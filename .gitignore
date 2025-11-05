@@ -1,33 +1,34 @@
+####################################
+#           ARCHIVOS GLOBALES
+####################################
 HELP.md
+
+####################################
+#             MAVEN
+####################################
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+mvnw
+mvnw.cmd
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
 
+####################################
+#      IDEs Y EDITORES
+####################################
 ### IntelliJ IDEA ###
-.idea
-*.iws
+.idea/
 *.iml
+*.iws
 *.ipr
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
+### Visual Studio Code ###
 .vscode/
+
+####################################
+#       CONFIGURACIÓN PERSONAL / ENTORNO
+####################################
+.env
+*.local
+*.properties.local
