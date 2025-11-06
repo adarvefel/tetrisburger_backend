@@ -4,9 +4,13 @@ import com.tetris.tetrisburger_backend.domain.exception.ProductNotFoundException
 import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.in.product.SetProductAvailability;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 
+@Service
+@Transactional
 public class SetProductAvailabilityUseCase implements SetProductAvailability {
     private final ProductRepository productRepository;
 

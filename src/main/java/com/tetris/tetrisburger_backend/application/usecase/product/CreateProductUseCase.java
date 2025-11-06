@@ -4,7 +4,11 @@ import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.in.product.CreateProduct;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.CreateProductCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
+@Service
+@Transactional
 public class CreateProductUseCase implements CreateProduct {
     private final ProductRepository productRepository;
 

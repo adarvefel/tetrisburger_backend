@@ -5,9 +5,13 @@ import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.in.product.UpdateProduct;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.UpdateProductCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 
+@Service
+@Transactional
 public class UpdateProductUseCase implements UpdateProduct {
     private final ProductRepository productRepository;
 

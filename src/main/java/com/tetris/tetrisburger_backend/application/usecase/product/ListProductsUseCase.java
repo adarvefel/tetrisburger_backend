@@ -6,7 +6,11 @@ import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.in.product.ListProducts;
 import com.tetris.tetrisburger_backend.domain.port.in.product.query.ListProductsQuery;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
+@Service
+@Transactional
 public class ListProductsUseCase implements ListProducts {
     private final ProductRepository productRepository;
 

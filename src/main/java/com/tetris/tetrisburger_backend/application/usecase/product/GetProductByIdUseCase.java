@@ -5,7 +5,11 @@ import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.in.product.GetProductById;
 import com.tetris.tetrisburger_backend.domain.port.in.product.query.GetProductByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
+@Service
+@Transactional
 public class GetProductByIdUseCase implements GetProductById {
     private final ProductRepository productRepository;
 
