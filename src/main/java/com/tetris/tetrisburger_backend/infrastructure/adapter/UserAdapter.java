@@ -96,10 +96,10 @@ public class UserAdapter implements UserRepository {
 
         return new PageResponse<>(
                 users,
-                page.getTotalPages(),
+                page.getNumber(),
+                page.getSize(),
                 page.getTotalElements(),
-                page.getTotalPages(),
-                page.getNumber()
+                page.getTotalPages()
         );
     }
 
@@ -133,7 +133,6 @@ public class UserAdapter implements UserRepository {
             throw e;
         }
     }
-
 
 
     @Override
