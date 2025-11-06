@@ -1,7 +1,6 @@
-
 Pruebas en postman para los usuarios
 Al final estan los cURLS:
-    
+
 Autenticación
 Login
 Autentica un usuario y retorna un token JWT.
@@ -307,7 +306,8 @@ json
 "idUser": 4
 }
 Notas Importantes
-Autenticación: Todos los endpoints excepto /auth/login, /auth/register y /auth/forgot-password requieren un token JWT válido en el header Authorization: Bearer {token}
+Autenticación: Todos los endpoints excepto /auth/login, /auth/register y /auth/forgot-password requieren un token JWT
+válido en el header Authorization: Bearer {token}
 
 Roles: ADMIN, EMPLOYEE, CLIENT
 
@@ -352,7 +352,9 @@ Reset Password
 curl --location 'http://localhost:8080/api/auth/reset-password' \
 --header 'Content-Type: application/json' \
 --data '{
-"token":"eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoicGFzc3dvcmRfcmVzZXQiLCJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzMDczODQsImV4cCI6MTc2MjMxMDk4NH0.ZxjGefem6_-I9ccwVIQUfqsmxpYLZnTcuP4HaJu3aIQ",
+"token":"
+eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoicGFzc3dvcmRfcmVzZXQiLCJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzMDczODQsImV4cCI6MTc2MjMxMDk4NH0.ZxjGefem6_
+-I9ccwVIQUfqsmxpYLZnTcuP4HaJu3aIQ",
 "newPassword":"felipe12345"
 }'
 
@@ -361,11 +363,13 @@ USER - Todos los Curls
 --------------------------
 Get Profile
 curl --location 'http://localhost:8080/api/profile' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyb21wZWN1Y2FzMTJAZ21haWwuY29tIiwiaWF0IjoxNzYyMzc4MTQ3LCJleHAiOjE3NjIzODE3NDd9.W8i1sBQmwD01wy2plew1qkahdMVxoTdkhXic2CJxRkw'
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyb21wZWN1Y2FzMTJAZ21haWwuY29tIiwiaWF0IjoxNzYyMzc4MTQ3LCJleHAiOjE3NjIzODE3NDd9.W8i1sBQmwD01wy2plew1qkahdMVxoTdkhXic2CJxRkw'
 ---------------------------------------------------------------------
 Update Profile (PATCH)
 curl --location --request PATCH 'http://localhost:8080/api/profile' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyb21wZWN1Y2FzMTJAZ21haWwuY29tIiwiaWF0IjoxNzYyMzc5NzIxLCJleHAiOjE3NjIzODMzMjF9.CIm4wYtvOucM4Ib_thBLpOOBZCxzy4tS60HACDVB8SQ' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyb21wZWN1Y2FzMTJAZ21haWwuY29tIiwiaWF0IjoxNzYyMzc5NzIxLCJleHAiOjE3NjIzODMzMjF9.CIm4wYtvOucM4Ib_thBLpOOBZCxzy4tS60HACDVB8SQ' \
 --header 'Content-Type: application/json' \
 --data '{
 "userName": "queRicolacuca",
@@ -375,7 +379,8 @@ curl --location --request PATCH 'http://localhost:8080/api/profile' \
 -------------------------------------------------------
 Delete Profile
 curl --location --request DELETE 'http://localhost:8080/api/profile' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjE1MDM5MzIsImV4cCI6MTc2MTUwNzUzMn0.QpolO523GCrrVSm8qTh3Tjmyp-LhaSc7C-H4KSDddzc'
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjE1MDM5MzIsImV4cCI6MTc2MTUwNzUzMn0.QpolO523GCrrVSm8qTh3Tjmyp-LhaSc7C-H4KSDddzc'
 
 ----------------------------------------
 ADMIN - Todos los Curls
@@ -383,7 +388,8 @@ ADMIN - Todos los Curls
 Create User (POST)
 
 curl --location 'http://localhost:8080/api/admin/users' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc' \
 --header 'Content-Type: application/json' \
 --data-raw '{
 "userName": "joseComeGordas",
@@ -396,12 +402,14 @@ curl --location 'http://localhost:8080/api/admin/users' \
 ------------------------------------------------------
 Get All Users (GET)
 curl --location --request GET 'http://localhost:8080/api/admin/users' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc' \
 --header 'Content-Type: application/json'
 -------------------------------------------------------------
 Update User (PUT)
 curl --location --request PUT 'http://localhost:8080/api/admin/users/3' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc' \
 --header 'Content-Type: application/json' \
 --data '{
 "userName": "Saralegustachimbo238",
@@ -410,12 +418,210 @@ curl --location --request PUT 'http://localhost:8080/api/admin/users/3' \
 ---------------------------------
 Get User by ID
 curl --location 'http://localhost:8080/api/admin/users/3' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc'
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc'
 -------------------------
 Delete User
 curl --location --request DELETE 'http://localhost:8080/api/admin/users/4' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzNjg0MDEsImV4cCI6MTc2MjM3MjAwMX0.cgh4fFx_tnIe-UaGwHjq0zGdwRMetB3ODK0iVTgivLE'
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzNjg0MDEsImV4cCI6MTc2MjM3MjAwMX0.cgh4fFx_tnIe-UaGwHjq0zGdwRMetB3ODK0iVTgivLE'
 
+# Módulo de Productos - TetrisBurger API
 
+## Introducción
 
+El módulo de **Productos** de **TetrisBurger** permite la gestión completa de los productos ofrecidos por el
+restaurante.  
+Todos los endpoints requieren **rol ADMIN**, ya que las operaciones incluyen creación, actualización, eliminación,
+ajuste de stock y disponibilidad, además de la consulta de productos.
+
+La API se expone en:  
+`http://localhost:8080/api/products`
+
+Cada producto contiene:
+
+- `id`: Identificador único.
+- `name`: Nombre del producto.
+- `description`: Descripción breve.
+- `quantity`: Cantidad disponible.
+- `price`: Precio del producto.
+- `availability`: Estado de disponibilidad (`true` o `false`).
+- `productType`: Tipo de producto (FOOD, DRINK, etc.).
+- `ingredientType`: Tipo de ingrediente (BURGER, SAUCE, etc.).
+- `burgerIngredient`: Indica si es ingrediente de hamburguesa.
+- `productCategoryId`: Categoría del producto.
+- `supplierId`: Proveedor del producto.
+
+Ejemplo de producto:
+
+json
+{
+"id": 16,
+"name": "Burger King XXXL",
+"description": "Mista",
+"quantity": 25,
+"price": 250000.00,
+"availability": true,
+"productType": "FOOD",
+"ingredientType": "BURGER",
+"burgerIngredient": false,
+"productCategoryId": 1,
+"supplierId": 2
+}
+
+Crear un producto
+Método: POST
+URL: /api/products
+Descripción: Crea un nuevo producto.
+Cuerpo del Request:
+
+{
+"name": "Burger King XXXL",
+"description": "Mista",
+"quantity": 25,
+"price": 250000.00,
+"availability": true,
+"productType": "FOOD",
+"ingredientType": "BURGER",
+"burgerIngredient": false,
+"productCategoryId": 1,
+"supplierId": 2
+}
+
+Rol requerido: ADMIN
+Ejemplo de Response: Devuelve el producto creado con id.
+curl --location 'http://localhost:8080/api/products' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzkyMjk2LCJleHAiOjE3NjIzOTU4OTZ9.8FPvuCXMoOGFsL19_ncGQS8gXLhpX4W5BOra4b52P0Y' \
+--header 'Content-Type: application/json' \
+--data '{
+"name": "Burger King",
+"description": "Mista",
+"quantity": 25,
+"price": 10000.00,
+"availability": true,
+"productType": "FOOD",
+"ingredientType": "BURGER",
+"burgerIngredient": false,
+"productCategoryId": 1,
+"supplierId": 2
+}'
+
+Obtener producto por ID
+Método: GET
+URL: /api/products/{id}
+Descripción: Obtiene un producto específico por su ID.
+Parámetros:
+id (path) – Identificador del producto
+Rol requerido: ADMIN
+Ejemplo de Request: GET http://localhost:8080/api/products/{id}
+curl --location 'http://localhost:8080/api/products/16' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzkyMjk2LCJleHAiOjE3NjIzOTU4OTZ9.8FPvuCXMoOGFsL19_ncGQS8gXLhpX4W5BOra4b52P0Y'
+
+Listar productos
+Método: GET
+URL: /api/products
+Descripción: Lista todos los productos con paginación y filtros opcionales.
+Parámetros opcionales:
+productCategoryId – Filtra por categoría
+availability – Filtra por disponibilidad (true o false)
+page – Número de página (default 0)
+size – Cantidad de productos por página (default 12)
+sortBy – Campo de orden
+direction – ASC o DESC (default ASC)
+Rol requerido: ADMIN
+Ejemplo de Request:http://localhost:8080/api/products
+curl --location 'http://localhost:8080/api/products' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzQ3Mjc5LCJleHAiOjE3NjIzNTA4Nzl9.okRVhK8V0BIHtbWXm-j7AQ9uVz7BhZmLJTEXfZvM-1M'
+
+Buscar productos por texto
+Método: GET
+URL: /api/products/search
+Descripción: Permite buscar productos por nombre o descripción.
+Parámetros:
+q – Término de búsqueda (obligatorio)
+productCategoryId – Filtra por categoría
+availability – Filtra por disponibilidad
+page, size, sortBy, direction – Igual que listar productos
+Rol requerido: ADMIN
+Ejemplo de Request:http://localhost:8080/api/products/search?q=pulga
+curl --location 'http://localhost:8080/api/products/search?q=pulga' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzQ3Mjc5LCJleHAiOjE3NjIzNTA4Nzl9.okRVhK8V0BIHtbWXm-j7AQ9uVz7BhZmLJTEXfZvM-1M'
+
+Actualizar un producto
+Método: PUT
+URL: /api/products/{id}
+Descripción: Actualiza un producto existente.
+Parámetros: id (path)
+Cuerpo del Request:
+{
+"name": "Burger King Mega",
+"description": "Mista XXL",
+"quantity": 30,
+"price": 270000.00,
+"availability": true,
+"productType": "FOOD",
+"ingredientType": "BURGER",
+"burgerIngredient": false,
+"productCategoryId": 1,
+"supplierId": 2
+}
+Rol requerido: ADMIN
+Ejemplo de Response: Producto actualizado.
+curl --location --request PUT 'http://localhost:8080/api/products/16' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzkyMjk2LCJleHAiOjE3NjIzOTU4OTZ9.8FPvuCXMoOGFsL19_ncGQS8gXLhpX4W5BOra4b52P0Y' \
+--header 'Content-Type: application/json' \
+--data '{
+"name": "Burger King XXXL",
+"quantity": 25,
+"price": 250000.00,
+"availability": true,
+"productType": "FOOD",
+"ingredientType": "BURGER",
+"burgerIngredient": false,
+"productCategoryId": 1,
+"supplierId": 2
+}'
+
+Eliminar un producto
+Método: DELETE
+URL: /api/products/{id}
+Descripción: Elimina un producto del sistema.
+Parámetros: id (path)
+Rol requerido: ADMIN
+Ejemplo de Response: Código 204 No Content.
+http://localhost:8080/api/products/{id}
+curl --location --request DELETE 'http://localhost:8080/api/products/15' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzQ3Mjc5LCJleHAiOjE3NjIzNTA4Nzl9.okRVhK8V0BIHtbWXm-j7AQ9uVz7BhZmLJTEXfZvM-1M'
+
+Cambiar disponibilidad
+Método: PATCH
+URL: /api/products/{id}/availability
+Descripción: Cambia el estado de disponibilidad de un producto.
+Parámetros:
+id (path)
+availability (query) – true o false
+Rol requerido: ADMIN
+Ejemplo de Request: PATCH http://localhost:8080/api/products/16/availability?availability=false
+curl --location --request PATCH 'http://localhost:8080/api/products/10/availability?availability=false' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjaGVAZ21haWwuY29tIiwiaWF0IjoxNzYyMzA2MTQ1LCJleHAiOjE3NjIzMDk3NDV9.KBUTqaP5NY_Sc_2iJ_X-VWQV3Uhs57x9HoELtfPxEb4'
+
+Ajustar stock
+Método: PATCH
+URL: /api/products/{id}/stock
+Descripción: Ajusta la cantidad disponible de un producto.
+Parámetros:
+id (path)
+delta (query) – Positivo para aumentar, negativo para disminuir
+Rol requerido: ADMIN
+Ejemplo de Request: PATCH http://localhost:8080/api/products/{id}/availability?availability=false
+curl --location --request PATCH 'http://localhost:8080/api/products/10/stock?delta=10' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjaGVAZ21haWwuY29tIiwiaWF0IjoxNzYyMzA2MTQ1LCJleHAiOjE3NjIzMDk3NDV9.KBUTqaP5NY_Sc_2iJ_X-VWQV3Uhs57x9HoELtfPxEb4'
 
