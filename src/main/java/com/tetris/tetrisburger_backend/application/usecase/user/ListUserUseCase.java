@@ -32,7 +32,7 @@ public class ListUserUseCase implements ListUser {
 
         logger.debug("Se encontraron {} usuario(s) en total, mostrando página {}/{}",
                 users.totalElements(),
-                users.pageNumber() + 1,
+                users.page() + 1,
                 users.totalPages());
 
         return users;
