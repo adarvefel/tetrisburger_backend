@@ -625,3 +625,93 @@ curl --location --request PATCH 'http://localhost:8080/api/products/10/stock?del
 --header 'Authorization: Bearer
 eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjaGVAZ21haWwuY29tIiwiaWF0IjoxNzYyMzA2MTQ1LCJleHAiOjE3NjIzMDk3NDV9.KBUTqaP5NY_Sc_2iJ_X-VWQV3Uhs57x9HoELtfPxEb4'
 
+# Módulo de Categorías de Producto - TetrisBurger API
+
+## Introducción
+
+El módulo de **Categorías de Producto** de **TetrisBurger** gestiona las distintas categorías a las que pueden
+pertenecer los productos del restaurante.  
+Este módulo permite **crear, actualizar, eliminar, listar y consultar categorías**, garantizando una organización clara
+dentro del catálogo de productos.
+
+Todos los endpoints requieren **rol ADMIN**, ya que las operaciones afectan directamente la estructura de clasificación
+del inventario.
+
+La API se expone en:  
+`http://localhost:8080/api/product-categories`
+
+Cada categoría de producto contiene los siguientes atributos:
+
+- `id`: Identificador único de la categoría.
+- `name`: Nombre de la categoría.
+- `description`: Descripción breve de la categoría.
+- `available`: Estado de disponibilidad (`true` o `false`).
+
+Ejemplo de categoría:
+json
+{
+"name": "Snacks",
+"description": "Acompañamientos",
+"available": true
+}
+
+GET públicos
+Listar categorías
+URL: http://localhost:8080/api/product-categories (sin Authorization)
+Respuesta 200 ejemplo:
+
+Obtener por id
+URL: http://localhost:8080/api/product-categories/{id} (sin Authorization)
+Respuesta 200 ejemplo:
+{ "id": 1, "name": "Burgers", "description": "Clásicas", "available": true }
+
+POST crear (ADMIN)
+URL: http://localhost:8080/api/product-categories
+Headers:
+Content-Type: application/json
+Authorization: Bearer <JWT_ADMIN> (en Postman Auth Type = Bearer Token, pega el JWT)
+Body JSON:
+{
+"name": "Sides",
+"description": "Acompañamientos",
+"available": true
+}
+Respuesta esperada: 201 Created con el recurso creado en el body.
+curl --location 'http://localhost:8080/api/product-categories' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyNTMxNjA1LCJleHAiOjE3NjI1MzUyMDV9.rkEaEE0wOSqItPW4FOiUI_XM-GG0hjhGXc1XsBPY-rw' \
+--data '
+{
+"name": "Snacks",
+"description": "Acompañamientos",
+"available": true
+}'
+
+PUT actualizar (ADMIN)
+URL: http://localhost:8080/api/product-categories/{id}
+Headers: Content-Type: application/json, Authorization: Bearer <JWT_ADMIN>
+Body JSON:
+{
+"name": "Sides & Snacks",
+"description": "Acompañamientos y bocados",
+"available": true
+}
+Respuesta esperada: 200 OK con la categoría actualizada.
+curl --location --request PUT 'http://localhost:8080/api/product-categories/4' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyNTMxNjA1LCJleHAiOjE3NjI1MzUyMDV9.rkEaEE0wOSqItPW4FOiUI_XM-GG0hjhGXc1XsBPY-rw' \
+--data '{
+"name": "Sides & Snacks",
+"description": "Acompañamientos y bocados",
+"available": true
+}'
+
+DELETE eliminar (ADMIN)
+URL: http://localhost:8080/api/product-categories/{id}
+Headers: Authorization: Bearer <JWT_ADMIN>
+Respuesta esperada: 204 No Content sin body.
+curl --location --request DELETE 'http://localhost:8080/api/product-categories/2' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyNTMxNjA1LCJleHAiOjE3NjI1MzUyMDV9.rkEaEE0wOSqItPW4FOiUI_XM-GG0hjhGXc1XsBPY-rw'

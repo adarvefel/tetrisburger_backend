@@ -5,12 +5,19 @@ import com.tetris.tetrisburger_backend.domain.exception.InvalidTokenException;
 import com.tetris.tetrisburger_backend.domain.exception.UserAlreadyExistsException;
 import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.BindException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -25,139 +32,139 @@ public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     private ResponseEntity<MessageResponseDTO> buildErrorResponse(String message) {
-        return ResponseEntity
-                .badRequest()
-                .body(new MessageResponseDTO(message, false));
+        return ResponseEntity.badRequest().body(new MessageResponseDTO(message, false));
     }
 
-    private ResponseEntity<MessageResponseDTO> buildErrorResponse(
-            HttpStatus status,
-            String message) {
-        return ResponseEntity
-                .status(status)
-                .body(new MessageResponseDTO(message, false));
+    private ResponseEntity<MessageResponseDTO> buildErrorResponse(HttpStatus status, String message) {
+        return ResponseEntity.status(status).body(new MessageResponseDTO(message, false));
     }
 
     private ResponseEntity<Map<String, Object>> buildValidationErrorResponse(
-            HttpStatus status,
-            String message,
-            Map<String, String> errors) {
-
+            HttpStatus status, String message, Map<String, String> errors) {
         Map<String, Object> response = new HashMap<>();
         response.put("message", message);
         response.put("success", false);
         response.put("timestamp", System.currentTimeMillis());
         response.put("errors", errors);
-
         return ResponseEntity.status(status).body(response);
     }
 
+    // 409 CONFLICT — reglas de negocio/únicos
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<MessageResponseDTO> handleUserExists(
-            UserAlreadyExistsException ex,
-            WebRequest request) {
-        logger.warn("Usuario ya existe: {} - Path: {}",
-                ex.getMessage(), request.getDescription(false));
+    public ResponseEntity<MessageResponseDTO> handleUserExists(UserAlreadyExistsException ex, WebRequest request) {
+        logger.warn("Usuario ya existe: {} - Path: {}", ex.getMessage(), request.getDescription(false));
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    // 404 NOT FOUND — recursos no encontrados
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<MessageResponseDTO> handleUserNotFound(
-            UserNotFoundException ex,
-            WebRequest request) {
-        logger.warn("Usuario no encontrado: {} - Path: {}",
-                ex.getMessage(), request.getDescription(false));
+    public ResponseEntity<MessageResponseDTO> handleUserNotFound(UserNotFoundException ex, WebRequest request) {
+        logger.warn("Usuario no encontrado: {} - Path: {}", ex.getMessage(), request.getDescription(false));
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
+    // 401 UNAUTHORIZED — credenciales inválidas
     @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<MessageResponseDTO> handleInvalidCredentials(
-            InvalidCredentialsException ex,
-            WebRequest request) {
-        logger.warn("Credenciales inválidas - Path: {}",
-                request.getDescription(false));
+    public ResponseEntity<MessageResponseDTO> handleInvalidCredentials(InvalidCredentialsException ex, WebRequest request) {
+        logger.warn("Credenciales inválidas - Path: {}", request.getDescription(false));
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Credenciales inválidas");
     }
 
+    // 400 BAD REQUEST — token inválido (puedes cambiar a 401 si prefieres)
     @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<MessageResponseDTO> handleInvalidToken(
-            InvalidTokenException ex,
-            WebRequest request) {
-        logger.warn("Token inválido: {} - Path: {}",
-                ex.getMessage(), request.getDescription(false));
+    public ResponseEntity<MessageResponseDTO> handleInvalidToken(InvalidTokenException ex, WebRequest request) {
+        logger.warn("Token inválido: {} - Path: {}", ex.getMessage(), request.getDescription(false));
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    // 409 CONFLICT — violación de integridad (únicos/FK)
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<MessageResponseDTO> handleDataIntegrityViolation(
-            DataIntegrityViolationException ex,
-            WebRequest request) {
-
-        logger.error("Error de integridad de datos - Path: {}",
-                request.getDescription(false), ex);
-
+    public ResponseEntity<MessageResponseDTO> handleDataIntegrityViolation(DataIntegrityViolationException ex, WebRequest request) {
+        logger.error("Error de integridad de datos - Path: {}", request.getDescription(false), ex);
         String message = "Conflicto de integridad de datos";
-
-        if (ex.getMessage() != null) {
-            if (ex.getMessage().contains("email") || ex.getMessage().contains("unique")) {
-                message = "El email ya está registrado en el sistema";
-            } else if (ex.getMessage().contains("foreign key")) {
-                message = "Referencia inválida a datos relacionados";
-            }
+        String cause = ex.getMostSpecificCause() != null && ex.getMostSpecificCause().getMessage() != null
+                ? ex.getMostSpecificCause().getMessage().toLowerCase()
+                : (ex.getMessage() == null ? "" : ex.getMessage().toLowerCase());
+        if (cause.contains("unique") || cause.contains("duplicate") || cause.contains("uq_")) {
+            message = "Registro duplicado: ya existe un recurso con esos datos";
+        } else if (cause.contains("foreign key") || cause.contains("fk_")) {
+            message = "Referencia inválida a datos relacionados";
         }
-
         return buildErrorResponse(HttpStatus.CONFLICT, message);
     }
 
+    // 400 BAD REQUEST — argumentos de negocio inválidos
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<MessageResponseDTO> handleIllegalArgument(
-            IllegalArgumentException ex,
-            WebRequest request) {
-        logger.warn("Argumento inválido: {} - Path: {}",
-                ex.getMessage(), request.getDescription(false));
+    public ResponseEntity<MessageResponseDTO> handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
+        logger.warn("Argumento inválido: {} - Path: {}", ex.getMessage(), request.getDescription(false));
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    // 400 BAD REQUEST — @Valid en body (Bean Validation)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationErrors(
-            MethodArgumentNotValidException ex,
-            WebRequest request) {
-
-        logger.warn("Errores de validación - Path: {}",
-                request.getDescription(false));
-
-        Map<String, String> errors = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
+    public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex, WebRequest request) {
+        logger.warn("Errores de validación - Path: {}", request.getDescription(false));
+        Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .collect(Collectors.toMap(
-                        error -> error.getField(),
-                        error -> error.getDefaultMessage() != null
-                                ? error.getDefaultMessage()
-                                : "Error de validación",
+                        err -> err.getField(),
+                        err -> err.getDefaultMessage() != null ? err.getDefaultMessage() : "Error de validación",
                         (existing, replacement) -> existing
                 ));
-
-        return buildValidationErrorResponse(
-                HttpStatus.BAD_REQUEST,
-                "Errores de validación",
-                errors
-        );
+        return buildValidationErrorResponse(HttpStatus.BAD_REQUEST, "Errores de validación", errors);
     }
 
+    // 400 BAD REQUEST — validación en @RequestParam/@PathVariable
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
+        logger.warn("Constraint violation - Path: {}", req.getRequestURI());
+        Map<String, String> errors = ex.getConstraintViolations().stream()
+                .collect(Collectors.toMap(
+                        v -> v.getPropertyPath().toString(),
+                        v -> v.getMessage(),
+                        (a, b) -> a
+                ));
+        return buildValidationErrorResponse(HttpStatus.BAD_REQUEST, "Errores de validación", errors);
+    }
+
+    // 400 BAD REQUEST — binding de query/form
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<Map<String, Object>> handleBindException(BindException ex, HttpServletRequest req) {
+        logger.warn("BindException - Path: {}", req.getRequestURI());
+        Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.toMap(
+                        err -> err.getField(),
+                        err -> err.getDefaultMessage() != null ? err.getDefaultMessage() : "Error de validación",
+                        (a, b) -> a
+                ));
+        return buildValidationErrorResponse(HttpStatus.BAD_REQUEST, "Errores de validación", errors);
+    }
+
+    // 400 BAD REQUEST — request mal formado o parámetro faltante
+    @ExceptionHandler({MissingServletRequestParameterException.class, HttpMediaTypeNotSupportedException.class})
+    public ResponseEntity<MessageResponseDTO> handleBadRequest(Exception ex, HttpServletRequest req) {
+        logger.warn("Bad request: {} - Path: {}", ex.getMessage(), req.getRequestURI());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    // 403 FORBIDDEN — denegado por seguridad
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<MessageResponseDTO> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
+        logger.warn("Access denied - Path: {}", req.getRequestURI());
+        return buildErrorResponse(HttpStatus.FORBIDDEN, "Acceso denegado");
+    }
+
+    // 405 METHOD NOT ALLOWED
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<MessageResponseDTO> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
+        logger.warn("Method not allowed: {} - Path: {}", ex.getMessage(), req.getRequestURI());
+        return buildErrorResponse(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage());
+    }
+
+    // 500 INTERNAL SERVER ERROR — fallback
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<MessageResponseDTO> handleGenericException(
-            Exception ex,
-            WebRequest request) {
-
+    public ResponseEntity<MessageResponseDTO> handleGenericException(Exception ex, WebRequest request) {
         logger.error("Error inesperado en {} - Tipo: {} - Mensaje: {}",
-                request.getDescription(false),
-                ex.getClass().getSimpleName(),
-                ex.getMessage(),
-                ex);
-
-        return buildErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Error interno del servidor"
-        );
+                request.getDescription(false), ex.getClass().getSimpleName(), ex.getMessage(), ex);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
     }
 }
