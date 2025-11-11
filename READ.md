@@ -715,3 +715,111 @@ Respuesta esperada: 204 No Content sin body.
 curl --location --request DELETE 'http://localhost:8080/api/product-categories/2' \
 --header 'Authorization: Bearer
 eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyNTMxNjA1LCJleHAiOjE3NjI1MzUyMDV9.rkEaEE0wOSqItPW4FOiUI_XM-GG0hjhGXc1XsBPY-rw'
+
+## Módulo de Proveedores - TetrisBurger API
+
+# Introducción
+
+El módulo de Proveedores (Suppliers) de TetrisBurger gestiona la información de las empresas o personas que suministran
+insumos al restaurante.
+Este módulo permite listar, consultar, crear, actualizar y eliminar proveedores, facilitando una administración
+organizada de los contactos comerciales.
+
+Los endpoints GET son públicos, es decir, no requieren autenticación, mientras que las operaciones POST, PUT y DELETE
+requieren el rol ADMIN, ya que modifican la información del sistema.
+
+La API se expone en:
+`http://localhost:8080/api/suppliers`
+
+Cada proveedor contiene los siguientes atributos:
+
+id: Identificador único del proveedor.
+`name`: Nombre del proveedor o empresa.
+`phone`: Número de teléfono de contacto.
+`email`: Correo electrónico del proveedor.
+`address`: Dirección física.
+`registrationDate`: Fecha de registro del proveedor.
+
+Endpoints
+🔹 Listar proveedores (GET público)
+
+URL:
+http://localhost:8080/api/suppliers?q=juan&page=0&size=12&sortBy=name&direction=ASC
+Descripción:
+Permite listar los proveedores registrados con soporte de búsqueda, paginación y ordenamiento.
+No requiere autenticación.
+Parámetros opcionales:
+q: Palabra clave para buscar por nombre.
+page: Número de página (por defecto 0).
+size: Cantidad de registros por página (por defecto 12).
+sortBy: Campo por el cual ordenar (por defecto name).
+direction: Dirección de orden (ASC o DESC).
+curl --location 'http://localhost:8080/api/suppliers'
+
+Obtener proveedor por ID (GET público)
+URL:
+http://localhost:8080/api/suppliers/3
+Descripción:
+Consulta la información de un proveedor específico por su identificador.
+No requiere autenticación.
+Respuesta 200 (ejemplo):
+curl --location 'http://localhost:8080/api/suppliers/1'
+
+Crear proveedor (POST - ADMIN)
+Authorization: Bearer <JWT_ADMIN>
+URL:
+http://localhost:8080/api/suppliers
+{
+"name": "Proveedor S.A.",
+"phone": "3120001111",
+"email": "contacto@proveedor.com",
+"address": "Zona Industrial 45",
+"registrationDate": "2025-01-10"
+}
+Respuesta esperada:
+201 Created con el proveedor creado en el body.
+curl --location 'http://localhost:8080/api/suppliers' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyNzQyMDA1LCJleHAiOjE3NjI3NDU2MDV9.kVV3Ql5f7JzHMhMQX1gYAXfNlQaTqxkymuizTMG_tQg' \
+--data-raw '{
+"name": "Mac Pollo",
+"phone": "3120001111",
+"email": "mpollo@proveedor.com",
+"address": "Zona Industrial 04",
+"registrationDate": "2025-01-10"
+}'
+
+Actualizar proveedor (PUT - ADMIN)
+URL:
+http://localhost:8080/api/suppliers/3
+Headers:
+Authorization: Bearer <JWT_ADMIN>
+{
+"name": "Proveedor S.A. Actualizado",
+"phone": "3120002222",
+"email": "contacto@proveedor.com",
+"address": "Zona Industrial 50",
+"registrationDate": "2025-01-10"
+}
+Respuesta esperada:
+200 OK con el proveedor actualizado en el body.
+curl --location --request PUT 'http://localhost:8080/api/suppliers/1' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyNzQyMDA1LCJleHAiOjE3NjI3NDU2MDV9.kVV3Ql5f7JzHMhMQX1gYAXfNlQaTqxkymuizTMG_tQg' \
+--data-raw '{
+"name": "Proveedor S.A. Actualizado",
+"phone": "3120002222",
+"email": "contacto@proveedor.com",
+"address": "Zona Industrial 50",
+"registrationDate": "2025-01-10"
+}'
+
+Eliminar proveedor (DELETE - ADMIN)
+URL:
+http://localhost:8080/api/suppliers/3
+Headers:
+Authorization: Bearer <JWT_ADMIN>
+Respuesta esperada:
+204 No Content sin body.
