@@ -20,22 +20,26 @@ public class AdjustProductStockUseCase implements AdjustProductStock {
 
     @Override
     public Product adjustStock(Integer id, int delta, Integer updatedBy) {
-        Product current = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException(id));
-        int newQty = Math.max(0, (current.getQuantity() == null ? 0 : current.getQuantity()) + delta);
-        Product updated = new Product(
+        Product current = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+        int baseQty = current.getQuantity() == null ? 0 : current.getQuantity();
+        int newQty = Math.max(0, baseQty + delta);
+
+        Product updated = Product.of(
                 current.getId(),
                 current.getName(),
                 current.getDescription(),
                 newQty,
                 current.getPrice(),
-                current.isAvailability(),
+                current.getAvailability(),       // antes: isAvailability()
                 current.getProductType(),
                 current.getIngredientType(),
-                current.isBurgerIngredient(),
+                current.getBurgerIngredient(),   // evita is... si es Boolean wrapper
+                current.getImageUrl(),           // incluye imageUrl
                 current.getProductCategoryId(),
                 current.getSupplierId(),
                 current.getCreatedAt(),
-                Instant.now(),
+                Instant.now(),                   // updatedAt
                 current.getDeletedAt(),
                 current.getCreatedBy(),
                 updatedBy,
@@ -43,4 +47,5 @@ public class AdjustProductStockUseCase implements AdjustProductStock {
         );
         return productRepository.save(updated);
     }
+
 }

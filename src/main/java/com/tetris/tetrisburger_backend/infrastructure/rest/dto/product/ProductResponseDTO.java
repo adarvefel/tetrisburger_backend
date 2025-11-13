@@ -1,18 +1,14 @@
+// src/main/java/com/tetris/tetrisburger_backend/infrastructure/rest/dto/product/ProductResponseDTO.java
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.product;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class ProductResponseDTO {
-
     private Integer id;
     private String name;
     private String description;
@@ -22,6 +18,7 @@ public class ProductResponseDTO {
     private String productType;
     private String ingredientType;
     private Boolean burgerIngredient;
+    private String imageUrl; // nuevo
     private Integer productCategoryId;
     private Integer supplierId;
 }

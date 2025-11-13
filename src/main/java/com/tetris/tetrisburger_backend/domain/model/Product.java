@@ -1,3 +1,4 @@
+// src/main/java/com/tetris/tetrisburger_backend/domain/model/Product.java
 package com.tetris.tetrisburger_backend.domain.model;
 
 import java.math.BigDecimal;
@@ -9,10 +10,11 @@ public class Product {
     private String description;
     private Integer quantity;
     private BigDecimal price;
-    private boolean availability;
+    private Boolean availability;
     private String productType;
     private String ingredientType;
-    private boolean burgerIngredient;
+    private Boolean burgerIngredient;
+    private String imageUrl; // nuevo
     private Integer productCategoryId;
     private Integer supplierId;
     private Instant createdAt;
@@ -22,10 +24,11 @@ public class Product {
     private Integer updatedBy;
     private Integer deletedBy;
 
-    public Product(Integer id, String name, String description, Integer quantity, BigDecimal price,
-                   boolean availability, String productType, String ingredientType, boolean burgerIngredient,
-                   Integer productCategoryId, Integer supplierId, Instant createdAt, Instant updatedAt,
-                   Instant deletedAt, Integer createdBy, Integer updatedBy, Integer deletedBy) {
+    private Product(Integer id, String name, String description, Integer quantity, BigDecimal price,
+                    Boolean availability, String productType, String ingredientType, Boolean burgerIngredient,
+                    String imageUrl, Integer productCategoryId, Integer supplierId,
+                    Instant createdAt, Instant updatedAt, Instant deletedAt,
+                    Integer createdBy, Integer updatedBy, Integer deletedBy) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -35,6 +38,7 @@ public class Product {
         this.productType = productType;
         this.ingredientType = ingredientType;
         this.burgerIngredient = burgerIngredient;
+        this.imageUrl = imageUrl;
         this.productCategoryId = productCategoryId;
         this.supplierId = supplierId;
         this.createdAt = createdAt;
@@ -46,13 +50,22 @@ public class Product {
     }
 
     public static Product ofNew(String name, String description, Integer quantity, BigDecimal price,
-                                boolean availability, String productType, String ingredientType, boolean burgerIngredient,
-                                Integer productCategoryId, Integer supplierId, Integer createdBy) {
+                                Boolean availability, String productType, String ingredientType, Boolean burgerIngredient,
+                                String imageUrl, Integer productCategoryId, Integer supplierId, Integer createdBy) {
         return new Product(null, name, description, quantity, price, availability, productType, ingredientType,
-                burgerIngredient, productCategoryId, supplierId, Instant.now(), null, null, createdBy, null, null);
+                burgerIngredient, imageUrl, productCategoryId, supplierId, null, null, null, createdBy, null, null);
     }
 
-    // getters y setters
+    public static Product of(Integer id, String name, String description, Integer quantity, BigDecimal price,
+                             Boolean availability, String productType, String ingredientType, Boolean burgerIngredient,
+                             String imageUrl, Integer productCategoryId, Integer supplierId,
+                             Instant createdAt, Instant updatedAt, Instant deletedAt,
+                             Integer createdBy, Integer updatedBy, Integer deletedBy) {
+        return new Product(id, name, description, quantity, price, availability, productType, ingredientType,
+                burgerIngredient, imageUrl, productCategoryId, supplierId, createdAt, updatedAt, deletedAt,
+                createdBy, updatedBy, deletedBy);
+    }
+
     public Integer getId() {
         return id;
     }
@@ -73,7 +86,7 @@ public class Product {
         return price;
     }
 
-    public boolean isAvailability() {
+    public Boolean getAvailability() {
         return availability;
     }
 
@@ -85,8 +98,12 @@ public class Product {
         return ingredientType;
     }
 
-    public boolean isBurgerIngredient() {
+    public Boolean getBurgerIngredient() {
         return burgerIngredient;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
     }
 
     public Integer getProductCategoryId() {
@@ -119,9 +136,5 @@ public class Product {
 
     public Integer getDeletedBy() {
         return deletedBy;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
     }
 }

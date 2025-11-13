@@ -20,21 +20,24 @@ public class SetProductAvailabilityUseCase implements SetProductAvailability {
 
     @Override
     public Product setAvailability(Integer id, boolean availability, Integer updatedBy) {
-        Product current = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException(id));
-        Product updated = new Product(
+        Product current = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+
+        Product updated = Product.of(
                 current.getId(),
                 current.getName(),
                 current.getDescription(),
                 current.getQuantity(),
                 current.getPrice(),
-                availability,
+                availability,                            // nuevo valor
                 current.getProductType(),
                 current.getIngredientType(),
-                current.isBurgerIngredient(),
+                current.getBurgerIngredient(),           // antes llamabas isBurgerIngredient()
+                current.getImageUrl(),                   // incluye imageUrl
                 current.getProductCategoryId(),
                 current.getSupplierId(),
                 current.getCreatedAt(),
-                Instant.now(),
+                Instant.now(),                           // updatedAt
                 current.getDeletedAt(),
                 current.getCreatedBy(),
                 updatedBy,
@@ -42,4 +45,5 @@ public class SetProductAvailabilityUseCase implements SetProductAvailability {
         );
         return productRepository.save(updated);
     }
+
 }

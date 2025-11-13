@@ -1,3 +1,4 @@
+// src/main/java/com/tetris/tetrisburger_backend/application/usecase/product/CreateProductUseCase.java
 package com.tetris.tetrisburger_backend.application.usecase.product;
 
 import com.tetris.tetrisburger_backend.domain.model.Product;
@@ -24,7 +25,7 @@ public class CreateProductUseCase implements CreateProduct {
         Product product = Product.ofNew(
                 cmd.name(), cmd.description(), cmd.quantity(), cmd.price(),
                 cmd.availability(), cmd.productType(), cmd.ingredientType(), cmd.burgerIngredient(),
-                cmd.productCategoryId(), cmd.supplierId(), cmd.createdBy()
+                cmd.imageUrl(), cmd.productCategoryId(), cmd.supplierId(), cmd.createdBy()
         );
         return productRepository.save(product);
     }
