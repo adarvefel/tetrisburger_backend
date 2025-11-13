@@ -1,3 +1,4 @@
+// src/main/java/com/tetris/tetrisburger_backend/infrastructure/persistence/entity/ProductEntity.java
 package com.tetris.tetrisburger_backend.infrastructure.persistence.entity;
 
 import jakarta.persistence.Column;
@@ -36,6 +37,9 @@ public class ProductEntity {
     @Column(name = "is_burger_ingredient")
     private Boolean burgerIngredient;
 
+    @Column(name = "image_url") // nuevo
+    private String imageUrl;
+
     @Column(name = "id_product_category")
     private Integer productCategoryId;
 
@@ -60,7 +64,7 @@ public class ProductEntity {
     @Column(name = "deleted_by")
     private Integer deletedBy;
 
-    // getters y setters
+    // getters/setters (incluye imageUrl)
     public Integer getId() {
         return id;
     }
@@ -131,6 +135,14 @@ public class ProductEntity {
 
     public void setBurgerIngredient(Boolean burgerIngredient) {
         this.burgerIngredient = burgerIngredient;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public Integer getProductCategoryId() {
