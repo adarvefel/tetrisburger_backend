@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Component
 public class PqrsAdapter implements PqrsPort {
 
@@ -36,5 +38,11 @@ public class PqrsAdapter implements PqrsPort {
             logger.error("Error al guardar en la base de datos el PQRS con id: {}: {}", pqrs.getIdPqrs(), e);
             throw e;
         }
+    }
+
+    @Override
+    public Optional<Pqrs> findById(Integer id) {
+        logger.info("Buscando PQRS en la base de datos por el ID: {}", id);
+        return pqrsJpaRepository.findById(id).map(pqrsEntityMapper::toDomain);
     }
 }
