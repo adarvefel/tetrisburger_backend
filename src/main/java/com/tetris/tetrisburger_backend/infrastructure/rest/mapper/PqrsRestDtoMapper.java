@@ -8,8 +8,13 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface PqrsRestDtoMapper {
 
-    @Mapping(source = "type", target = "type" )
-    @Mapping(source = "subject", target = "subject" )
-    @Mapping(source = "description", target = "description" )
-    CreatePqrsCommand toCreatePqrsCommand (CreatePqrsRequestDTO createPqrsRequestDTO);
+    default CreatePqrsCommand toCreatePqrsCommand(CreatePqrsRequestDTO createPqrsRequestDTO, Integer idUser){
+
+        return new CreatePqrsCommand(
+                createPqrsRequestDTO.type(),
+                createPqrsRequestDTO.subject(),
+                createPqrsRequestDTO.description(),
+                idUser
+        );
+    }
 }

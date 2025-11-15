@@ -31,7 +31,7 @@ public class CreatePqrsUseCase implements CreatePqrs {
         pqrs.setPriority(PqrsPriority.MEDIUM);
         pqrs.setSubject(createPqrsCommand.subject());
         pqrs.setDescription(createPqrsCommand.description());
-        pqrs.setIdUser(1);
+        pqrs.setIdUser(createPqrsCommand.idUser());
 
         Pqrs pqrsSaved = pqrsPort.savePqrs(pqrs);
 

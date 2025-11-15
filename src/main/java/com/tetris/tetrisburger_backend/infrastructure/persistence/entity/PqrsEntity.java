@@ -25,10 +25,10 @@ public class PqrsEntity {
     @Column(name = "id_pqrs")
     private Integer idPqrs;
 
-    @Column(name = "type")
+    @Column(name = "type", nullable = false)
     private String type;
 
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     private String status;
 
     @Column(name = "priority")
@@ -43,7 +43,7 @@ public class PqrsEntity {
     @Column(name = "response")
     private String response;
 
-    @Column(name = "id_user")
+    @Column(name = "id_user", nullable = false)
     private Integer idUser;
 
     @Column(name = "assigned_to")
@@ -54,19 +54,19 @@ public class PqrsEntity {
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(name = "update_at")
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "delete_at")
+    @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
     @Column(name = "created_by")
     private Integer createdBy;
 
     @LastModifiedBy
-    @Column(name = "update_by")
+    @Column(name = "updated_by")
     private Integer updatedBy;
 
-    @Column(name = "delete_by")
+    @Column(name = "deleted_by")
     private Integer deletedBy;
 }
