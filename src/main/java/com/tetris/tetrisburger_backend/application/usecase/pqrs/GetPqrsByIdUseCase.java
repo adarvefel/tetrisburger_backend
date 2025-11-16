@@ -4,9 +4,11 @@ import com.tetris.tetrisburger_backend.domain.model.Pqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.GetPqrsById;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.GetPqrsByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.out.PqrsPort;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 @Service
+@Transactional
 public class GetPqrsByIdUseCase implements GetPqrsById {
 
     private final PqrsPort pqrsPort;

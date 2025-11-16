@@ -2,11 +2,15 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
 
 import com.tetris.tetrisburger_backend.application.usecase.pqrs.CreatePqrsUseCase;
 import com.tetris.tetrisburger_backend.application.usecase.pqrs.GetPqrsByIdUseCase;
+import com.tetris.tetrisburger_backend.application.usecase.pqrs.ListPqrsUseCase;
+import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Pqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.CreatePqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.CreatePqrsCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.GetPqrsByIdQuery;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsQuery;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.CreatePqrsRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.ListPqrsResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.PqrsResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.PqrsRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
@@ -30,11 +34,13 @@ public class PqrsController {
     private final PqrsRestDtoMapper pqrsRestDtoMapper;
     private  final CreatePqrs createPqrs;
     private final GetPqrsByIdUseCase getPqrsByIdUseCase;
+    private final ListPqrsUseCase listPqrsUseCase;
 
-    public PqrsController(PqrsRestDtoMapper pqrsRestDtoMapper, CreatePqrs createPqrs, GetPqrsByIdUseCase getPqrsByIdUseCase) {
+    public PqrsController(PqrsRestDtoMapper pqrsRestDtoMapper, CreatePqrs createPqrs, GetPqrsByIdUseCase getPqrsByIdUseCase, ListPqrsUseCase listPqrsUseCase) {
         this.pqrsRestDtoMapper = pqrsRestDtoMapper;
         this.createPqrs = createPqrs;
         this.getPqrsByIdUseCase = getPqrsByIdUseCase;
+        this.listPqrsUseCase = listPqrsUseCase;
     }
 
     //CRear PQRS
@@ -58,7 +64,7 @@ public class PqrsController {
 
     @GetMapping("/{id}")
     public ResponseEntity<PqrsResponseDTO> getPqrsById(@PathVariable Integer id){
-        logger.info("Usuario intentando buscar PQRS con el ID: {}", id);
+        logger.info("Admin buscando PQRS con el ID: {}", id);
 
         Pqrs pqrs = getPqrsByIdUseCase.handle(new GetPqrsByIdQuery(id));
         PqrsResponseDTO response = pqrsRestDtoMapper.toPqrsResponseDTO(pqrs);
@@ -67,4 +73,24 @@ public class PqrsController {
         return ResponseEntity.ok(response);
     }
 
+    //Listar todos lo pqrs
+
+    @GetMapping
+    public ResponseEntity<ListPqrsResponseDTO> listPqrs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "idPqrs") String sortBy){
+
+
+        logger.info("Admin listando pqrs page: {}, size: {}, sortBy: {}", page, size, sortBy);
+
+        ListPqrsQuery listPqrsQuery = new ListPqrsQuery(page, size, sortBy);
+        PageResponse<Pqrs> list = listPqrsUseCase.handle(listPqrsQuery);
+        ListPqrsResponseDTO response = pqrsRestDtoMapper.toListPqrsResponseDTO(list);
+
+        logger.info("Retornando PQRS {} de {} totales", list.content().size(), response.totalElements());
+
+        return ResponseEntity.ok(response);
+
+    }
 }
