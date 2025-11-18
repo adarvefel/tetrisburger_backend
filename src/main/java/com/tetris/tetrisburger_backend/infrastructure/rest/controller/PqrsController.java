@@ -1,15 +1,21 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
 
 import com.tetris.tetrisburger_backend.application.usecase.pqrs.CreatePqrsUseCase;
+import com.tetris.tetrisburger_backend.application.usecase.pqrs.DeleteSoftPqrsUseCase;
 import com.tetris.tetrisburger_backend.application.usecase.pqrs.GetPqrsByIdUseCase;
 import com.tetris.tetrisburger_backend.application.usecase.pqrs.ListPqrsUseCase;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Pqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.CreatePqrs;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.DeleteSoftPqrs;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.GetPqrsById;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.ListPqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.CreatePqrsCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.DeleteSoftPqrsCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.GetPqrsByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsQuery;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.CreatePqrsRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.DeleteSoftPqrsResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.ListPqrsResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.PqrsResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.PqrsRestDtoMapper;
@@ -33,14 +39,16 @@ public class PqrsController {
 
     private final PqrsRestDtoMapper pqrsRestDtoMapper;
     private  final CreatePqrs createPqrs;
-    private final GetPqrsByIdUseCase getPqrsByIdUseCase;
-    private final ListPqrsUseCase listPqrsUseCase;
+    private final GetPqrsById getPqrsById;
+    private final ListPqrs listPqrs;
+    private final DeleteSoftPqrs deleteSoftPqrs;
 
-    public PqrsController(PqrsRestDtoMapper pqrsRestDtoMapper, CreatePqrs createPqrs, GetPqrsByIdUseCase getPqrsByIdUseCase, ListPqrsUseCase listPqrsUseCase) {
+    public PqrsController(PqrsRestDtoMapper pqrsRestDtoMapper, CreatePqrs createPqrs, GetPqrsById getPqrsById, ListPqrs listPqrs, DeleteSoftPqrs deleteSoftPqrs) {
         this.pqrsRestDtoMapper = pqrsRestDtoMapper;
         this.createPqrs = createPqrs;
-        this.getPqrsByIdUseCase = getPqrsByIdUseCase;
-        this.listPqrsUseCase = listPqrsUseCase;
+        this.getPqrsById = getPqrsById;
+        this.listPqrs = listPqrs;
+        this.deleteSoftPqrs = deleteSoftPqrs;
     }
 
     //CRear PQRS
@@ -66,7 +74,7 @@ public class PqrsController {
     public ResponseEntity<PqrsResponseDTO> getPqrsById(@PathVariable Integer id){
         logger.info("Admin buscando PQRS con el ID: {}", id);
 
-        Pqrs pqrs = getPqrsByIdUseCase.handle(new GetPqrsByIdQuery(id));
+        Pqrs pqrs = getPqrsById.handle(new GetPqrsByIdQuery(id));
         PqrsResponseDTO response = pqrsRestDtoMapper.toPqrsResponseDTO(pqrs);
 
         logger.info("PQRS encontrada con el ID: {}", id);
@@ -85,10 +93,37 @@ public class PqrsController {
         logger.info("Admin listando pqrs page: {}, size: {}, sortBy: {}", page, size, sortBy);
 
         ListPqrsQuery listPqrsQuery = new ListPqrsQuery(page, size, sortBy);
-        PageResponse<Pqrs> list = listPqrsUseCase.handle(listPqrsQuery);
+        PageResponse<Pqrs> list = listPqrs.handle(listPqrsQuery);
         ListPqrsResponseDTO response = pqrsRestDtoMapper.toListPqrsResponseDTO(list);
 
         logger.info("Retornando PQRS {} de {} totales", list.content().size(), response.totalElements());
+
+        return ResponseEntity.ok(response);
+
+    }
+
+    //Soft delete
+
+    @DeleteMapping("/{idPqrs}")
+    public  ResponseEntity<DeleteSoftPqrsResponseDTO>  softDelete (@PathVariable Integer idPqrs, @AuthenticationPrincipal CustomUserDetails customUserDetails){
+
+        Integer idUser = customUserDetails.getId();
+
+        logger.info("Usuario con ID: {} intenrando eliminar Pqrs con ID: {}", idUser, idPqrs);
+
+        DeleteSoftPqrsCommand deleteSoftPqrsCommand = new DeleteSoftPqrsCommand(
+                idPqrs,
+                idUser
+        );
+
+        deleteSoftPqrs.handle(deleteSoftPqrsCommand);
+
+        logger.info("Usuario con ID: {} eliminno Pqrs con ID: {}", idUser, idPqrs);
+
+        DeleteSoftPqrsResponseDTO response = new DeleteSoftPqrsResponseDTO(
+                "PQRS eliminada corretamente.",
+                idPqrs
+        );
 
         return ResponseEntity.ok(response);
 

@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -81,5 +82,22 @@ public class PqrsAdapter implements PqrsPort {
                 page.getTotalPages()
 
         );
+    }
+
+    @Override
+    public void softDeletePqrs(Integer idPqrs, Integer idUser) {
+
+        logger.info("Usuario con ID: {} intenrando eliminar Pqrs de la db con ID: {}", idUser, idPqrs);
+
+        PqrsEntity pqrs = pqrsJpaRepository.findById(idPqrs)
+                .orElseThrow(() -> new RuntimeException("Pqrs no encontrada."));
+
+
+        pqrs.setDeletedAt(LocalDateTime.now());
+        pqrs.setDeletedBy(idUser);
+
+
+        logger.info("Usuario con ID: {} eliminno Pqrs de la db con ID: {}", idUser, idPqrs);
+
     }
 }
