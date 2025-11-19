@@ -9,6 +9,7 @@ import com.tetris.tetrisburger_backend.domain.model.Pqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.*;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.CreatePqrsCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.DeleteSoftPqrsCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.UpdatePqrsByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.UpdatePqrsCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.GetPqrsByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsQuery;
@@ -38,14 +39,16 @@ public class PqrsController {
     private final ListPqrs listPqrs;
     private final DeleteSoftPqrs deleteSoftPqrs;
     private final UpdatePqrs updatePqrs;
+    private final UpdatePqrsByAdmin updatePqrsByAdmin;
 
-    public PqrsController(PqrsRestDtoMapper pqrsRestDtoMapper, CreatePqrs createPqrs, GetPqrsById getPqrsById, ListPqrs listPqrs, DeleteSoftPqrs deleteSoftPqrs, UpdatePqrs updatePqrs) {
+    public PqrsController(PqrsRestDtoMapper pqrsRestDtoMapper, CreatePqrs createPqrs, GetPqrsById getPqrsById, ListPqrs listPqrs, DeleteSoftPqrs deleteSoftPqrs, UpdatePqrs updatePqrs, UpdatePqrsByAdmin updatePqrsByAdmin) {
         this.pqrsRestDtoMapper = pqrsRestDtoMapper;
         this.createPqrs = createPqrs;
         this.getPqrsById = getPqrsById;
         this.listPqrs = listPqrs;
         this.deleteSoftPqrs = deleteSoftPqrs;
         this.updatePqrs = updatePqrs;
+        this.updatePqrsByAdmin = updatePqrsByAdmin;
     }
 
 //CRear PQRS
@@ -126,6 +129,8 @@ public class PqrsController {
 
     }
 
+    //Actualizar pqrs propio,
+
     @PatchMapping("/{idPqrs}")
     public ResponseEntity<PqrsResponseDTO> updatePqrs(@PathVariable Integer idPqrs,
                                                       @RequestBody UpdatePqrsRequestDTO updatePqrsRequestDTO,
@@ -148,5 +153,29 @@ public class PqrsController {
 
         return ResponseEntity.ok(response);
 
+    }
+
+    //Actualizar pqrs admin
+
+    @PatchMapping("/admin/{idPqrs}")
+    public ResponseEntity<PqrsResponseDTO> updatePqrsAdmin(@PathVariable Integer idPqrs,
+                                                           @RequestBody UpdatePqrsByAdminRequestDTO updatePqrsByAdminRequestDTO,
+                                                           @AuthenticationPrincipal CustomUserDetails customUserDetails){
+
+        Integer assignedTo = customUserDetails.getId();
+
+        logger.info("Staff ID: {} , respondiendo PQRS ID: {}", assignedTo, idPqrs);
+
+        UpdatePqrsByAdminCommand updatePqrsByAdminCommand = pqrsRestDtoMapper.toUpdatePqrsByAdminCommand(idPqrs,
+                updatePqrsByAdminRequestDTO,
+                assignedTo);
+
+        Pqrs pqrs = updatePqrsByAdmin.handle(updatePqrsByAdminCommand);
+
+        PqrsResponseDTO response = pqrsRestDtoMapper.toPqrsResponseDTO(pqrs);
+
+        logger.info("Staff ID: {} , respondio con exito el PQRS ID: {}", assignedTo, idPqrs);
+
+        return ResponseEntity.ok(response);
     }
 }

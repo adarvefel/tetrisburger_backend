@@ -3,12 +3,10 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.mapper;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Pqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.CreatePqrsCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.UpdatePqrsByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.UpdatePqrsCommand;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.PqrsEntity;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.CreatePqrsRequestDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.ListPqrsResponseDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.PqrsResponseDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.UpdatePqrsRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -68,6 +66,21 @@ public interface PqrsRestDtoMapper {
           updatePqrsRequestDTO.subject(),
           updatePqrsRequestDTO.description(),
           idUser
+        );
+
+    }
+
+    //Mapping para update admin
+    default UpdatePqrsByAdminCommand toUpdatePqrsByAdminCommand(Integer idPqrs,
+                                                                UpdatePqrsByAdminRequestDTO updatePqrsByAdminRequestDTO,
+                                                                Integer assignedTo){
+
+        return new UpdatePqrsByAdminCommand(
+          idPqrs,
+          updatePqrsByAdminRequestDTO.status(),
+          updatePqrsByAdminRequestDTO.priority(),
+          updatePqrsByAdminRequestDTO.response(),
+          assignedTo
         );
 
     }
