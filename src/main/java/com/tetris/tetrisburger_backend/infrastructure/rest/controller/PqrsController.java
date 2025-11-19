@@ -6,18 +6,13 @@ import com.tetris.tetrisburger_backend.application.usecase.pqrs.GetPqrsByIdUseCa
 import com.tetris.tetrisburger_backend.application.usecase.pqrs.ListPqrsUseCase;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Pqrs;
-import com.tetris.tetrisburger_backend.domain.port.in.pqrs.CreatePqrs;
-import com.tetris.tetrisburger_backend.domain.port.in.pqrs.DeleteSoftPqrs;
-import com.tetris.tetrisburger_backend.domain.port.in.pqrs.GetPqrsById;
-import com.tetris.tetrisburger_backend.domain.port.in.pqrs.ListPqrs;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.*;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.CreatePqrsCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.DeleteSoftPqrsCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.UpdatePqrsCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.GetPqrsByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsQuery;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.CreatePqrsRequestDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.DeleteSoftPqrsResponseDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.ListPqrsResponseDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.PqrsResponseDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.PqrsRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import jakarta.validation.Valid;
@@ -42,16 +37,18 @@ public class PqrsController {
     private final GetPqrsById getPqrsById;
     private final ListPqrs listPqrs;
     private final DeleteSoftPqrs deleteSoftPqrs;
+    private final UpdatePqrs updatePqrs;
 
-    public PqrsController(PqrsRestDtoMapper pqrsRestDtoMapper, CreatePqrs createPqrs, GetPqrsById getPqrsById, ListPqrs listPqrs, DeleteSoftPqrs deleteSoftPqrs) {
+    public PqrsController(PqrsRestDtoMapper pqrsRestDtoMapper, CreatePqrs createPqrs, GetPqrsById getPqrsById, ListPqrs listPqrs, DeleteSoftPqrs deleteSoftPqrs, UpdatePqrs updatePqrs) {
         this.pqrsRestDtoMapper = pqrsRestDtoMapper;
         this.createPqrs = createPqrs;
         this.getPqrsById = getPqrsById;
         this.listPqrs = listPqrs;
         this.deleteSoftPqrs = deleteSoftPqrs;
+        this.updatePqrs = updatePqrs;
     }
 
-    //CRear PQRS
+//CRear PQRS
 
     @PostMapping
     public ResponseEntity<PqrsResponseDTO> createPqrs(@AuthenticationPrincipal CustomUserDetails customUserDetails, @RequestBody @Valid CreatePqrsRequestDTO createPqrsRequestDTO){
@@ -124,6 +121,30 @@ public class PqrsController {
                 "PQRS eliminada corretamente.",
                 idPqrs
         );
+
+        return ResponseEntity.ok(response);
+
+    }
+
+    @PatchMapping("/{idPqrs}")
+    public ResponseEntity<PqrsResponseDTO> updatePqrs(@PathVariable Integer idPqrs,
+                                                      @RequestBody UpdatePqrsRequestDTO updatePqrsRequestDTO,
+                                                      @AuthenticationPrincipal CustomUserDetails customUserDetails){
+
+
+
+
+        Integer idUser = customUserDetails.getId();
+
+        logger.info("Usuario con id: {} intentando actualizar su PQRS de id: {} ", idUser, idPqrs);
+
+        UpdatePqrsCommand command = pqrsRestDtoMapper.toUpdatePqrsCommand(idPqrs, updatePqrsRequestDTO, idUser);
+
+        Pqrs pqrs = updatePqrs.handle(command);
+
+        PqrsResponseDTO response = pqrsRestDtoMapper.toPqrsResponseDTO(pqrs);
+
+        logger.info("Usuario con id: {} actualizo su PQRS de id: {} ", idUser, idPqrs);
 
         return ResponseEntity.ok(response);
 

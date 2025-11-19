@@ -100,4 +100,18 @@ public class PqrsAdapter implements PqrsPort {
         logger.info("Usuario con ID: {} eliminno Pqrs de la db con ID: {}", idUser, idPqrs);
 
     }
+
+    @Override
+    public Pqrs updatePqrs(Pqrs pqrs) {
+
+        logger.info("Usuario con id: {} intentando actualizar su PQRS en la DB de id: {} ", pqrs.getIdUser(), pqrs.getIdPqrs());
+
+        PqrsEntity pqrsEntity = pqrsEntityMapper.toEntity(pqrs);
+        pqrsJpaRepository.save(pqrsEntity);
+        Pqrs domain = pqrsEntityMapper.toDomain(pqrsEntity);
+
+        logger.info("Usuario con id: {} actualizo su PQRS en la DB de id: {} ", pqrs.getIdUser(), pqrs.getIdPqrs());
+
+        return domain;
+    }
 }

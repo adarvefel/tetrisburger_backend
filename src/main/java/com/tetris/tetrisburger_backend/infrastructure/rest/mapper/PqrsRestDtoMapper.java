@@ -3,10 +3,12 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.mapper;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Pqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.CreatePqrsCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.UpdatePqrsCommand;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.PqrsEntity;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.CreatePqrsRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.ListPqrsResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.PqrsResponseDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.UpdatePqrsRequestDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -55,6 +57,18 @@ public interface PqrsRestDtoMapper {
                 pageResponse.totalPages()
         );
 
+
+    }
+
+    //Mapping para update
+    default UpdatePqrsCommand toUpdatePqrsCommand(Integer idPqrs, UpdatePqrsRequestDTO updatePqrsRequestDTO,  Integer idUser){
+        return new UpdatePqrsCommand(
+          idPqrs,
+          updatePqrsRequestDTO.type(),
+          updatePqrsRequestDTO.subject(),
+          updatePqrsRequestDTO.description(),
+          idUser
+        );
 
     }
 }
