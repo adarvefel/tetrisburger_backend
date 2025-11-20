@@ -10,4 +10,6 @@ import org.springframework.stereotype.Repository;
 public interface PqrsJpaRepository extends JpaRepository<PqrsEntity, Integer> {
 
     Page<PqrsEntity> findAllByDeletedAtIsNull(Pageable pageable);
+
+    Page<PqrsEntity> findAllByIdUserAndDeletedAtIsNull(Integer idUser, Pageable pageable);
 }

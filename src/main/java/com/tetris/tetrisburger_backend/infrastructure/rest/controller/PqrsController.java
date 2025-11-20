@@ -40,8 +40,9 @@ public class PqrsController {
     private final DeleteSoftPqrs deleteSoftPqrs;
     private final UpdatePqrs updatePqrs;
     private final UpdatePqrsByAdmin updatePqrsByAdmin;
+    private final ListPqrsById listPqrsById;
 
-    public PqrsController(PqrsRestDtoMapper pqrsRestDtoMapper, CreatePqrs createPqrs, GetPqrsById getPqrsById, ListPqrs listPqrs, DeleteSoftPqrs deleteSoftPqrs, UpdatePqrs updatePqrs, UpdatePqrsByAdmin updatePqrsByAdmin) {
+    public PqrsController(PqrsRestDtoMapper pqrsRestDtoMapper, CreatePqrs createPqrs, GetPqrsById getPqrsById, ListPqrs listPqrs, DeleteSoftPqrs deleteSoftPqrs, UpdatePqrs updatePqrs, UpdatePqrsByAdmin updatePqrsByAdmin, ListPqrsById listPqrsById) {
         this.pqrsRestDtoMapper = pqrsRestDtoMapper;
         this.createPqrs = createPqrs;
         this.getPqrsById = getPqrsById;
@@ -49,6 +50,7 @@ public class PqrsController {
         this.deleteSoftPqrs = deleteSoftPqrs;
         this.updatePqrs = updatePqrs;
         this.updatePqrsByAdmin = updatePqrsByAdmin;
+        this.listPqrsById = listPqrsById;
     }
 
 //CRear PQRS
@@ -178,4 +180,37 @@ public class PqrsController {
 
         return ResponseEntity.ok(response);
     }
+
+    //Obtener lista de los pqrs propios
+
+    @GetMapping("/me")
+    public ResponseEntity<ListPqrsResponseDTO> listById(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "idPqrs") String sortBy){
+
+
+        Integer idUser = customUserDetails.getId();
+
+        logger.info("Usuario ID: {} listando sus propias pqrs", idUser);
+
+        ListPqrsQuery listPqrsQuery = new ListPqrsQuery(
+                page,
+                size,
+                sortBy
+        );
+
+        PageResponse<Pqrs> pqrs = listPqrsById.handle(listPqrsQuery, idUser);
+
+        ListPqrsResponseDTO response = pqrsRestDtoMapper.toListPqrsResponseDTO(pqrs);
+
+
+        logger.info("Usuario ID: {} realizo consulta de sus propias pqrs", idUser);
+
+        return ResponseEntity.ok(response);
+
+    }
+
+
 }

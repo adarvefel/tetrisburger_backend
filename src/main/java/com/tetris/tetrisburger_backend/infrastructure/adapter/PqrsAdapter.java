@@ -114,4 +114,34 @@ public class PqrsAdapter implements PqrsPort {
 
         return domain;
     }
+
+    @Override
+    public PageResponse<Pqrs> findAllById(ListPqrsQuery listPqrsQuery, Integer idUser) {
+
+        logger.info("Buscando en la DB pqrs del user id: {}", idUser);
+
+        Pageable pageable = PageRequest.of(
+                listPqrsQuery.page(),
+                listPqrsQuery.size(),
+                Sort.by(listPqrsQuery.storBy()).ascending()
+        );
+
+        Page<PqrsEntity> page = pqrsJpaRepository.findAllByIdUserAndDeletedAtIsNull(idUser, pageable);
+
+        List<Pqrs> pqrs = page.getContent()
+                .stream()
+                .map(pqrsEntityMapper::toDomain)
+                .toList();
+
+
+        logger.info("PQRS del user ID: {} encontradas en la DB", idUser);
+
+        return new PageResponse<Pqrs>(
+                pqrs,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages()
+        );
+    }
 }

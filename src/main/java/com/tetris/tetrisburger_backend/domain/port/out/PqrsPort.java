@@ -17,4 +17,6 @@ public interface PqrsPort {
     void softDeletePqrs(Integer idPqrs, Integer idUser);
 
     Pqrs updatePqrs(Pqrs pqrs);
+
+    PageResponse<Pqrs> findAllById(ListPqrsQuery listPqrsQuery, Integer idUser);
 }
