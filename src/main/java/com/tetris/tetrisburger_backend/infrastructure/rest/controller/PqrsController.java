@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -71,7 +72,7 @@ public class PqrsController {
     }
 
     //Buscar pqrs por id
-
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @GetMapping("/{id}")
     public ResponseEntity<PqrsResponseDTO> getPqrsById(@PathVariable Integer id){
         logger.info("Admin buscando PQRS con el ID: {}", id);
@@ -84,7 +85,7 @@ public class PqrsController {
     }
 
     //Listar todos lo pqrs
-
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @GetMapping
     public ResponseEntity<ListPqrsResponseDTO> listPqrs(
             @RequestParam(defaultValue = "0") int page,
@@ -158,7 +159,7 @@ public class PqrsController {
     }
 
     //Actualizar pqrs admin
-
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @PatchMapping("/admin/{idPqrs}")
     public ResponseEntity<PqrsResponseDTO> updatePqrsAdmin(@PathVariable Integer idPqrs,
                                                            @RequestBody UpdatePqrsByAdminRequestDTO updatePqrsByAdminRequestDTO,
