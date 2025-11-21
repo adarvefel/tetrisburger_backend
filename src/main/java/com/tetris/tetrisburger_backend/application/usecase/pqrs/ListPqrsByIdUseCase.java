@@ -3,7 +3,7 @@ package com.tetris.tetrisburger_backend.application.usecase.pqrs;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Pqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.ListPqrsById;
-import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsQuery;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.out.PqrsPort;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -19,9 +19,9 @@ public class ListPqrsByIdUseCase implements ListPqrsById {
     }
 
     @Override
-    public PageResponse<Pqrs> handle(ListPqrsQuery listPqrsQuery, Integer idUser) {
+    public PageResponse<Pqrs> handle(ListPqrsByIdQuery listPqrsByIdQuery, Integer idUser) {
 
-        PageResponse<Pqrs> pqrs = pqrsPort.findAllById(listPqrsQuery, idUser);
+        PageResponse<Pqrs> pqrs = pqrsPort.findAllById(listPqrsByIdQuery, idUser);
 
         return pqrs;
     }

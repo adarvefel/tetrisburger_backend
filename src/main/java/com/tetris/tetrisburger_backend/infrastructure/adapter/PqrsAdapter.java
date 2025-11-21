@@ -2,6 +2,7 @@ package com.tetris.tetrisburger_backend.infrastructure.adapter;
 
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Pqrs;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsQuery;
 import com.tetris.tetrisburger_backend.domain.port.out.PqrsPort;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.PqrsEntity;
@@ -116,14 +117,14 @@ public class PqrsAdapter implements PqrsPort {
     }
 
     @Override
-    public PageResponse<Pqrs> findAllById(ListPqrsQuery listPqrsQuery, Integer idUser) {
+    public PageResponse<Pqrs> findAllById(ListPqrsByIdQuery listPqrsByIdQuery, Integer idUser) {
 
         logger.info("Buscando en la DB pqrs del user id: {}", idUser);
 
         Pageable pageable = PageRequest.of(
-                listPqrsQuery.page(),
-                listPqrsQuery.size(),
-                Sort.by(listPqrsQuery.storBy()).ascending()
+                listPqrsByIdQuery.page(),
+                listPqrsByIdQuery.size(),
+                Sort.by(listPqrsByIdQuery.storBy()).ascending()
         );
 
         Page<PqrsEntity> page = pqrsJpaRepository.findAllByIdUserAndDeletedAtIsNull(idUser, pageable);

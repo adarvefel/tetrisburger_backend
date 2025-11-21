@@ -12,6 +12,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.DeleteSoftPqr
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.UpdatePqrsByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.UpdatePqrsCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.GetPqrsByIdQuery;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsQuery;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.pqrs.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.PqrsRestDtoMapper;
@@ -196,13 +197,13 @@ public class PqrsController {
 
         logger.info("Usuario ID: {} listando sus propias pqrs", idUser);
 
-        ListPqrsQuery listPqrsQuery = new ListPqrsQuery(
+        ListPqrsByIdQuery listPqrsByIdQuery = new ListPqrsByIdQuery(
                 page,
                 size,
                 sortBy
         );
 
-        PageResponse<Pqrs> pqrs = listPqrsById.handle(listPqrsQuery, idUser);
+        PageResponse<Pqrs> pqrs = listPqrsById.handle(listPqrsByIdQuery, idUser);
 
         ListPqrsResponseDTO response = pqrsRestDtoMapper.toListPqrsResponseDTO(pqrs);
 
