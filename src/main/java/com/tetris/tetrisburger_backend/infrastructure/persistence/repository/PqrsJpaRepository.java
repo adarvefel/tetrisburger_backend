@@ -12,4 +12,10 @@ public interface PqrsJpaRepository extends JpaRepository<PqrsEntity, Integer> {
     Page<PqrsEntity> findAllByDeletedAtIsNull(Pageable pageable);
 
     Page<PqrsEntity> findAllByIdUserAndDeletedAtIsNull(Integer idUser, Pageable pageable);
+
+    Page<PqrsEntity> findAllByTypeAndDeletedAtIsNull(String type, Pageable pageable);
+
+    Page<PqrsEntity> findAllByStatusAndDeletedAtIsNull(String status, Pageable pageable);
+
+    Page<PqrsEntity> findAllByPriorityAndDeletedAtIsNull(String priority, Pageable pageable);
 }

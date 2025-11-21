@@ -56,32 +56,38 @@ public class PqrsAdapter implements PqrsPort {
     }
 
     @Override
-    public PageResponse<Pqrs> findAllPqrs(ListPqrsQuery listPqrsQuery) {
-
-        logger.info("Buscando pqrs en la db page: {}, tamaño: {}", listPqrsQuery.page(), listPqrsQuery.size());
+    public PageResponse<Pqrs> findAllPqrs(ListPqrsQuery q) {
 
         Pageable pageable = PageRequest.of(
-                listPqrsQuery.page(),
-                listPqrsQuery.size(),
-                Sort.by(listPqrsQuery.storBy()).ascending()
-                
+                q.page(),
+                q.size(),
+                Sort.by(q.sortBy()).ascending()
         );
 
-        Page<PqrsEntity> page = pqrsJpaRepository.findAllByDeletedAtIsNull(pageable);
 
-        List<Pqrs> pqrs = page.getContent().stream()
+
+        Page<PqrsEntity> page;
+
+        if (q.type() != null) {
+            page = pqrsJpaRepository.findAllByTypeAndDeletedAtIsNull(q.type(), pageable);
+        } else if (q.status() != null) {
+            page = pqrsJpaRepository.findAllByStatusAndDeletedAtIsNull(q.status(), pageable);
+        } else if (q.priority() != null) {
+            page = pqrsJpaRepository.findAllByPriorityAndDeletedAtIsNull(q.priority(), pageable);
+        } else {
+            page = pqrsJpaRepository.findAllByDeletedAtIsNull(pageable);
+        }
+
+        List<Pqrs> list = page.getContent().stream()
                 .map(pqrsEntityMapper::toDomain)
                 .toList();
 
-        logger.info("PQRS encontradas en la db {} de: {}, pagina: {} de: {}", pqrs.size(), page.getTotalElements(), page.getNumber() + 1, page.getTotalPages());
-
-        return new PageResponse<Pqrs>(
-                pqrs,
+        return new PageResponse<>(
+                list,
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages()
-
         );
     }
 

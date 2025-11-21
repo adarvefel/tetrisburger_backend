@@ -86,25 +86,30 @@ public class PqrsController {
     }
 
     //Listar todos lo pqrs
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ListPqrsResponseDTO> listPqrs(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "idPqrs") String sortBy){
+            @RequestParam(defaultValue = "idPqrs") String sortBy,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String priority
+    ) {
+        logger.info("Admin listando pqrs page: {}, size: {}, sortBy: {}, type: {}, status: {}, priority: {}",
+                page, size, sortBy, type, status, priority);
 
+        ListPqrsQuery query = new ListPqrsQuery(page, size, sortBy, type, status, priority);
+        PageResponse<Pqrs> pageResult = listPqrs.handle(query);
 
-        logger.info("Admin listando pqrs page: {}, size: {}, sortBy: {}", page, size, sortBy);
+        ListPqrsResponseDTO response = pqrsRestDtoMapper.toListPqrsResponseDTO(pageResult);
 
-        ListPqrsQuery listPqrsQuery = new ListPqrsQuery(page, size, sortBy);
-        PageResponse<Pqrs> list = listPqrs.handle(listPqrsQuery);
-        ListPqrsResponseDTO response = pqrsRestDtoMapper.toListPqrsResponseDTO(list);
-
-        logger.info("Retornando PQRS {} de {} totales", list.content().size(), response.totalElements());
+        logger.info("Retornando lista de pqrs: {}, size: {}, sortBy: {}, type: {}, status: {}, priority: {}",
+                page, size, sortBy, type, status, priority);
 
         return ResponseEntity.ok(response);
-
     }
+
 
     //Soft delete
 
