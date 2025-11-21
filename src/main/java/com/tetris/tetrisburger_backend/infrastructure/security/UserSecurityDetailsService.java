@@ -13,12 +13,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Adaptador de seguridad para cargar usuarios desde el dominio.
- * Implementa UserDetailsService de Spring Security.
- * Pertenece a la capa de infrastructure.
-**/
-
 @Service
 public class UserSecurityDetailsService implements UserDetailsService {
 
@@ -32,19 +26,18 @@ public class UserSecurityDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User domainUser = userPort.findUserByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException(
-                        "User not found with email: " + email));
+                        "Usuario no encontrado con el Email: " + email));
 
         Role role = domainUser.getRole();
         List<GrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
 
-        // ✅ CAMBIO: Retorna CustomUserDetails con ID
+        // Devuelve CustomUserDetails con ID de usuario
         return new CustomUserDetails(
-                domainUser.getIdUser(),  // ✅ AGREGAR ID
+                domainUser.getIdUser(),
                 domainUser.getEmail(),
                 domainUser.getPassword(),
                 authorities
         );
     }
 }
-
