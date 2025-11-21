@@ -10,6 +10,8 @@ import com.tetris.tetrisburger_backend.domain.port.out.PqrsPort;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 @Transactional
 
@@ -42,6 +44,9 @@ public class UpdatePqrsByAdminUseCase implements UpdatePqrsByAdmin {
         }
 
         pqrs.setAssignedTo(updatePqrsByAdminCommand.assignedTo());
+
+        pqrs.setUpdatedBy(updatePqrsByAdminCommand.assignedTo());
+        pqrs.setUpdatedAt(LocalDateTime.now());
 
         Pqrs pqrsSaved = pqrsPort.savePqrs(pqrs);
 

@@ -10,6 +10,8 @@ import com.tetris.tetrisburger_backend.domain.port.out.PqrsPort;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 
 @Service
 @Transactional
@@ -32,6 +34,8 @@ public class CreatePqrsUseCase implements CreatePqrs {
         pqrs.setSubject(createPqrsCommand.subject());
         pqrs.setDescription(createPqrsCommand.description());
         pqrs.setIdUser(createPqrsCommand.idUser());
+        pqrs.setCreatedBy(createPqrsCommand.idUser());
+        pqrs.setCreatedAt(LocalDateTime.now());
 
         Pqrs pqrsSaved = pqrsPort.savePqrs(pqrs);
 

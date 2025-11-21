@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
+//@EntityListeners(AuditingEntityListener.class)
 public class PqrsEntity {
 
     @Id
@@ -49,11 +49,11 @@ public class PqrsEntity {
     @Column(name = "assigned_to")
     private Integer assignedTo;
 
-    @CreatedDate
+    //@CreatedDate
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
+    //@LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
@@ -63,7 +63,7 @@ public class PqrsEntity {
     @Column(name = "created_by")
     private Integer createdBy;
 
-    @LastModifiedBy
+    //@LastModifiedBy
     @Column(name = "updated_by")
     private Integer updatedBy;
 
