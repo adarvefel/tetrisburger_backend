@@ -1,0 +1,29 @@
+package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger;
+
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+
+public record BurgerResponseDTO(
+        Integer idBurger,
+        String name,
+        String description,
+        BigDecimal basePrice,
+        BigDecimal finalPrice,
+        Boolean isOnMenu,
+        Boolean isFavorite,
+        Boolean isCustom,
+        Boolean availability,
+        String imageUrl,
+        Integer idUser,
+        Integer timesOrdered,
+        Instant createdAt,
+        Instant updatedAt,
+        Instant deletedAt,
+        Integer createdBy,   // ← AGREGAR
+        Integer updatedBy,
+        Integer deletedBy,
+        List<BurgerIngredientResponseDTO> ingredients
+) {
+}

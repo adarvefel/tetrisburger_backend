@@ -53,6 +53,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product-categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/suppliers/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/burgers/**").permitAll()
+
 
                         // ✅ Requieren autenticación
                         .requestMatchers("/api/profile/**")

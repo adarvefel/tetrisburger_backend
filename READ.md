@@ -823,3 +823,586 @@ Headers:
 Authorization: Bearer <JWT_ADMIN>
 Respuesta esperada:
 204 No Content sin body.
+
+
+SECCION DE HAMBURGUESA
+
+1) Crear hamburguesa personalizada (cliente)
+   Método: POST
+   URL: http://localhost:8080/api/burgers/custom
+
+Headers en Postman:
+
+Key: Content-Type → application/json
+
+Key: Authorization → Bearer <token_cliente>
+
+Body (tab Body → raw → JSON):
+
+json
+{
+"name": "come cuca 200ks",
+"description": "Hamburguesa test",
+"imageUrl": "https://example.com/images/burger-cliente.png",
+"ingredients": [
+{
+"idProduct": 9,
+"quantity": 2,
+"isOptional": false
+},
+{
+"idProduct": 7,
+"quantity": 2,
+"isOptional": false
+},
+{
+"idProduct": 8,
+"quantity": 1,
+"isOptional": false
+},
+{
+"idProduct": 12,
+"quantity": 1,
+"isOptional": false
+}
+]
+}
+Respuesta ejemplo:
+
+json
+{
+"idBurger": 25,
+"name": "come cuca 200ks",
+"description": "Hamburguesa test",
+"basePrice": 0,
+"finalPrice": 7200.00,
+"isOnMenu": false,
+"isFavorite": false,
+"isCustom": true,
+"availability": true,
+"imageUrl": "https://example.com/images/burger-cliente.png",
+"idUser": 6,
+"timesOrdered": 0,
+"createdAt": "2025-11-20T16:06:05.056567800Z",
+"updatedAt": "2025-11-20T16:06:05.056567800Z",
+"deletedAt": null,
+"createdBy": 6,
+"updatedBy": 6,
+"deletedBy": null,
+"ingredients": [
+{
+"idBurgerIngredient": 52,
+"idProduct": 9,
+"priceAtTime": 500.00,
+"quantity": 2,
+"isOptional": false
+},
+{
+"idBurgerIngredient": 53,
+"idProduct": 7,
+"priceAtTime": 1200.00,
+"quantity": 2,
+"isOptional": false
+},
+{
+"idBurgerIngredient": 54,
+"idProduct": 8,
+"priceAtTime": 1800.00,
+"quantity": 1,
+"isOptional": false
+},
+{
+"idBurgerIngredient": 55,
+"idProduct": 12,
+"priceAtTime": 2000.00,
+"quantity": 1,
+"isOptional": false
+}
+]
+}
+2) Crear hamburguesa de menú (admin)
+   Método: POST
+   URL: http://localhost:8080/api/admin/burgers/menu
+
+Headers:
+
+Content-Type: application/json
+
+Authorization: Bearer <token_admin>
+
+Body:
+
+json
+{
+"name": "Burger Deluxe",
+"description": "Hamburguesa gourmet con queso cheddar, tocino y salsa especial",
+"imageUrl": "https://cdn.tetrisburger.com/menu/burger-deluxe.png",
+"favorite": false,
+"ingredients": [
+{
+"idProduct": 6,
+"quantity": 1,
+"isOptional": false
+},
+{
+"idProduct": 7,
+"quantity": 1,
+"isOptional": false
+},
+{
+"idProduct": 8,
+"quantity": 1,
+"isOptional": true
+},
+{
+"idProduct": 15,
+"quantity": 1,
+"isOptional": true
+}
+]
+}
+Respuesta ejemplo:
+
+json
+{
+"idBurger": 27,
+"name": "Burger Deluxe",
+"description": "Hamburguesa gourmet con queso cheddar, tocino y salsa especial",
+"basePrice": 9500.00,
+"finalPrice": 9500.00,
+"isOnMenu": true,
+"isFavorite": false,
+"isCustom": false,
+"availability": true,
+"imageUrl": "https://cdn.tetrisburger.com/menu/burger-deluxe.png",
+"timesOrdered": 0,
+"createdAt": "2025-11-20T17:56:04.6926153",
+"updatedAt": "2025-11-20T17:56:04.6926153",
+"deletedAt": null,
+"updatedBy": 2,
+"createdBy": 2,
+"deletedBy": null,
+"ingredients": [
+{
+"idBurgerIngredient": 60,
+"idProduct": 6,
+"priceAtTime": 4500.00,
+"quantity": 1,
+"isOptional": false
+},
+{
+"idBurgerIngredient": 61,
+"idProduct": 7,
+"priceAtTime": 1200.00,
+"quantity": 1,
+"isOptional": false
+},
+{
+"idBurgerIngredient": 62,
+"idProduct": 8,
+"priceAtTime": 1800.00,
+"quantity": 1,
+"isOptional": true
+},
+{
+"idBurgerIngredient": 63,
+"idProduct": 15,
+"priceAtTime": 2000.00,
+"quantity": 1,
+"isOptional": true
+}
+]
+}
+3) Obtener burger por ID (pública/autenticada)
+   Método: GET
+   URL: http://localhost:8080/api/burgers/15
+
+Headers:
+
+Authorization: Bearer <token_cliente>
+
+Body: (no se envía body en Postman, déjalo vacío)
+
+Respuesta ejemplo (similar a tus datos):
+
+json
+{
+"idBurger": 15,
+"name": "Cheeseburger Clásica",
+"description": "Hamburguesa de la casa con queso cheddar y salsa especial",
+"basePrice": 4500.00,
+"finalPrice": 12000.00,
+"isOnMenu": true,
+"isFavorite": true,
+"isCustom": false,
+"availability": true,
+"imageUrl": "https://cdn.tetrisburger.com/menu/cheeseburger-clasica.png",
+"timesOrdered": 0,
+"createdAt": "2025-11-16T14:47:46.313016",
+"updatedAt": "2025-11-20T14:47:46.313016",
+"deletedAt": null,
+"createdBy": 2,
+"updatedBy": 2,
+"deletedBy": null,
+"ingredients": [
+{
+"idBurgerIngredient": 2,
+"idProduct": 6,
+"priceAtTime": 4500.00,
+"quantity": 1,
+"isOptional": false
+},
+{
+"idBurgerIngredient": 3,
+"idProduct": 7,
+"priceAtTime": 1200.00,
+"quantity": 1,
+"isOptional": false
+},
+{
+"idBurgerIngredient": 4,
+"idProduct": 8,
+"priceAtTime": 1800.00,
+"quantity": 1,
+"isOptional": true
+}
+]
+}
+4) Listar hamburguesas de menú (admin, paginado)
+   Método: GET
+   URL: http://localhost:8080/api/admin/burgers/menu
+
+Puedes usar query params page y size si quieres (ej: ?page=0&size=10).
+
+Headers:
+
+Authorization: Bearer <token_admin>
+
+Body: vacío.
+
+Respuesta ejemplo:
+
+json
+{
+"content": [
+{
+"idBurger": 2,
+"name": "Cheeseburger Clásica",
+"description": "Hamburguesa de la casa con queso cheddar y salsa especial",
+"basePrice": 0.00,
+"finalPrice": 0,
+"isOnMenu": true,
+"isFavorite": true,
+"isCustom": false,
+"availability": true,
+"imageUrl": "https://cdn.tetrisburger.com/menu/cheeseburger-clasica.png",
+"timesOrdered": 0,
+"createdAt": "2025-11-16T14:47:46.313016",
+"updatedAt": "2025-11-16T14:47:46.313016",
+"deletedAt": null,
+"updatedBy": 2,
+"createdBy": 2,
+"deletedBy": null,
+"ingredients": []
+},
+{
+"idBurger": 9,
+"name": "Cheeseburger Clásica",
+"description": "Hamburguesa de la casa con queso cheddar y salsa especial",
+"basePrice": 0.00,
+"finalPrice": 0,
+"isOnMenu": true,
+"isFavorite": true,
+"isCustom": false,
+"availability": true,
+"imageUrl": "https://cdn.tetrisburger.com/menu/cheeseburger-clasica.png",
+"timesOrdered": 0,
+"createdAt": "2025-11-17T12:16:29.892058",
+"updatedAt": "2025-11-17T12:16:29.892058",
+"deletedAt": null,
+"updatedBy": 2,
+"createdBy": 2,
+"deletedBy": null,
+"ingredients": [
+{
+"idBurgerIngredient": 2,
+"idProduct": 6,
+"priceAtTime": 4500.00,
+"quantity": 1,
+"isOptional": false
+}
+]
+}
+// ...
+],
+"page": 0,
+"size": 10,
+"totalElements": 10,
+"totalPages": 1,
+"first": true,
+"last": true
+}
+5) Listar hamburguesas custom del usuario (cliente)
+   Método: GET
+   URL: http://localhost:8080/api/burgers/custom/mine
+
+Headers:
+
+Authorization: Bearer <token_cliente>
+
+Body: vacío.
+
+Respuesta ejemplo:
+
+json
+{
+"content": [
+{
+"idBurger": 25,
+"name": "come cuca 200ks",
+"description": "Hamburguesa test",
+"basePrice": 0.00,
+"finalPrice": 7200.00,
+"isOnMenu": false,
+"isFavorite": false,
+"isCustom": true,
+"availability": true,
+"imageUrl": "https://example.com/images/burger-cliente.png",
+"idUser": 6,
+"timesOrdered": 0,
+"createdAt": "2025-11-20T16:06:05.056568Z",
+"updatedAt": "2025-11-20T16:06:05.056568Z",
+"deletedAt": null,
+"createdBy": 6,
+"updatedBy": 6,
+"deletedBy": null,
+"ingredients": [
+{
+"idBurgerIngredient": 52,
+"idProduct": 9,
+"priceAtTime": 500.00,
+"quantity": 2,
+"isOptional": false
+}
+]
+}
+// ...
+],
+"page": 0,
+"size": 10,
+"totalElements": 3,
+"totalPages": 1,
+"first": true,
+"last": true
+}
+6) Actualizar hamburguesa custom (cliente)
+   Método: PUT
+   URL: http://localhost:8080/api/burgers/custom/25
+
+Headers:
+
+Content-Type: application/json
+
+Authorization: Bearer <token_cliente>
+
+Body:
+
+json
+{
+"name": "Me encanta la cuca burger",
+"description": "hamburguesa de cuca ",
+"imageUrl": "https://cdn.miapp.com/images/custom-burger-123.png",
+"ingredients": [
+{
+"idProduct": 6,
+"quantity": 1,
+"isOptional": false
+},
+{
+"idProduct": 9,
+"quantity": 1,
+"isOptional": true
+}
+]
+}
+Respuesta ejemplo:
+
+json
+{
+"idBurger": 25,
+"name": "Me encanta la cuca burger",
+"description": "hamburguesa de cuca",
+"basePrice": 0.00,
+"finalPrice": 5000.00,
+"isOnMenu": false,
+"isFavorite": false,
+"isCustom": true,
+"availability": true,
+"imageUrl": "https://cdn.miapp.com/images/custom-burger-123.png",
+"idUser": 6,
+"timesOrdered": 0,
+"createdAt": "2025-11-20T16:06:05.056568Z",
+"updatedAt": "2025-11-20T18:31:19.029026100Z",
+"deletedAt": null,
+"createdBy": 6,
+"updatedBy": 6,
+"deletedBy": null,
+"ingredients": [
+{
+"idBurgerIngredient": 64,
+"idProduct": 6,
+"priceAtTime": 4500.00,
+"quantity": 1,
+"isOptional": false
+},
+{
+"idBurgerIngredient": 65,
+"idProduct": 9,
+"priceAtTime": 500.00,
+"quantity": 1,
+"isOptional": true
+}
+]
+}
+7) Actualizar hamburguesa de menú (admin)
+   Método: PUT
+   URL: http://localhost:8080/api/admin/burgers/menu/17
+
+Headers:
+
+Content-Type: application/json
+
+Authorization: Bearer <token_admin>
+
+Body:
+
+json
+{
+"name": "Clásica doble editada",
+"description": "Doble carne, queso cheddar y bacon",
+"imageUrl": "https://example.com/images/menu-burger-3.png",
+"ingredients": [
+{
+"idProduct": 9,
+"quantity": 1,
+"isOptional": false
+},
+{
+"idProduct": 13,
+"quantity": 2,
+"isOptional": false
+}
+],
+"availability": true,
+"favorite": true,
+"onMenu": true
+}
+Respuesta: (depende de tu implementación, similar al create de menú con datos actualizados).
+
+8) Marcar hamburguesa custom como favorita (cliente)
+   Método: POST
+   URL: http://localhost:8080/api/burgers/custom/19/favorite
+
+Headers:
+
+Authorization: Bearer <token_cliente>
+
+Body: vacío.
+
+Respuesta ejemplo (ideal):
+
+json
+{
+"idBurger": 19,
+"isFavorite": true,
+"message": "Hamburguesa marcada como favorita"
+}
+9) Actualizar precio de hamburguesa de menú (admin)
+   Método: PATCH
+   URL: http://localhost:8080/api/admin/burgers/menu/18/price
+
+Headers:
+
+Content-Type: application/json
+
+Authorization: Bearer <token_admin>
+
+Body:
+
+json
+{
+"newPrice": 20000.00
+}
+Respuesta ejemplo:
+
+json
+{
+"idBurger": 18,
+"name": "Cheeseburger Clásica",
+"basePrice": 20000.00,
+"finalPrice": 20000.00,
+"isOnMenu": true,
+"availability": true,
+"updatedAt": "2025-11-20T16:08:53.296522",
+"updatedBy": 2
+}
+10) Buscar hamburguesas de menú por nombre (admin)
+    Método: GET
+    URL:
+    http://localhost:8080/api/admin/burgers/menu/search?name=burger
+    (o con paginación: ?name=burger&page=0&size=10)
+
+Headers:
+
+Authorization: Bearer <token_admin>
+
+Body: vacío.
+
+Respuesta: es un listado paginado como el de “listar menú”, filtrado por name.
+
+11) Buscar hamburguesas custom del usuario por nombre (cliente)
+    Método: GET
+    URL:
+    http://localhost:8080/api/burgers/custom/search?name=come
+    (opcional: &page=0&size=10)
+
+Headers:
+
+Authorization: Bearer <token_cliente>
+
+Body: vacío (no envíes JSON en GET).
+
+DELETE admin – borrar burger de menú (soft delete)
+Endpoint:
+DELETE http://localhost:8080/api/admin/burgers/menu/{idBurger}
+
+cURL:
+
+bash
+curl --location --request DELETE 'http://localhost:8080/api/admin/burgers/menu/27' \
+--header 'Authorization: Bearer <token_admin>'
+JSON de respuesta (200 OK con MessageResponseDTO):
+
+json
+{
+"message": "Hamburguesa de menú eliminada correctamente",
+"success": true,
+"timestamp": 1732137600000
+}
+DELETE cliente – borrar burger personalizada (soft delete)
+Endpoint:
+DELETE http://localhost:8080/api/burgers/custom/{idBurger}
+
+cURL:
+
+bash
+curl --location --request DELETE 'http://localhost:8080/api/burgers/custom/25' \
+--header 'Authorization: Bearer <token_cliente>'
+JSON de respuesta (200 OK con MessageResponseDTO):
+
+json
+{
+"message": "Hamburguesa personalizada eliminada correctamente",
+"success": true,
+"timestamp": 1732137600000
+}
