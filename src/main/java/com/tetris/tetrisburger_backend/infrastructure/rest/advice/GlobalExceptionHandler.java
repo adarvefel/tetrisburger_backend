@@ -1,9 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.advice;
 
-import com.tetris.tetrisburger_backend.domain.exception.InvalidCredentialsException;
-import com.tetris.tetrisburger_backend.domain.exception.InvalidTokenException;
-import com.tetris.tetrisburger_backend.domain.exception.UserAlreadyExistsException;
-import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
+import com.tetris.tetrisburger_backend.domain.exception.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -167,4 +164,16 @@ public class GlobalExceptionHandler {
                 request.getDescription(false), ex.getClass().getSimpleName(), ex.getMessage(), ex);
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
     }
+
+
+    //PQRS
+
+
+    // 400 BAD REQUEST — PQRS ya eliminada
+    @ExceptionHandler(PqrsAlreadyDeletedException.class)
+    public ResponseEntity<MessageResponseDTO> handlePqrsAlreadyDeleted(PqrsAlreadyDeletedException ex, WebRequest request) {
+        logger.warn("PQRS ya eliminada o no encontrada: {} - Path: {}", ex.getMessage(), request.getDescription(false));
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
 }

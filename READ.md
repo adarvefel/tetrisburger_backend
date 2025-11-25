@@ -1406,3 +1406,499 @@ json
 "success": true,
 "timestamp": 1732137600000
 }
+
+---
+
+# Módulo de PQRS 📬
+
+---
+
+## Crear una PQRS
+
+Endpoint para registrar una nueva PQRS en el sistema.
+
+### Endpoint
+
+- Método: `POST`
+- URL: `http://localhost:8080/api/pqrs`
+- Ruta: `/api/pqrs`
+- Autenticación: Requiere usuario autenticado
+
+### Cuerpo de la petición (JSON)
+
+```
+{
+  "type": "CLAIM",
+  "subject": "Pedido retardado",
+  "description": "El pedido llegó 2 horas tarde."
+}
+```
+
+### Campos de la petición
+
+- `type`: Tipo de PQRS, por ejemplo `CLAIM`, `REQUEST`, etc.
+- `subject`: Asunto o título corto de la PQRS.
+- `description`: Descripción detallada del caso reportado.
+
+### Respuesta exitosa (201 Created)
+
+```
+{
+  "idPqrs": 16,
+  "type": "CLAIM",
+  "status": "RECEIVED",
+  "priority": "MEDIUM",
+  "subject": "Pedido retardado",
+  "description": "El pedido llegó 2 horas tarde.",
+  "response": null,
+  "idUser": 5,
+  "assignedTo": null
+}
+```
+
+### Campos de la respuesta
+
+- `idPqrs`: Identificador único de la PQRS creada.
+- `type`: Tipo de PQRS registrado.
+- `status`: Estado actual de la PQRS, por ejemplo `RECEIVED`.
+- `priority`: Prioridad asignada, por ejemplo `LOW`, `MEDIUM`, `HIGH`.
+- `subject`: Asunto de la PQRS.
+- `description`: Descripción de la PQRS.
+- `response`: Respuesta asociada a la PQRS (si existe), o `null` si aún no se ha respondido.
+- `idUser`: Identificador del usuario que creó la PQRS.
+- `assignedTo`: Identificador del agente o responsable asignado, o `null` si aún no tiene asignación.
+
+### Ejemplo con cURL
+
+```
+curl --location 'http://localhost:8080/api/pqrs' \
+  --header 'Content-Type: application/json' \
+  --header 'Authorization: Bearer <TOKEN>' \
+  --data '{
+    "type": "CLAIM",
+    "subject": "Pedido retardado",
+    "description": "El pedido llegó 2 horas tarde."
+  }'
+```
+
+---
+
+## Actualizar una PQRS
+
+Endpoint para actualizar una PQRS existente en el sistema.
+### Endpoint
+
+- Método: `PATCH`
+- URL: `http://localhost:8080/api/pqrs/{idPqrs}`
+- Ruta: `/api/pqrs/{idPqrs}`
+- Autenticación: Requiere usuario autenticado
+
+### Parámetros de ruta
+
+- `idPqrs`: Identificador único de la PQRS a actualizar.
+
+### Cuerpo de la petición (JSON)
+
+```
+{
+  "type": "CLAIM",
+  "subject": "Pedido retardado_actualizado",
+  "description": "El malparido rappi llego 2 horas tarde_acutualizado"
+}
+```
+
+### Campos de la petición
+
+- `type`: Tipo de PQRS, por ejemplo `CLAIM`, `REQUEST`, etc.
+- `subject`: Asunto o título corto de la PQRS.
+- `description`: Descripción detallada del caso reportado.
+
+### Respuesta exitosa (200 OK)
+
+```
+{
+    "idPqrs": 16,
+    "type": "CLAIM",
+    "status": "RECEIVED",
+    "priority": "MEDIUM",
+    "subject": "Pedido retardado_actualizado",
+    "description": "El malparido rappi llego 2 horas tarde_acutualizado",
+    "response": null,
+    "idUser": 5,
+    "assignedTo": null
+}
+```
+### Campos de la respuesta
+
+- `idPqrs`: Identificador único de la PQRS creada.
+- `type`: Tipo de PQRS registrado.
+- `status`: Estado actual de la PQRS, por ejemplo `RECEIVED`.
+- `priority`: Prioridad asignada, por ejemplo `LOW`, `MEDIUM`, `HIGH`.
+- `subject`: Asunto de la PQRS.
+- `description`: Descripción de la PQRS.
+- `response`: Respuesta asociada a la PQRS (si existe), o `null` si aún no se ha respondido.
+- `idUser`: Identificador del usuario que creó la PQRS.
+- `assignedTo`: Identificador del agente o responsable asignado, o `null` si aún no tiene asignación.
+
+### Ejemplo con cURL
+
+```
+curl --location --request PATCH 'http://localhost:8080/api/pqrs/16' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: ••••••' \
+--data '{
+  "type": "CLAIM",
+  "subject": "Pedido retardado_actualizado",
+  "description": "El malparido rappi llego 2 horas tarde_acutualizado"
+}
+'
+```
+----
+
+## Eliminar una PQRS
+
+Endpoint para eliminar una PQRS existente en el sistema.
+### Endpoint
+
+- Método: `DELETE`
+- URL: `http://localhost:8080/api/pqrs/{idPqrs}`
+- Ruta: `/api/pqrs/{idPqrs}`
+- Autenticación: Requiere usuario autenticado
+
+### Parámetros de ruta
+
+- `idPqrs`: Identificador único de la PQRS a eliminar.
+
+
+### Respuesta exitosa (200 OK)
+
+```
+{
+    "message": "PQRS eliminada corretamente.",
+    "idPqrs": 16
+}
+```
+### Campos de la respuesta
+
+- `message`: Mensaje sobre la accion realizada.
+- `idPqrs`: Identificador único de la PQRS eliminada.
+
+### Ejemplo con cURL
+
+```
+curl --location --request DELETE 'http://localhost:8080/api/pqrs/16' \
+--header 'Authorization: ••••••'
+```
+----
+
+## Listar mis PQRS
+
+Endpoint para obtener todas las PQRS asociadas al usuario autenticado, con soporte de paginación.
+
+### Endpoint
+
+- Método: `GET`
+- URL: `http://localhost:8080/api/pqrs/me`
+- Ruta: `/api/pqrs/me`
+- Autenticación: Requiere usuario autenticado
+
+### Parámetros de consulta (opcional)
+
+- `page`: Número de página a retornar. Por defecto `0`.
+- `size`: Cantidad de elementos por página. Por defecto `10`.
+
+
+
+### Respuesta exitosa (200 OK)
+
+```
+{
+    "pqrs": [
+        {
+            "idPqrs": 13,
+            "type": "CLAIM",
+            "status": "ANSWERED",
+            "priority": "CRITICAL",
+            "subject": "Burger desastroza",
+            "description": "Me llego una hamburguesa con cucarachas.",
+            "response": "CRITICAL",
+            "idUser": 5,
+            "assignedTo": 3
+        },
+        {
+            "idPqrs": 14,
+            "type": "CLAIM",
+            "status": "ANSWERED",
+            "priority": "CRITICAL",
+            "subject": "Burger desastroza",
+            "description": "Me llego una hamburguesa con cucarachas.",
+            "response": "Lo sentimos en el culo, su dinero sera devolvido",
+            "idUser": 5,
+            "assignedTo": 3
+        }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 2,
+    "totalPages": 1
+}
+```
+### Campos de la respuesta (paginación)
+
+- `content`: Lista de PQRS correspondientes a la página actual.
+- `page`: Número de página actual (basado en índice 0).
+- `size`: Cantidad de elementos incluidos en la página actual.
+- `totalElements`: Número total de PQRS que cumplen el criterio.
+- `totalPages`: Número total de páginas disponibles.
+
+### Campos de cada PQRS en `content`
+
+- `idPqrs`: Identificador único de la PQRS.
+- `type`: Tipo de PQRS, por ejemplo `CLAIM`, `REQUEST`, etc.
+- `status`: Estado actual de la PQRS, por ejemplo `RECEIVED`, `IN_PROGRESS`, `ANSWERED`, `CLOSED`.
+- `priority`: Prioridad asignada, por ejemplo `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`.
+- `subject`: Asunto de la PQRS.
+- `description`: Descripción de la PQRS.
+- `response`: Respuesta asociada a la PQRS (si existe), o `null` si aún no se ha respondido.
+- `idUser`: Identificador del usuario que creó la PQRS.
+- `assignedTo`: Identificador del agente o responsable asignado, o `null` si aún no tiene asignación.
+### Ejemplo con cURL
+
+```
+curl --location 'http://localhost:8080/api/pqrs/me' \
+--header 'Authorization: ••••••'
+```
+----
+
+## Responder una PQRS
+
+Endpoint para que un administrador responda una PQRS existente en el sistema.
+### Endpoint
+
+- Método: `PATCH`
+- URL: `http://localhost:8080/api/pqrs/admin/{idPqrs}`
+- Ruta: `/api/pqrs/admin/{idPqrs}`
+- Autenticación: Requiere usuario con rol administrador o empleado autenticado
+
+### Parámetros de ruta
+
+- `idPqrs`: Identificador único de la PQRS a responder.
+
+### Cuerpo de la petición (JSON)
+
+```
+{
+    "status":"ANSWERED",
+    "priority":"CRITICAL",
+    "response":"Lo sentimos en el culo, el veneco domiciliaro fue despedido."
+}
+```
+
+### Campos de la petición
+
+- `status`: Nuevo estado de la PQRS, por ejemplo `ANSWERED`.
+- `priority`: Prioridad asignada tras la respuesta, por ejemplo `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`.
+- `response`: Texto de la respuesta que se envía al usuario.
+### Respuesta exitosa (200 OK)
+
+```
+{
+    "idPqrs": 15,
+    "type": "PETITION",
+    "status": "ANSWERED",
+    "priority": "CRITICAL",
+    "subject": "Prueba de peticion15_actualizada",
+    "description": "Esta es la descripcion de  la prueba de peticion15_actualizada",
+    "response": "Lo sentimos en el culo, el veneco domiciliaro fue despedido.",
+    "idUser": 7,
+    "assignedTo": 3
+}
+```
+### Campos de la respuesta
+
+- `idPqrs`: Identificador único de la PQRS creada.
+- `type`: Tipo de PQRS registrado.
+- `status`: Estado actual de la PQRS, por ejemplo `RECEIVED`.
+- `priority`: Prioridad asignada, por ejemplo `LOW`, `MEDIUM`, `HIGH`.
+- `subject`: Asunto de la PQRS.
+- `description`: Descripción de la PQRS.
+- `response`: Respuesta asociada a la PQRS (si existe), o `null` si aún no se ha respondido.
+- `idUser`: Identificador del usuario que creó la PQRS.
+- `assignedTo`: Identificador del agente o responsable asignado, o `null` si aún no tiene asignación.
+
+### Ejemplo con cURL
+
+```
+curl --location --request PATCH 'http://localhost:8080/api/pqrs/admin/15' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: ••••••' \
+--data '{
+    "status":"ANSWERED",
+    "priority":"CRITICAL",
+    "response":"Lo sentimos en el culo, el veneco domiciliaro fue despedido."
+}'
+```
+----
+
+## Obtener una PQRS por ID
+
+Endpoint para obtener una PQRS por ID existente en el sistema.
+### Endpoint
+
+- Método: `GET`
+- URL: `http://localhost:8080/api/pqrs/{idPqrs}`
+- Ruta: `/api/pqrs/{idPqrs}`
+- Autenticación: Requiere usuario con rol Admin o Employee autenticado
+
+### Parámetros de ruta
+
+- `idPqrs`: Identificador único de la PQRS a consultar.
+
+
+### Respuesta exitosa (200 OK)
+
+```
+{
+    "idPqrs": 15,
+    "type": "PETITION",
+    "status": "ANSWERED",
+    "priority": "CRITICAL",
+    "subject": "Prueba de peticion15_actualizada",
+    "description": "Esta es la descripcion de  la prueba de peticion15_actualizada",
+    "response": "Lo sentimos en el culo, el veneco domiciliaro fue despedido.",
+    "idUser": 7,
+    "assignedTo": 3
+}
+```
+### Campos de la respuesta
+- `idPqrs`: Identificador único de la PQRS creada.
+- `type`: Tipo de PQRS registrado.
+- `status`: Estado actual de la PQRS, por ejemplo `RECEIVED`.
+- `priority`: Prioridad asignada, por ejemplo `LOW`, `MEDIUM`, `HIGH`.
+- `subject`: Asunto de la PQRS.
+- `description`: Descripción de la PQRS.
+- `response`: Respuesta asociada a la PQRS (si existe), o `null` si aún no se ha respondido.
+- `idUser`: Identificador del usuario que creó la PQRS.
+- `assignedTo`: Identificador del agente o responsable asignado, o `null` si aún no tiene asignación.
+
+### Ejemplo con cURL
+
+```
+curl --location 'http://localhost:8080/api/pqrs/15' \
+--header 'Authorization: ••••••'
+
+```
+----
+
+## Listar todas las PQRS
+
+Endpoint para obtener todas las PQRS con soporte de paginación.
+
+### Endpoint
+
+- Método: `GET`
+- URL: `http://localhost:8080/api/pqrs`
+- Ruta: `/api/pqrs`
+- Autenticación: Requiere usuario con rol ADMIN o Employee autenticado
+
+### Parámetros de consulta (opcional)
+
+- `page`: Número de página a retornar. Por defecto `0`.
+- `size`: Cantidad de elementos por página. Por defecto `10`.
+- `status`: Filtra las PQRS por estado, por ejemplo `RECEIVED`, `ANSWERED`, etc. (opcional).
+
+
+### Respuesta exitosa (200 OK)
+
+```
+{
+    "pqrs": [
+        {
+            "idPqrs": 3,
+            "type": "PETITION",
+            "status": "RECEIVED",
+            "priority": "MEDIUM",
+            "subject": "Prueba de peticion2",
+            "description": "Esta es la descripcion de  la prueba de peticion2",
+            "response": null,
+            "idUser": 3,
+            "assignedTo": null
+        },
+        {
+            "idPqrs": 4,
+            "type": "PETITION",
+            "status": "RECEIVED",
+            "priority": "MEDIUM",
+            "subject": "Prueba de peticion3",
+            "description": "Esta es la descripcion de  la prueba de peticion3",
+            "response": null,
+            "idUser": 3,
+            "assignedTo": null
+        },
+        {
+            "idPqrs": 5,
+            "type": "PETITION",
+            "status": "RECEIVED",
+            "priority": "MEDIUM",
+            "subject": "Prueba de peticion5_actualizada",
+            "description": "Esta es la descripcion de  la prueba de peticion5_actualizada",
+            "response": null,
+            "idUser": 3,
+            "assignedTo": null
+        },
+        {
+            "idPqrs": 6,
+            "type": "PETITION",
+            "status": "RECEIVED",
+            "priority": "MEDIUM",
+            "subject": "Prueba de peticion5_actualizada",
+            "description": "Esta es la descripcion de  la prueba de peticion5_actualizada",
+            "response": null,
+            "idUser": 3,
+            "assignedTo": null
+        },
+        {
+            "idPqrs": 7,
+            "type": "PETITION",
+            "status": "RECEIVED",
+            "priority": "MEDIUM",
+            "subject": "Prueba de peticion7",
+            "description": "Esta es la descripcion de  la prueba de peticion6",
+            "response": null,
+            "idUser": 3,
+            "assignedTo": null
+        }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 5,
+    "totalPages": 1
+}
+```
+### Campos de la respuesta (paginación)
+
+- `content`: Lista de PQRS correspondientes a la página actual.
+- `page`: Número de página actual (basado en índice 0).
+- `size`: Cantidad de elementos incluidos en la página actual.
+- `totalElements`: Número total de PQRS que cumplen el criterio.
+- `totalPages`: Número total de páginas disponibles.
+
+### Campos de cada PQRS en `content`
+
+- `idPqrs`: Identificador único de la PQRS.
+- `type`: Tipo de PQRS, por ejemplo `CLAIM`, `REQUEST`, etc.
+- `status`: Estado actual de la PQRS, por ejemplo `RECEIVED`, `IN_PROGRESS`, `ANSWERED`, `CLOSED`.
+- `priority`: Prioridad asignada, por ejemplo `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`.
+- `subject`: Asunto de la PQRS.
+- `description`: Descripción de la PQRS.
+- `response`: Respuesta asociada a la PQRS (si existe), o `null` si aún no se ha respondido.
+- `idUser`: Identificador del usuario que creó la PQRS.
+- `assignedTo`: Identificador del agente o responsable asignado, o `null` si aún no tiene asignación.
+### Ejemplo con cURL
+
+```
+curl --location 'http://localhost:8080/api/pqrs?page=0&size=10&status=RECEIVED' \
+--header 'Authorization: ••••••'
+```
+----
+

@@ -54,7 +54,6 @@ public class UserEntity {
     @Column(name = "deleted_at",nullable = false)
     private LocalDateTime deletedAt;
 
-    @CreatedBy
     @Column(name = "created_by", updatable = false)
     private Integer createdBy;
 
