@@ -1902,3 +1902,39 @@ curl --location 'http://localhost:8080/api/pqrs?page=0&size=10&status=RECEIVED' 
 ```
 ----
 
+------------------------------------------------------------------------------------
+MENU CATEGORY
+
+ADMIN Y EMPLOYEE    
+Método: POST
+
+URL: http://localhost:8080/api/menu-category
+
+Descripción: Crea una nueva categoría de menú en el sistema.​
+
+Cuerpo de la petición (JSON)
+json
+{
+"menuCategoryName": "CUCAS FRITAS",
+"description": "ricas cucas para comer"
+}
+Campos:
+
+menuCategoryName (string, requerido): Nombre de la categoría de menú.
+
+description (string, opcional/requerido según tu regla): Descripción breve de la categoría.
+
+Ejemplo de respuesta 201 (Created)
+json
+{
+"idMenuCategory": 3,
+"menuCategoryName": "CUCAS FRITAS",
+"description": "ricas cucas para comer",
+"createdAt": "2025-12-17T15:23:06.0187888",
+"updatedAt": "2025-12-17T15:23:06.0187888",
+"deletedAt": null,
+"createdBy": 2,
+"updatedBy": 2,
+"deletedBy": null
+}
+Campo
