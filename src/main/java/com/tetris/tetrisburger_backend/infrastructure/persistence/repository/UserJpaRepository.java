@@ -20,6 +20,12 @@ public interface UserJpaRepository extends JpaRepository<UserEntity,Integer> {
 
     Optional<UserEntity> findByEmailAndDeletedAtIsNull(String email);
 
+    List<UserEntity> findByEmailContainingIgnoreCaseAndDeletedAtIsNull(String email);
+
+
+    List<UserEntity> findByEmailContainingIgnoreCase(String email);
+
+
     Page<UserEntity> findAllByDeletedAtIsNull(Pageable pageable);
 
     List<UserEntity> findAllByDeletedAtIsNull();

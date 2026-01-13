@@ -11,7 +11,7 @@ public record UserResponseDTO(
         String phone,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        LocalDateTime deleteAt,
+        LocalDateTime deletedAt,
         Integer createdBy,
         Integer updatedBy,
         Integer deletedBy

@@ -3,209 +3,258 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.*;
-import com.tetris.tetrisburger_backend.domain.port.in.user.command.CreateUserByAdminCommand;
+        import com.tetris.tetrisburger_backend.domain.port.in.user.command.CreateUserByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.DeleteUserByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.UpdateUserByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.user.query.ListUsersQuery;
+import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.*;
-import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.UserRestDtoMapper;
+        import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.UserRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
-/**
- * Controller REST para gestión de usuarios por ADMIN
- * Sigue Clean Architecture: coordina entre REST y casos de uso
- */
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin/users")
-@PreAuthorize("hasRole('ADMIN')")  // ✅ TODOS los métodos requieren ADMIN
+@PreAuthorize("hasRole('ADMIN')")
+@Tag(name = "Admin - Usuarios", description = "Gestión de usuarios (solo ADMIN)")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    // Ports IN (Use Cases)
     private final CreateUserByAdmin createUserByAdmin;
     private final ListUser listUser;
     private final GetUserById getUserById;
     private final UpdateUserByAdmin updateUserByAdmin;
     private final DeleteUserByAdmin deleteUserByAdmin;
-
-    // Mapper
     private final UserRestDtoMapper mapper;
+    private final ImageStoragePort imageStoragePort;
+    private final SearchUsersByEmail  searchUsersByEmail;
 
-    // ✅ Constructor limpio (sin duplicados)
-    public UserController(
-            CreateUserByAdmin createUserByAdmin,
-            ListUser listUser,
-            GetUserById getUserById,
-            UpdateUserByAdmin updateUserByAdmin,
-            DeleteUserByAdmin deleteUserByAdmin,
-            UserRestDtoMapper mapper) {
+    public UserController(CreateUserByAdmin createUserByAdmin, ListUser listUser, GetUserById getUserById, UpdateUserByAdmin updateUserByAdmin, DeleteUserByAdmin deleteUserByAdmin, UserRestDtoMapper mapper, ImageStoragePort imageStoragePort, SearchUsersByEmail searchUsersByEmail) {
         this.createUserByAdmin = createUserByAdmin;
         this.listUser = listUser;
         this.getUserById = getUserById;
         this.updateUserByAdmin = updateUserByAdmin;
         this.deleteUserByAdmin = deleteUserByAdmin;
         this.mapper = mapper;
+        this.imageStoragePort = imageStoragePort;
+        this.searchUsersByEmail = searchUsersByEmail;
     }
 
-    // ============================================
-    // CREATE
-    // ============================================
-
-    /**
-     * POST /api/admin/users
-     * Crear nuevo usuario (solo ADMIN)
-     */
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Crear usuario",
+            description = "Crea un nuevo usuario con rol específico (solo ADMIN). " +
+                    "Consume multipart/form-data para permitir subir `userImage` como archivo."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Usuario creado"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado (no es ADMIN)")
+    })
     public ResponseEntity<CreateUserByAdminResponseDTO> createUser(
-            @Valid @RequestBody CreateUserByAdminRequestDTO requestDTO) {
+            @Valid @ModelAttribute CreateUserByAdminRequestDTO requestDTO,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
         logger.info("Admin creando usuario con email: {}", requestDTO.email());
 
-        // 1. DTO → Command
-        CreateUserByAdminCommand command = mapper.toCreateUserByAdminCommand(requestDTO);
+        Integer adminId = getUserIdFromDetails(userDetails);
 
-        // 2. Ejecutar UseCase
+        CreateUserByAdminCommand command = mapper.toCreateUserByAdminCommand(requestDTO, adminId);
+
         User createdUser = createUserByAdmin.handle(command);
 
-        // 3. Domain → DTO
-        CreateUserByAdminResponseDTO responseDTO = mapper.toCreateUserByAdminResponseDTO(createdUser);
+        if (createdUser.getUserImageKey() != null) {
+            imageStoragePort.getImageUrl(createdUser.getUserImageKey());
+        }
 
-        logger.info("Usuario creado exitosamente con ID: {}", createdUser.getIdUser());
+        CreateUserByAdminResponseDTO responseDTO = new CreateUserByAdminResponseDTO(
+                createdUser.getIdUser(),
+                createdUser.getUserName(),
+                createdUser.getEmail(),
+                createdUser.getUserImage(),
+                createdUser.getRole().name(),
+                createdUser.getPhone(),
+                createdUser.getCreatedAt(),
+                createdUser.getUpdatedAt(),
+                createdUser.getCreatedBy(),
+                createdUser.getUpdatedBy()
+        );
+
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
     }
 
-    // ============================================
-    // READ
-    // ============================================
-
-    /**
-     * GET /api/admin/users?page=0&size=10&sortBy=idUser
-     * Listar todos los usuarios con paginación
-     */
     @GetMapping
+    @Operation(summary = "Listar usuarios", description = "Retorna lista paginada de usuarios (solo ADMIN).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Listado retornado"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado (no es ADMIN)")
+    })
     public ResponseEntity<ListUserResponseDTO> listAllUsers(
+            @Parameter(description = "Número de página (inicia en 0)", example = "0")
             @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Tamaño de página", example = "10")
             @RequestParam(defaultValue = "10") int size,
+
+            @Parameter(description = "Campo para ordenar", example = "idUser")
             @RequestParam(defaultValue = "idUser") String sortBy) {
 
-        logger.debug("Admin listando usuarios - page: {}, size: {}, sortBy: {}", page, size, sortBy);
-
-        // 1. Crear Query
         ListUsersQuery query = new ListUsersQuery(page, size, sortBy);
 
-        // 2. Ejecutar UseCase
         PageResponse<User> pageResponse = listUser.execute(query);
 
-        // 3. PageResponse<User> → DTO
         ListUserResponseDTO responseDTO = mapper.toListUserResponseDTO(pageResponse);
 
-        logger.debug("Retornando {} usuarios de {} totales",
-                pageResponse.content().size(),
-                pageResponse.totalElements());
-
         return ResponseEntity.ok(responseDTO);
     }
 
-    /**
-     * GET /api/admin/users/{id}
-     * Obtener usuario por ID
-     */
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Integer id) {
-        logger.debug("Admin buscando usuario por ID: {}", id);
+    @Operation(summary = "Obtener usuario por ID", description = "Retorna los datos de un usuario específico (solo ADMIN).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuario retornado"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado (no es ADMIN)")
+    })
+    public ResponseEntity<UserResponseDTO> getUserById(
+            @Parameter(description = "ID del usuario", example = "3")
+            @PathVariable Integer id) {
 
-        // 1. Ejecutar UseCase
         User user = getUserById.handle(id);
 
-        // 2. Domain → DTO
-        UserResponseDTO responseDTO = mapper.toUserResponseDTO(user);
+        if (user.getUserImageKey() != null) {
+            imageStoragePort.getImageUrl(user.getUserImageKey());
+        }
 
-        logger.debug("Usuario encontrado: {}", user.getEmail());
+        UserResponseDTO responseDTO = new UserResponseDTO(
+                user.getIdUser(),
+                user.getUserName(),
+                user.getEmail(),
+                user.getUserImage(),
+                user.getPhone(),
+                user.getRole().name(),
+                user.getCreatedAt(),
+                user.getUpdatedAt(),
+                user.getDeletedAt(),
+                user.getCreatedBy(),
+                user.getUpdatedBy(),
+                user.getDeletedBy()
+        );
+
         return ResponseEntity.ok(responseDTO);
     }
 
-    // ============================================
-    // UPDATE
-    // ============================================
-
-    /**
-     * PUT /api/admin/users/{id}
-     * Actualizar usuario
-     */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Actualizar usuario",
+            description = "Actualiza datos del usuario (solo ADMIN). " +
+                    "Consume multipart/form-data para permitir actualizar `userImage` como archivo."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuario actualizado"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado (no es ADMIN)")
+    })
     public ResponseEntity<UpdateUserByAdminResponseDTO> updateUser(
+            @Parameter(description = "ID del usuario", example = "3")
             @PathVariable Integer id,
-            @Valid @RequestBody UpdateUserByAdminRequestDTO updateDTO) {
+            @Valid @ModelAttribute UpdateUserByAdminRequestDTO updateDTO,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        logger.info("Admin actualizando usuario con ID: {}", id);
+        Integer adminId = getUserIdFromDetails(userDetails);
 
-        // 1. DTO → Command
-        UpdateUserByAdminCommand command = mapper.toUpdateUserByAdminCommand(id, updateDTO);
+        UpdateUserByAdminCommand command = mapper.toUpdateUserByAdminCommand(id, updateDTO, adminId);
 
-        // 2. Ejecutar UseCase
         User updatedUser = updateUserByAdmin.handle(command);
 
-        // 3. Domain → DTO
-        UpdateUserByAdminResponseDTO responseDTO = mapper.toUpdateUserByAdminResponseDTO(updatedUser);
+        if (updatedUser.getUserImageKey() != null) {
+            imageStoragePort.getImageUrl(updatedUser.getUserImageKey());
+        }
 
-        logger.info("Usuario actualizado exitosamente con ID: {}", id);
+        UpdateUserByAdminResponseDTO responseDTO = new UpdateUserByAdminResponseDTO(
+                updatedUser.getIdUser(),
+                updatedUser.getUserName(),
+                updatedUser.getEmail(),
+                updatedUser.getUserImage(),
+                updatedUser.getRole().name(),
+                updatedUser.getPhone(),
+                updatedUser.getCreatedAt(),
+                updatedUser.getUpdatedAt(),
+                updatedUser.getCreatedBy(),
+                updatedUser.getUpdatedBy()
+        );
+
         return ResponseEntity.ok(responseDTO);
     }
 
-    // ============================================
-    // DELETE
-    // ============================================
-
-    /**
-     * DELETE /api/admin/users/{id}
-     * Eliminar usuario (soft delete)
-     * ✅ SOLO 1 método - sin duplicado
-     */
     @DeleteMapping("/{id}")
+    @Operation(summary = "Eliminar usuario", description = "Realiza soft delete del usuario (solo ADMIN).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuario eliminado correctamente"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado (no es ADMIN)")
+    })
     public ResponseEntity<DeleteUserByAdminDTO> deleteUserByAdmin(
+            @Parameter(description = "ID del usuario", example = "4")
             @PathVariable Integer id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        logger.info("Admin eliminando usuario con ID: {}", id);
-
         Integer adminId = getUserIdFromDetails(userDetails);
+
         DeleteUserByAdminCommand command = new DeleteUserByAdminCommand(id, adminId);
 
-        // Ejecutar UseCase (Soft Delete)
         deleteUserByAdmin.handle(command);
 
-        logger.info("Usuario {} marcado como eliminado por admin {}", id, adminId);
-
-        // ✅ Retorna DTO con mensaje
         DeleteUserByAdminDTO response = mapper.toDeleteUserByAdminDTO(id);
-        return ResponseEntity.ok(response);  // ✅ OK en lugar de noContent()
+        return ResponseEntity.ok(response);
     }
 
-
-
-
-    // ============================================
-    // MÉTODOS PRIVADOS (HELPERS)
-    // ============================================
-
-    /**
-     * Extrae el ID del usuario desde CustomUserDetails
-     * ✅ Auditoría: registra quién hizo la acción
-     */
     private Integer getUserIdFromDetails(UserDetails userDetails) {
-        if (userDetails instanceof CustomUserDetails) {
-            return ((CustomUserDetails) userDetails).getId();
+        if (userDetails instanceof CustomUserDetails customUserDetails) {
+            return customUserDetails.getId();
         }
-        throw new RuntimeException("UserDetails no es CustomUserDetails");
+        throw new IllegalStateException("UserDetails no es CustomUserDetails");
+    }
+
+    @GetMapping("/by-email")
+    @Operation(
+            summary = "Buscar usuarios por email",
+            description = "Retorna usuarios cuyo email contiene el texto indicado (solo ADMIN). Ej: email=jose"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuarios retornados"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado (no es ADMIN)")
+    })
+    public ResponseEntity<List<UserResponseDTO>> getUsersByEmail(
+            @Parameter(description = "Texto a buscar dentro del email", example = "jose")
+            @RequestParam String email
+    ) {
+        List<User> users = searchUsersByEmail.handle(email);
+        return ResponseEntity.ok(mapper.toUserResponseDTOList(users));
     }
 }

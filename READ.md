@@ -1,18 +1,22 @@
 Pruebas en postman para los usuarios
 Al final estan los cURLS:
 
-Autenticación
+Autenticación (Auth)
 Login
-Autentica un usuario y retorna un token JWT.
+Autentica un usuario y retorna un JWT.
 
 Endpoint: POST /api/auth/login
 
+Content-Type: application/json
+
+Body (JSON)
+
 json
 {
-"email": "pipe58@gmail.com",
-"password": "pipe1234"
+"email": "adarvefelipe58@gmail.com",
+"password": "felipe12345"
 }
-Respuesta (200):
+Respuesta exitosa (200 OK)
 
 json
 {
@@ -22,410 +26,341 @@ json
 "user": {
 "idUser": 2,
 "userName": "felipeSA",
-"email": "pipe58@gmail.com",
+"email": "adarvefelipe58@gmail.com",
 "role": "ADMIN"
 },
-"timestamp": "2025-11-05T17:04:37.037933"
+"timestamp": "2026-01-12T14:12:37.9723667"
 }
-Registro
+Register
 Crea una nueva cuenta de usuario.
 
 Endpoint: POST /api/auth/register
 
-json
-{
-"userName": "felipeSa",
-"email": "pipe58@gmail.com",
-"password": "pipe1234"
-}
-Respuesta (201):
+Content-Type: application/json
+
+Body (JSON)
 
 json
 {
-"idUser": 6,
-"userName": "rompecucas",
-"email": "rompecucas12@gmail.com",
+"userName": "marrian",
+"email": "tetrisburger8@gmail.com",
+"password": "melomama2024"
+}
+Respuesta exitosa (201 Created)
+
+json
+{
+"idUser": 22,
+"userName": "marrian",
+"email": "tetrisburger8@gmail.com",
 "userImage": null,
 "phone": null,
-"createdAt": "2025-11-05T15:00:45.2081821"
+"createdAt": "2026-01-11T22:05:07.7637541"
 }
-Recuperar Contraseña
+Forgot Password
 Envía un enlace de recuperación al correo del usuario.
 
 Endpoint: POST /api/auth/forgot-password
 
+Content-Type: application/json
+
+Body (JSON)
+
 json
 {
-"email": "adarvefelipe58@gmail.com"
+"email": "cama8@gmail.com"
 }
-Respuesta (200):
+Respuesta exitosa (200 OK)
 
 json
 {
 "message": "Correo de recuperación enviado",
 "success": true,
-"timestamp": 1762381426062
+"timestamp": 1768188179368
 }
-Reset de Contraseña
-Actualiza la contraseña con el token enviado al correo.
+Reset Password
+Actualiza la contraseña usando el token enviado por correo.
 
 Endpoint: POST /api/auth/reset-password
+
+Content-Type: application/json
+
+Body (JSON)
 
 json
 {
 "token": "eyJhbGciOiJIUzI1NiJ9...",
-"newPassword": "felipe12345"
+"newPassword": "tocame2026"
 }
-Respuesta (200):
+Respuesta exitosa (200 OK)
 
 json
 {
 "message": "Contraseña actualizada",
 "success": true,
-"timestamp": 1762381521207
+"timestamp": 1768188319547
 }
-Perfil de Usuario
-Obtener Perfil
+Perfil (Profile)
+Obtener perfil
 Retorna los datos del usuario autenticado.
 
 Endpoint: GET /api/profile
 
-Header requerido:
+Auth: Authorization: Bearer {token}
 
-text
-Authorization: Bearer {token}
-Respuesta (200):
+Respuesta exitosa (200 OK)
 
 json
 {
 "idUser": 6,
-"userName": "rompecucas",
+"userName": "llllll",
 "email": "rompecucas12@gmail.com",
-"userImage": null,
+"userImage": "jar_flies.webp",
 "role": "CLIENT",
-"phone": null,
+"phone": "3145883031",
 "createdAt": "2025-11-05T15:00:45.208182"
 }
-Actualizar Perfil
-Actualiza los datos del perfil del usuario autenticado.
+Actualizar perfil (con imagen)
+Actualiza datos del perfil del usuario autenticado incluyendo imagen.
 
 Endpoint: PATCH /api/profile
 
-Header requerido:
+Auth: Authorization: Bearer {token}
 
-text
-Authorization: Bearer {token}
-Content-Type: application/json
-Body:
+Content-Type: multipart/form-data​
 
-json
-{
-"userName": "queRicolacuca",
-"userImage": null,
-"phone": "3017342342"
-}
-Respuesta (200):
+Body (form-data)
 
-json
-{
-"idUser": 6,
-"userName": "queRicolacuca",
-"email": "rompecucas12@gmail.com",
-"userImage": "aaaaaa",
-"phone": "3017342342",
-"createdAt": "2025-11-05T15:00:45.208182",
-"updatedAt": "2025-11-05T16:56:48.054809",
-"createdBy": null,
-"updatedBy": 6
-}
-Eliminar Perfil
-Realiza soft delete del usuario autenticado.
+userName (string, opcional)
 
-Endpoint: DELETE /api/profile
+phone (string, opcional)
 
-Header requerido:
+userImage (file, opcional)​
 
-text
-Authorization: Bearer {token}
-Respuesta (200):
+Respuesta exitosa (200 OK)
 
 json
 {
 "idUser": 6,
-"userName": "queRicolacuca",
+"userName": "addad",
 "email": "rompecucas12@gmail.com",
-"userImage": "aaaaaa",
-"phone": "3017342342",
+"userImage": "devil-new-dres.jpg",
+"phone": "3145883031",
 "createdAt": "2025-11-05T15:00:45.208182",
-"updatedAt": "2025-11-05T16:56:48.054809",
+"updatedAt": "2026-01-11T22:46:24.3451623",
 "createdBy": null,
 "updatedBy": 6
 }
 Administración de Usuarios (Solo ADMIN)
-Crear Usuario
-Crea un nuevo usuario con rol específico.
+Crear usuario (con imagen)
+Crea un nuevo usuario con rol específico y permite subir imagen.
 
 Endpoint: POST /api/admin/users
 
-Header requerido:
+Auth: Authorization: Bearer {token}
 
-text
-Authorization: Bearer {token}
-Content-Type: application/json
-Body:
+Content-Type: multipart/form-data
+
+Body (form-data)
+
+userName (string, requerido)
+
+email (string, requerido)
+
+password (string, requerido)
+
+role (string, requerido: ADMIN | EMPLOYEE | CLIENT)
+
+phone (string, opcional)
+
+userImage (file, opcional)​
+
+Respuesta exitosa (201 Created)
 
 json
 {
-"userName": "joseComeGordas",
-"email": "jose56@gmail.com",
-"password": "amogorda1234",
-"userImage": "ttgj",
-"role": "EMPLOYEE",
-"phone": null
-}
-Respuesta (201):
-
-json
-{
-"idUser": 7,
-"userName": "joseComeGordas",
-"email": "jose56@gmail.com",
-"userImage": "ttgj",
-"role": "EMPLOYEE",
-"phone": null,
-"createdAt": "2025-11-05T17:05:39.4572149",
-"updatedAt": "2025-11-05T17:05:39.4572149",
+"idUser": 18,
+"userName": "felopa",
+"email": "fasw@test.com",
+"userImage": "jar_flies.webp",
+"role": "CLIENT",
+"phone": "3001234567",
+"createdAt": "2026-01-11T12:16:06.0305938",
+"updatedAt": "2026-01-11T12:16:06.0305938",
 "createdBy": 2,
 "updatedBy": 2
 }
-Listar Usuarios
-Retorna lista de todos los usuarios con paginación.
+Listar usuarios (paginado)
+Retorna lista de usuarios con paginación.
 
-Endpoint: GET /api/admin/users
+Endpoint: GET /api/admin/users?page=0&size=50&sortBy=idUser
 
-Header requerido:
+Auth: Authorization: Bearer {token}
 
-text
-Authorization: Bearer {token}
-Respuesta (200):
+Respuesta exitosa (200 OK)
+Retorna un objeto con users, totalElements, totalPages, timestamp.
 
-json
-{
-"users": [
-{
-"idUser": 2,
-"userName": "felipeSA",
-"email": "adarvefelipe58@gmail.com",
-"userImage": "3017342342",
-"role": "ADMIN",
-"phone": "askfkdflkdsfkl",
-"createdAt": "2025-11-04T10:20:30.088329",
-"updatedAt": "2025-11-04T20:52:18.37493",
-"deleteAt": null,
-"createdBy": null,
-"updatedBy": null,
-"deletedBy": null
-}
-],
-"totalElements": 5,
-"totalPages": 1,
-"timestamp": "2025-11-05T17:06:13.6351691"
-}
-Actualizar Usuario
-Actualiza datos de un usuario específico.
+Buscar usuarios por email (filtro)
+Busca por coincidencia dentro del email.
 
-Endpoint: PUT /api/admin/users/{idUser}
+Endpoint: GET /api/admin/users/by-email?email=@test.com
 
-Header requerido:
+Auth: Authorization: Bearer {token}
 
-text
-Authorization: Bearer {token}
-Content-Type: application/json
-Body:
+Respuesta exitosa (200 OK)
+Retorna un arreglo [] con los usuarios que coinciden (si no hay, retorna []).
 
-json
-{
-"userName": "Saralegustachimbo238",
-"phone": "41421"
-}
-Respuesta (200):
-
-json
-{
-"idUser": 3,
-"userName": "Saralegustachimbo238",
-"email": "saracomepenes69@gmail.com",
-"userImage": null,
-"role": "EMPLOYEE",
-"phone": "41421",
-"createdAt": "2025-11-04T10:36:33.958751",
-"updatedAt": "2025-11-05T14:56:13.812869",
-"createdBy": 2,
-"updatedBy": 2
-}
-Obtener Usuario por ID
+Obtener usuario por ID
 Retorna los datos de un usuario específico.
 
 Endpoint: GET /api/admin/users/{idUser}
 
-Header requerido:
+Auth: Authorization: Bearer {token}
 
-text
-Authorization: Bearer {token}
-Respuesta (200):
+Nota: En tu ejemplo de respuesta, role y phone salen cruzados (role=teléfono y phone=ADMIN). Eso sugiere un bug de mapeo/DTO en ese endpoint y conviene revisarlo. (No cambia la doc, pero sí el backend.)
+
+Actualizar usuario (con imagen)
+Actualiza datos de un usuario específico y permite actualizar imagen.
+
+Endpoint: PUT /api/admin/users/{idUser}
+
+Auth: Authorization: Bearer {token}
+
+Content-Type: multipart/form-data​
+
+Body (form-data)
+
+userName, email, password, role, phone (strings según aplique)
+
+userImage (file, opcional)​
+
+Respuesta exitosa (200 OK)
 
 json
 {
-"idUser": 3,
-"userName": "Saralegustachimbo08",
-"email": "saracomepenes69@gmail.com",
-"userImage": null,
-"role": "EMPLOYEE",
-"phone": null,
-"createdAt": "2025-11-04T10:36:33.958751",
-"updatedAt": "2025-11-05T14:56:13.812869",
-"deleteAt": null,
+"idUser": 19,
+"userName": "felopa",
+"email": "tag@gmail.com",
+"userImage": "slow_rush.jpg",
+"role": "ADMIN",
+"phone": "3597756453",
+"createdAt": "2026-01-11T14:30:12.878261",
+"updatedAt": "2026-01-11T22:30:24.0116202",
 "createdBy": 2,
-"updatedBy": 2,
-"deletedBy": null
+"updatedBy": 2
 }
-Eliminar Usuario
+Eliminar usuario (soft delete)
 Realiza soft delete de un usuario.
 
 Endpoint: DELETE /api/admin/users/{idUser}
 
-Header requerido:
+Auth: Authorization: Bearer {token}
 
-text
-Authorization: Bearer {token}
-Respuesta (200):
+Respuesta exitosa (200 OK)
 
 json
 {
 "message": "Usuario eliminado correctamente",
-"idUser": 4
+"idUser": 20
 }
-Notas Importantes
-Autenticación: Todos los endpoints excepto /auth/login, /auth/register y /auth/forgot-password requieren un token JWT
-válido en el header Authorization: Bearer {token}
-
-Roles: ADMIN, EMPLOYEE, CLIENT
-
-Soft Delete: Los usuarios eliminados no se borran completamente, solo se marcan con deletedAt
-
-Auditoría: Los campos createdBy, updatedBy y deletedBy registran qué usuario realizó cada acción
-
-
-
-AUTH - Todos los Curls
----------------------------------------------------
+cURLs (al final)
+AUTH
 Login
+
 curl --location 'http://localhost:8080/api/auth/login' \
 --header 'Content-Type: application/json' \
 --data-raw '{
-"email": "pipe58@gmail.com",
-"password": "pipe1234"
+"email": "adarvefelipe58@gmail.com",
+"password": "felipe12345"
 }'
-
----------------------------------------------------------------
 Register
 
 curl --location 'http://localhost:8080/api/auth/register' \
 --header 'Content-Type: application/json' \
 --data-raw '{
-"userName": "felipeSa",
-"email": "pipe58@gmail.com",
-"password": "pipe1234"
+"userName": "marrian",
+"email": "tetrisburger8@gmail.com",
+"password": "melomama2024"
 }'
-
----------------------------------------------------------------------------
 Forgot Password
+
+
 curl --location 'http://localhost:8080/api/auth/forgot-password' \
 --header 'Content-Type: application/json' \
 --data-raw '{
-"email": "adarvefelipe58@gmail.com"
+"email": "cama8@gmail.com"
 }'
-
----------------------------------------------------------------------
 Reset Password
+
 
 curl --location 'http://localhost:8080/api/auth/reset-password' \
 --header 'Content-Type: application/json' \
---data '{
-"token":"
-eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoicGFzc3dvcmRfcmVzZXQiLCJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzMDczODQsImV4cCI6MTc2MjMxMDk4NH0.ZxjGefem6_
--I9ccwVIQUfqsmxpYLZnTcuP4HaJu3aIQ",
-"newPassword":"felipe12345"
+--data-raw '{
+"token": "eyJhbGciOiJIUzI1NiJ9...",
+"newPassword": "tocame2026"
 }'
+ADMIN
+Create User (multipart)
 
---------------------
-USER - Todos los Curls
---------------------------
+
+curl --location 'http://localhost:8080/api/admin/users' \
+--header 'Authorization: Bearer {token}' \
+--form 'userName=lopa' \
+--form 'email=lola@test.com' \
+--form 'password=12345678' \
+--form 'userImage=@/ruta/local/imagen.webp' \
+--form 'role=CLIENT' \
+--form 'phone=3001234567'
+Get All Users
+
+
+curl --location --request GET 'http://localhost:8080/api/admin/users?page=0&size=50&sortBy=idUser' \
+--header 'Authorization: Bearer {token}'
+Update User (multipart)
+
+
+curl --location --request PUT 'http://localhost:8080/api/admin/users/19' \
+--header 'Authorization: Bearer {token}' \
+--form 'userName=felopa' \
+--form 'email=tag@gmail.com' \
+--form 'password=1323456' \
+--form 'userImage=@/ruta/local/imagen.jpg' \
+--form 'role=ADMIN' \
+--form 'phone=3597756453'
+Delete User
+
+
+curl --location --request DELETE 'http://localhost:8080/api/admin/users/20' \
+--header 'Authorization: Bearer {token}'
+Get User by ID
+
+
+curl --location 'http://localhost:8080/api/admin/users/18' \
+--header 'Authorization: Bearer {token}'
+Get Users by Email
+
+curl --location 'http://localhost:8080/api/admin/users/by-email?email=%40test.com' \
+--header 'Authorization: Bearer {token}'
+
+PROFILE
 Get Profile
+
 curl --location 'http://localhost:8080/api/profile' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyb21wZWN1Y2FzMTJAZ21haWwuY29tIiwiaWF0IjoxNzYyMzc4MTQ3LCJleHAiOjE3NjIzODE3NDd9.W8i1sBQmwD01wy2plew1qkahdMVxoTdkhXic2CJxRkw'
----------------------------------------------------------------------
-Update Profile (PATCH)
+--header 'Authorization: Bearer {token}'
+Update Profile (multipart)
+
+
 curl --location --request PATCH 'http://localhost:8080/api/profile' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyb21wZWN1Y2FzMTJAZ21haWwuY29tIiwiaWF0IjoxNzYyMzc5NzIxLCJleHAiOjE3NjIzODMzMjF9.CIm4wYtvOucM4Ib_thBLpOOBZCxzy4tS60HACDVB8SQ' \
---header 'Content-Type: application/json' \
---data '{
-"userName": "queRicolacuca",
-"userImage": null,
-"phone": "3017342342"
-}'
+--header 'Authorization: Bearer {token}' \
+--form 'userName=addad' \
+--form 'userImage=@/ruta/local/imagen.jpg' \
+--form 'phone=3145883031'
+
 -------------------------------------------------------
 Delete Profile
 curl --location --request DELETE 'http://localhost:8080/api/profile' \
 --header 'Authorization: Bearer
 eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjE1MDM5MzIsImV4cCI6MTc2MTUwNzUzMn0.QpolO523GCrrVSm8qTh3Tjmyp-LhaSc7C-H4KSDddzc'
-
-----------------------------------------
-ADMIN - Todos los Curls
-----------------------------------------
-Create User (POST)
-
-curl --location 'http://localhost:8080/api/admin/users' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc' \
---header 'Content-Type: application/json' \
---data-raw '{
-"userName": "joseComeGordas",
-"email": "jose56@gmail.com",
-"password":"amogorda1234",
-"userImage": "ttgj",
-"role": "EMPLOYEE",
-"phone": null
-}'
-------------------------------------------------------
-Get All Users (GET)
-curl --location --request GET 'http://localhost:8080/api/admin/users' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc' \
---header 'Content-Type: application/json'
--------------------------------------------------------------
-Update User (PUT)
-curl --location --request PUT 'http://localhost:8080/api/admin/users/3' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc' \
---header 'Content-Type: application/json' \
---data '{
-"userName": "Saralegustachimbo238",
-"phone": "41421"
-}'
----------------------------------
-Get User by ID
-curl --location 'http://localhost:8080/api/admin/users/3' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzODAyNzYsImV4cCI6MTc2MjM4Mzg3Nn0.kDz72LU2nRceGunhxsjkRjnTUxvF69oYXlcv6ht_Ylc'
--------------------------
-Delete User
-curl --location --request DELETE 'http://localhost:8080/api/admin/users/4' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjIzNjg0MDEsImV4cCI6MTc2MjM3MjAwMX0.cgh4fFx_tnIe-UaGwHjq0zGdwRMetB3ODK0iVTgivLE'
-
 # Módulo de Productos - TetrisBurger API
 
 ## Introducción
@@ -1937,4 +1872,3 @@ json
 "updatedBy": 2,
 "deletedBy": null
 }
-Campo

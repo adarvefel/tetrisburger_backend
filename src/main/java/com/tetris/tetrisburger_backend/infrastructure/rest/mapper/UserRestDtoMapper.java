@@ -14,12 +14,6 @@ import org.mapstruct.Named;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Mapper para convertir DTOs ↔ Commands ↔ Domain Models
- *
- * Flujo entrada:  RequestDTO → Command
- * Flujo salida:   User (Domain) → ResponseDTO
- */
 @Mapper(componentModel = "spring")
 public interface UserRestDtoMapper {
 
@@ -27,31 +21,26 @@ public interface UserRestDtoMapper {
     // DTO → COMMAND (ENTRADA)
     // ============================================
 
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "password", target = "password")
     RegisterUserCommand toRegisterCommand(RegisterUserRequestDTO dto);
 
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "password", target = "password")
     LoginUserCommand toLoginCommand(LoginRequestDTO dto);
 
+    // Commands con parámetros extra (custom methods)
+        default CreateUserByAdminCommand toCreateUserByAdminCommand(
+                CreateUserByAdminRequestDTO dto,
+                Integer createdBy) {
+            if (dto == null) return null;
 
-
-    default CreateUserByAdminCommand toCreateUserByAdminCommand(
-            CreateUserByAdminRequestDTO dto) {
-        if (dto == null) return null;
-
-        return new CreateUserByAdminCommand(
-                dto.userName(),
-                dto.email(),
-                dto.password(),
-                dto.userImage(),
-                stringToRole(dto.role()),
-                dto.phone()
-
-        );
-    }
+            return new CreateUserByAdminCommand(
+                    dto.userName(),
+                    dto.email(),
+                    dto.password(),
+                    dto.userImage(),
+                    stringToRole(dto.role()),
+                    dto.phone(),
+                    createdBy
+            );
+        }
 
     default UpdateProfileUserCommand toUpdateProfileUserCommand(
             Integer idUser,
@@ -64,14 +53,13 @@ public interface UserRestDtoMapper {
                 dto.password(),
                 dto.userImage(),
                 dto.phone()
-
         );
     }
 
-
     default UpdateUserByAdminCommand toUpdateUserByAdminCommand(
             Integer idUser,
-            UpdateUserByAdminRequestDTO dto) {
+            UpdateUserByAdminRequestDTO dto,
+            Integer updatedBy) {
         if (dto == null) return null;
 
         return new UpdateUserByAdminCommand(
@@ -81,8 +69,8 @@ public interface UserRestDtoMapper {
                 dto.password(),
                 dto.userImage(),
                 stringToRole(dto.role()),
-                dto.phone()
-
+                dto.phone(),
+                updatedBy
         );
     }
 
@@ -92,122 +80,55 @@ public interface UserRestDtoMapper {
 
     @Mapping(source = "idUser", target = "idUser")
     @Mapping(source = "adminId", target = "deletedBy")
-    DeleteUserByAdminCommand toDeleteUserByAdminCommand(
-            Integer idUser,
-            Integer adminId);
-
+    DeleteUserByAdminCommand toDeleteUserByAdminCommand(Integer idUser, Integer adminId);
 
     // ============================================
     // DOMAIN USER → RESPONSE DTO (SALIDA)
     // ============================================
 
-    // Respuesta de registro
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "userImage", target = "userImage")
-    @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "createdAt", target = "createdAt")
+    // Mapeo automático (campos con mismo nombre)
     RegisterUserResponseDTO toRegisterResponseDTO(User user);
 
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "userImage", target = "userImage")
-    @Mapping(source = "phone", target = "phone")
     @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
     UserResponseDTO toUserResponseDTO(User user);
-    // Mapea lista de usuarios (helper method)
-    @Mapping(source = "idUser", target = "id")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
+
     @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
     List<UserResponseDTO> toUserResponseDTOList(List<User> users);
 
-    //  Mapea PageResponse<User> → ListUserResponseDTO
     default ListUserResponseDTO toListUserResponseDTO(PageResponse<User> pageResponse) {
         if (pageResponse == null) return null;
 
-        List<UserResponseDTO> userDTOs = toUserResponseDTOList(pageResponse.content());
-
         return new ListUserResponseDTO(
-                userDTOs,
+                toUserResponseDTOList(pageResponse.content()),
                 pageResponse.totalElements(),
                 pageResponse.totalPages(),
                 LocalDateTime.now()
         );
     }
 
-    // Respuesta de admin creando usuario (con auditoría)
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "userImage", target = "userImage")
     @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
-    @Mapping(source = "createdBy", target = "createdBy")
-    @Mapping(source = "updatedBy", target = "updatedBy")
     CreateUserByAdminResponseDTO toCreateUserByAdminResponseDTO(User user);
 
-    // Respuesta de admin actualizando usuario (con auditoría)
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "userImage", target = "userImage")
     @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
-    @Mapping(source = "createdBy", target = "createdBy")
-    @Mapping(source = "updatedBy", target = "updatedBy")
     UpdateUserByAdminResponseDTO toUpdateUserByAdminResponseDTO(User user);
 
-    // Respuesta de usuario actualizando su perfil
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "userImage", target = "userImage")
-    @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
-    @Mapping(source = "createdBy", target = "createdBy")
-    @Mapping(source = "updatedBy", target = "updatedBy")
     UpdateProfileUserResponseDTO toUpdateProfileUserResponseDTO(User user);
 
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "userImage", target = "userImage")
     @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "createdAt", target = "createdAt")
     GetUserProfileResponseDTO toGetUserProfileResponseDTO(User user);
 
-    // Respuesta de eliminación de perfil
     default DeleteProfileUserDTO toDeleteProfileUserDTO(Integer idUser) {
-        return new DeleteProfileUserDTO(
-                "Perfil eliminado correctamente",
-                idUser
-        );
+        return new DeleteProfileUserDTO("Perfil eliminado correctamente", idUser);
     }
 
-    // Respuesta de admin eliminando usuario
     default DeleteUserByAdminDTO toDeleteUserByAdminDTO(Integer idUser) {
-        return new DeleteUserByAdminDTO(
-                "Usuario eliminado correctamente",  // message
-                idUser                              // idUser
-        );
+        return new DeleteUserByAdminDTO("Usuario eliminado correctamente", idUser);
     }
+
 
 
     // ============================================
-    // CONVERSIONES COMPLEJAS
+    // CONVERSIONES DE ENUM
     // ============================================
 
     @Named("stringToRole")
@@ -222,8 +143,6 @@ public interface UserRestDtoMapper {
 
     @Named("roleToString")
     default String roleToString(Role role) {
-        if (role == null) return null;
-        return role.name();
+        return role == null ? null : role.name();
     }
-
 }

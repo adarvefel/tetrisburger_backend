@@ -37,6 +37,9 @@ public class UserEntity {
     @Column(name = "user_image")
     private String userImage;
 
+    @Column(name = "user_image_key")
+    private String userImageKey;
+
     @Column(name = "role", nullable = false)
     private String role;
 

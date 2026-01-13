@@ -1,7 +1,6 @@
 package com.tetris.tetrisburger_backend.application.usecase.user;
 
 import com.tetris.tetrisburger_backend.domain.exception.UserAlreadyExistsException;
-import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.RegisterUser;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.RegisterUserCommand;
@@ -36,26 +35,34 @@ public class RegisterUserUseCase implements RegisterUser {
     public User handle(RegisterUserCommand cmd) {
         logger.info("Registrando usuario con email: {}", cmd.email());
 
-        // 1.  Verificar que el email no existe
+        // 1. Verificar que el email no existe
         if (userRepository.existsByEmail(cmd.email())) {
             logger.warn("Intento de registrar email duplicado: {}", cmd.email());
             throw new UserAlreadyExistsException("El email ya está registrado");
         }
 
-        // 2. Crear usuario (solo con setters)
-        User newUser = new User();
-        newUser.setUserName(cmd.userName());
-        newUser.setEmail(cmd.email());
-        newUser.setPassword(passwordEncoder.encode(cmd.password()));
-        newUser.setRole(Role.CLIENT);
+        // 2. Hashear contraseña
+        String hashedPassword = passwordEncoder.encode(cmd.password());
 
-        // 3. Guardar usuario
+        // 3. Crear cliente usando factory method del dominio
+        User newUser = User.createClient(
+                cmd.userName(),
+                cmd.email(),
+                hashedPassword
+        );
+
+        // 4. Guardar usuario
         User savedUser = userRepository.saveUser(newUser);
         logger.info("Usuario registrado exitosamente - ID: {}", savedUser.getIdUser());
 
-        // 4. Enviar email de bienvenida
-        emailPort.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUserName());
-        logger.info("Email de bienvenida enviado a: {}", savedUser.getEmail());
+        // 5. Enviar email de bienvenida (no debe romper el registro si falla)
+        try {
+            emailPort.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUserName());
+            logger.info("Email de bienvenida enviado a: {}", savedUser.getEmail());
+        } catch (Exception e) {
+            logger.error("Error al enviar email de bienvenida a {}: {}",
+                    savedUser.getEmail(), e.getMessage());
+        }
 
         return savedUser;
     }

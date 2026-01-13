@@ -4,6 +4,7 @@ import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.query.ListUsersQuery;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -30,6 +31,9 @@ public interface UserRepository {
 
     boolean existsByEmail(String email);
     boolean existsById(Integer id);
+
+    List<User> searchUsersByEmail(String emailPart);
+
 
 
 

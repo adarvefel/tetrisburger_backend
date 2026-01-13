@@ -32,6 +32,13 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
 
+    // Swagger / OpenAPI endpoints (permitir sin auth)
+    private static final String[] SWAGGER_WHITELIST = {
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html"
+    };
+
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthFilter,
             UserDetailsService userDetailsService) {
@@ -43,35 +50,31 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(withDefaults -> {
-                })
+                .cors(withDefaults -> { })
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        // ✅ Públicos
+
+                        // Swagger público (ponerlo arriba)
+                        .requestMatchers(SWAGGER_WHITELIST).permitAll()
+
+                        // Públicos
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product-categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/suppliers/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/burgers/**").permitAll()
 
+                        // Protegidos
+                        .requestMatchers("/api/profile/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT")
+                        .requestMatchers("/api/orders/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLOYEE")
+                        .requestMatchers("/api/users/**").authenticated()
 
-                        // ✅ Requieren autenticación
-                        .requestMatchers("/api/profile/**")
-                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT")
-
-                        .requestMatchers("/api/orders/**")
-                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLOYEE")
-
-                        .requestMatchers("/api/users/**").authenticated()  // ✅ Para @PreAuthorize
-
-                        // ✅ Resto requiere autenticación
+                        // Siempre al final
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(
-                        jwtAuthFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -103,11 +106,11 @@ public class SecurityConfig {
                 "http://localhost:3000"   // React
         ));
         config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));  // ✅ Agregar PATCH
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of(
-                "Authorization", "Content-Type", "X-Requested-With"));  // ✅ Headers comunes
+                "Authorization", "Content-Type", "X-Requested-With"));
         config.setAllowCredentials(true);
-        config.setMaxAge(3600L);  // ✅ Cache CORS 1 hora
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
