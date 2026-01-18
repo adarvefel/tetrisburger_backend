@@ -30,8 +30,19 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         this.region = region;
     }
 
+    /**
+     * Compatibilidad: el método del puerto sigue existiendo y por defecto guarda en users/.
+     */
     @Override
     public ImageUploadResult uploadUserImage(MultipartFile file) throws IOException {
+        return uploadImage(file, "users/");
+    }
+
+    /**
+     * Abierto: permite guardar bajo cualquier "carpeta" (prefijo) como users/, products/, menus/, etc.
+     * En S3 las "carpetas" son prefijos del object key.
+     */
+    public ImageUploadResult uploadImage(MultipartFile file, String prefix) throws IOException {
         if (file == null || file.isEmpty()) {
             return null;
         }
@@ -47,6 +58,9 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
             throw new IllegalArgumentException("La imagen no puede superar 5MB");
         }
 
+        // Normalizar prefijo ("products" -> "products/") y bloquear prefijos inválidos
+        String normalizedPrefix = normalizePrefix(prefix);
+
         // Obtener nombre original y extensión
         String originalFilename = file.getOriginalFilename();
         String extension = "";
@@ -58,19 +72,20 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
             baseName = originalFilename.substring(0, lastDot);
         }
 
-        // Generar key único: users/timestamp-uuid-nombre-sanitizado.ext
+        // Generar key único: <prefix>timestamp-uuid-nombre-sanitizado.ext
         String sanitizedName = sanitizeFileName(baseName);
         String uniqueId = UUID.randomUUID().toString().substring(0, 8);
-        String fileName = String.format("users/%d-%s-%s%s",
+
+        String key = String.format("%s%d-%s-%s%s",
+                normalizedPrefix,
                 System.currentTimeMillis(),
                 uniqueId,
                 sanitizedName,
                 extension);
 
-        // Subir a S3
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
-                .key(fileName)
+                .key(key)
                 .contentType(contentType)
                 .build();
 
@@ -79,7 +94,7 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
                 RequestBody.fromInputStream(file.getInputStream(), file.getSize())
         );
 
-        return new ImageUploadResult(fileName, originalFilename);
+        return new ImageUploadResult(key, originalFilename);
     }
 
     @Override
@@ -96,16 +111,10 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         s3Client.deleteObject(deleteObjectRequest);
     }
 
-
+    // (Opcional) si lo tienes usado en otras partes, lo dejamos como alias:
     public void delete(String key) {
-        DeleteObjectRequest req = DeleteObjectRequest.builder()
-                .bucket(bucketName)
-                .key(key)
-                .build();
-
-        s3Client.deleteObject(req);
+        deleteImage(key);
     }
-
 
     @Override
     public String getImageUrl(String imageKey) {
@@ -116,6 +125,26 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
                 bucketName,
                 region,
                 imageKey);
+    }
+
+    /**
+     * Normaliza y valida el prefijo.
+     * - null/blank => "" (sin carpeta)
+     * - "products" => "products/"
+     * - Bloquea traversal y prefijos raros
+     */
+    private String normalizePrefix(String prefix) {
+        String p = (prefix == null) ? "" : prefix.trim();
+
+        if (p.isEmpty()) return "";
+
+        // Seguridad básica: evitar cosas como "../", rutas absolutas o backslashes
+        if (p.contains("..") || p.startsWith("/") || p.contains("\\")) {
+            throw new IllegalArgumentException("Prefijo inválido: " + prefix);
+        }
+
+        if (!p.endsWith("/")) p += "/";
+        return p;
     }
 
     // Limpiar caracteres especiales del nombre

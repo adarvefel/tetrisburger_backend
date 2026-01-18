@@ -113,6 +113,14 @@ public class User {
         this.updatedBy = updatedBy;
     }
 
+    // Desvincula la imagen de un usuario
+    public void removeImage(Integer updatedBy){
+        this.userImageKey = null;
+        this.userImage = null;
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
+    }
+
     /**
      * Actualiza el perfil básico (nombre y teléfono)
      */
@@ -179,6 +187,9 @@ public class User {
         this.deletedAt = LocalDateTime.now();
         this.deletedBy = deletedBy;
     }
+
+
+
 
     /**
      * Verifica si está activo
