@@ -37,6 +37,9 @@ public class UserEntity {
     @Column(name = "user_image")
     private String userImage;
 
+    @Column(name = "user_image_key")
+    private String userImageKey;
+
     @Column(name = "role", nullable = false)
     private String role;
 
@@ -54,7 +57,6 @@ public class UserEntity {
     @Column(name = "deleted_at",nullable = false)
     private LocalDateTime deletedAt;
 
-    @CreatedBy
     @Column(name = "created_by", updatable = false)
     private Integer createdBy;
 

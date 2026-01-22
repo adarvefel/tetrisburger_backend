@@ -10,9 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-
-
 @Service
 @Transactional
 public class DeleteUserByAdminUseCase implements DeleteUserByAdmin {
@@ -31,12 +28,14 @@ public class DeleteUserByAdminUseCase implements DeleteUserByAdmin {
 
         // 1. Buscar usuario
         User user = userRepository.findUserById(command.idUser())
-                .orElseThrow(() -> new RuntimeException(
-                        "Usuario no encontrado con ID: " + command.idUser()));
+                .orElseThrow(() -> {
+                    logger.error("Usuario no encontrado - ID: {}", command.idUser());
+                    return new UserNotFoundException("Usuario no encontrado con ID: " + command.idUser());
+                });
 
-        // 2. SOFT DELETE: Marcar como eliminado
-        user.setDeletedAt(LocalDateTime.now());
-        user.setDeletedBy(command.deletedBy());
+        // 2. Soft delete usando método de dominio
+        user.markAsDeleted(command.deletedBy());
+
 
         // 3. Guardar
         userRepository.saveUser(user);
@@ -44,5 +43,4 @@ public class DeleteUserByAdminUseCase implements DeleteUserByAdmin {
         logger.info("Usuario {} marcado como eliminado por admin {}",
                 command.idUser(), command.deletedBy());
     }
-
 }

@@ -1,6 +1,7 @@
+// src/main/java/com/tetris/tetrisburger_backend/infrastructure/config/AuditorAwareImpl.java
 package com.tetris.tetrisburger_backend.infrastructure.config;
 
-import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
+import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.AuditorAware;
@@ -14,18 +15,12 @@ import java.util.Optional;
 public class AuditorAwareImpl implements AuditorAware<Integer> {
 
     private static final Logger logger = LoggerFactory.getLogger(AuditorAwareImpl.class);
-    private final UserRepository userRepository;
-
-    public AuditorAwareImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     @Override
     public Optional<Integer> getCurrentAuditor() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            // Validaciones en una línea
             if (authentication == null ||
                     !authentication.isAuthenticated() ||
                     "anonymousUser".equals(authentication.getPrincipal())) {
@@ -33,19 +28,16 @@ public class AuditorAwareImpl implements AuditorAware<Integer> {
                 return Optional.empty();
             }
 
-            String email = authentication.getName();
-            logger.debug("Obteniendo auditor para email: {}", email);
+            Object principal = authentication.getPrincipal();
 
-            // Retornar directamente
-            return userRepository.findUserByEmail(email)
-                    .map(user -> {
-                        logger.debug("Auditor ID registrado: {}", user.getIdUser());
-                        return user.getIdUser();
-                    })
-                    .or(() -> {
-                        logger.warn("Usuario no encontrado en BD: {}", email);
-                        return Optional.empty();
-                    });
+            if (principal instanceof CustomUserDetails userDetails) {
+                Integer id = userDetails.getId();
+                logger.debug("Auditor ID registrado desde principal: {}", id);
+                return Optional.of(id);
+            }
+
+            logger.warn("Principal no soportado para auditoría: {}", principal.getClass());
+            return Optional.empty();
 
         } catch (Exception e) {
             logger.error("Error obteniendo auditor: {}", e.getMessage(), e);

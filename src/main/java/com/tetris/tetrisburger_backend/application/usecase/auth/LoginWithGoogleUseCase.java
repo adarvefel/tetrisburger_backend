@@ -3,7 +3,6 @@ package com.tetris.tetrisburger_backend.application.usecase.auth;
 import com.tetris.tetrisburger_backend.domain.common.LoginResponse;
 import com.tetris.tetrisburger_backend.domain.exception.InvalidCredentialsException;
 import com.tetris.tetrisburger_backend.domain.exception.InvalidTokenException;
-import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.auth.LoginWithGoogle;
 import com.tetris.tetrisburger_backend.domain.port.in.auth.command.LoginWithGoogleCommand;
@@ -86,20 +85,27 @@ public class LoginWithGoogleUseCase implements LoginWithGoogle {
         // Generar contraseña aleatoria (no será usada en Google OAuth)
         String randomPassword = passwordEncoder.encode(UUID.randomUUID().toString());
 
-        // Usar User builder o constructor simplificado
-        User newUser = new User();
-        newUser.setUserName(userName);
-        newUser.setEmail(email);
-        newUser.setPassword(randomPassword);
-        newUser.setRole(Role.CLIENT);
-        // Los demás campos quedan con defaults (null, false, etc.)
+        // ✅ Usar factory method del dominio
+        User newUser = User.createClient(
+                userName,
+                email,
+                randomPassword  // Ya está hasheada
+                            // phone es null (Google no lo proporciona)
+        );
 
         // Guardar usuario
         User savedUser = userRepository.saveUser(newUser);
 
-        // Enviar email de bienvenida
-        emailPort.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUserName());
+        // Enviar email de bienvenida (no debe romper el registro si falla)
+        try {
+            emailPort.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUserName());
+            logger.info("Email de bienvenida enviado a: {}", savedUser.getEmail());
+        } catch (Exception e) {
+            logger.error("Error al enviar email de bienvenida a {}: {}",
+                    savedUser.getEmail(), e.getMessage());
+        }
 
+        logger.info("Usuario creado desde Google con ID: {}", savedUser.getIdUser());
         return savedUser;
     }
 }

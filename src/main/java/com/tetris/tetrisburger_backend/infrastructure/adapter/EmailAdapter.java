@@ -63,7 +63,7 @@ public class EmailAdapter implements EmailPort {
     public void sendWelcomeEmail(String to, String userName) {
         logger.info("Preparando email de bienvenida para: {}", to);
 
-        String subject = "¡Bienvenido a TetrisBurger! 🍔";
+        String subject = "¡Bienvenido a TetrisBurger! 🍔kw0";
         String body = String.format(
                 "Hola %s,\n\n" +
                         "¡Gracias por registrarte en TetrisBurger!\n\n" +

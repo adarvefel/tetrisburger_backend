@@ -7,6 +7,7 @@ public record UpdateUserByAdminResponseDTO(
         String userName,
         String email,
         String userImage,
+        String imageStatus,
         String role,
         String phone,
         LocalDateTime createdAt,

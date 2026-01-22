@@ -7,6 +7,7 @@ public record UpdateProfileUserResponseDTO(
         String userName,
         String email,
         String userImage,
+        String imageStatus,
         String phone,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,

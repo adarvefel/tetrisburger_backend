@@ -23,31 +23,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-/**
- * Controller REST para autenticación
- * Sigue Clean Architecture: coordina entre REST y casos de uso
- */
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Autenticación", description = "Login, registro, Google OAuth y recuperación de contraseña")
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    // Ports IN
     private final RegisterUser registerUser;
     private final LoginUser loginUser;
     private final LoginWithGoogle loginWithGoogle;
     private final ForgotPassword forgotPassword;
     private final ResetPassword resetPassword;
 
-    // Mappers
     private final UserRestDtoMapper userMapper;
-    private final AuthRestDtoMapper authMapper;  // ✅ Agregar AuthRestDtoMapper
+    private final AuthRestDtoMapper authMapper;
 
     public AuthController(
             RegisterUser registerUser,
@@ -66,79 +65,145 @@ public class AuthController {
         this.authMapper = authMapper;
     }
 
-    /**
-     * POST /api/auth/register
-     * Registrar nuevo usuario
-     */
     @PostMapping("/register")
+    @Operation(summary = "Registro", description = "Crea una nueva cuenta de usuario.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Usuario creado",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                            {
+                              "idUser": 6,
+                              "userName": "rompecucas",
+                              "email": "rompecucas12@gmail.com",
+                              "userImage": null,
+                              "phone": null,
+                              "createdAt": "2025-11-05T15:00:45.2081821"
+                            }
+                            """)
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "409", description = "Email ya registrado")
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = """
+                    {
+                      "userName": "felipeSa",
+                      "email": "pipe58@gmail.com",
+                      "password": "pipe1234"
+                    }
+                    """)
+            )
+    )
     public ResponseEntity<RegisterUserResponseDTO> register(
             @Valid @RequestBody RegisterUserRequestDTO requestDTO) {
 
         logger.info("Registrando nuevo usuario con email: {}", requestDTO.email());
 
-        // 1. DTO → Command
         RegisterUserCommand command = authMapper.toRegisterCommand(requestDTO);
-
-        // 2. Ejecutar caso de uso
         User registeredUser = registerUser.handle(command);
-
-        // 3. Domain → DTO
         RegisterUserResponseDTO responseDTO = authMapper.toRegisterResponseDTO(registeredUser);
 
-        logger.info("Usuario registrado exitosamente con ID: {}", registeredUser.getIdUser());
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
     }
 
-    /**
-     * POST /api/auth/login
-     * Iniciar sesión con email y contraseña
-     */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(
-            @Valid @RequestBody LoginRequestDTO loginDTO) {
+    @Operation(summary = "Login", description = "Autentica un usuario y retorna un token JWT.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Login exitoso",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                            {
+                              "token": "eyJhbGciOiJIUzI1NiJ9...",
+                              "tokenType": "Bearer",
+                              "expiresIn": 3600000,
+                              "user": {
+                                "idUser": 2,
+                                "userName": "felipeSA",
+                                "email": "pipe58@gmail.com",
+                                "role": "ADMIN"
+                              },
+                              "timestamp": "2025-11-05T17:04:37.037933"
+                            }
+                            """)
+                    )
+            ),
+            @ApiResponse(responseCode = "401", description = "Credenciales inválidas")
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = """
+                    {
+                      "email": "pipe58@gmail.com",
+                      "password": "pipe1234"
+                    }
+                    """)
+            )
+    )
+    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginDTO) {
 
         logger.info("Intento de login para: {}", loginDTO.email());
 
-        // 1. DTO → Command
         LoginUserCommand command = authMapper.toLoginCommand(loginDTO);
-
-        // 2. Ejecutar caso de uso (retorna LoginResponse del domain)
         LoginResponse domainResponse = loginUser.execute(command);
-
-        // 3. LoginResponse (domain) → LoginResponseDTO (REST)
         LoginResponseDTO responseDTO = authMapper.toLoginResponseDTO(domainResponse);
 
-        logger.info("Login exitoso para: {}", loginDTO.email());
         return ResponseEntity.ok(responseDTO);
     }
 
-    /**
-     * POST /api/auth/google
-     * Iniciar sesión con Google OAuth
-     */
     @PostMapping("/google")
+    @Operation(summary = "Login con Google", description = "Inicia sesión con Google OAuth.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login exitoso"),
+            @ApiResponse(responseCode = "400", description = "Token de Google inválido")
+    })
     public ResponseEntity<LoginResponseDTO> loginWithGoogleEndpoint(
             @Valid @RequestBody GoogleLoginRequestDTO googleLoginDTO) {
 
         logger.info("Intento de login con Google");
 
-        // 1. DTO → Command (usar mapper)
-        LoginWithGoogleCommand command = authMapper.toLoginWithGoogleCommand(googleLoginDTO);  // ✅ CAMBIO: usar mapper
-
-        // 2. Ejecutar caso de uso
+        LoginWithGoogleCommand command = authMapper.toLoginWithGoogleCommand(googleLoginDTO);
         LoginResponse domainResponse = loginWithGoogle.handle(command);
-        // 3. Domain → DTO
         LoginResponseDTO responseDTO = authMapper.toLoginResponseDTO(domainResponse);
 
-        logger.info("Login con Google exitoso");
         return ResponseEntity.ok(responseDTO);
     }
 
-    /**
-     * POST /api/auth/forgot-password
-     * Generar token de recuperación de contraseña
-     */
     @PostMapping("/forgot-password")
+    @Operation(summary = "Recuperar contraseña", description = "Envía un enlace de recuperación al correo del usuario.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Correo de recuperación enviado",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                            {
+                              "message": "Correo de recuperación enviado",
+                              "success": true,
+                              "timestamp": 1762381426062
+                            }
+                            """)
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Email inválido")
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = """
+                    {
+                      "email": "adarvefelipe58@gmail.com"
+                    }
+                    """)
+            )
+    )
     public ResponseEntity<MessageResponseDTO> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequestDTO forgotDTO) {
 
@@ -147,36 +212,46 @@ public class AuthController {
         ForgotPasswordCommand command = authMapper.toForgotPasswordCommand(forgotDTO);
         forgotPassword.execute(command);
 
-        logger.info("Token de recuperación generado para: {}", forgotDTO.email());
-
-        // ✅ Usa MessageResponseDTO (reutilizable)
-        return ResponseEntity.ok(new MessageResponseDTO(
-                "Correo de recuperación enviado",
-                true
-        ));
+        return ResponseEntity.ok(new MessageResponseDTO("Correo de recuperación enviado", true));
     }
 
-
-    /**
-     * POST /api/auth/reset-password
-     * Resetear contraseña con token
-     */
     @PostMapping("/reset-password")
+    @Operation(summary = "Reset de contraseña", description = "Actualiza la contraseña con el token enviado al correo.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Contraseña actualizada",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                            {
+                              "message": "Contraseña actualizada",
+                              "success": true,
+                              "timestamp": 1762381521207
+                            }
+                            """)
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Token inválido o expirado")
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = """
+                    {
+                      "token": "eyJhbGciOiJIUzI1NiJ9...",
+                      "newPassword": "felipe12345"
+                    }
+                    """)
+            )
+    )
     public ResponseEntity<MessageResponseDTO> resetPasswordEndpoint(
             @Valid @RequestBody ResetPasswordRequestDTO resetDTO) {
 
         logger.info("Intento de resetear contraseña con token");
 
-        // 1. DTO → Command (usar mapper)
-        ResetPasswordCommand command = authMapper.toResetPasswordCommand(resetDTO);  // usar mapper
+        ResetPasswordCommand command = authMapper.toResetPasswordCommand(resetDTO);
+        resetPassword.handle(command);
 
-        // 2. Ejecutar caso de uso
-        resetPassword.handle(command);  // ✅ CAMBIO: execute()
-
-        logger.info("Contraseña reseteada exitosamente");
-        return ResponseEntity.ok(new MessageResponseDTO(
-                "Contraseña actualizada",
-                true
-        ));
+        return ResponseEntity.ok(new MessageResponseDTO("Contraseña actualizada", true));
     }
 }

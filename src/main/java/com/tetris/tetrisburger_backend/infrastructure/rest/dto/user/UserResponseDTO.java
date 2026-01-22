@@ -7,11 +7,12 @@ public record UserResponseDTO(
         String userName,
         String email,
         String userImage,
+        String imageStatus,
         String role,
         String phone,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        LocalDateTime deleteAt,
+        LocalDateTime deletedAt,
         Integer createdBy,
         Integer updatedBy,
         Integer deletedBy

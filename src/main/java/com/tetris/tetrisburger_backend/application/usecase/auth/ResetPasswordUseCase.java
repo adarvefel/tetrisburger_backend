@@ -58,6 +58,7 @@ public class ResetPasswordUseCase implements ResetPassword {
                 user.getEmail(),
                 passwordEncoder.encode(command.newPassword()),
                 user.getUserImage(),
+                user.getUserImageKey(),
                 user.getRole(),
                 user.getPhone(),
                 user.getCreatedAt(),

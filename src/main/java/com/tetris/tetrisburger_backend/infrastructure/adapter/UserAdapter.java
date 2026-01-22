@@ -16,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -96,10 +97,10 @@ public class UserAdapter implements UserRepository {
 
         return new PageResponse<>(
                 users,
-                page.getTotalPages(),
+                page.getNumber(),
+                page.getSize(),
                 page.getTotalElements(),
-                page.getTotalPages(),
-                page.getNumber()
+                page.getTotalPages()
         );
     }
 
@@ -135,7 +136,6 @@ public class UserAdapter implements UserRepository {
     }
 
 
-
     @Override
     public boolean existsByEmail(String email) {
         // ✅ CAMBIO: Con filtro de soft delete
@@ -147,4 +147,18 @@ public class UserAdapter implements UserRepository {
         // ✅ CAMBIO: Con filtro de soft delete
         return jpa.existsByIdUserAndDeletedAtIsNull(id);
     }
+
+    @Override
+    public List<User> searchUsersByEmail(String emailPart) {
+        logger.debug("Buscando usuarios activos por email parcial: {}", emailPart);
+
+        String term = (emailPart == null) ? "" : emailPart.trim();
+
+        return jpa.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(term)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+
 }

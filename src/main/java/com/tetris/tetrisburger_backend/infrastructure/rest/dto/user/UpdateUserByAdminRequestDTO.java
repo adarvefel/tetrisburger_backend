@@ -1,19 +1,26 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.user;
 
-import jakarta.validation.constraints.*;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
 
+@Schema(description = "Actualización de usuario por ADMIN vía JSON (sin imagen). Campos opcionales.")
 public record UpdateUserByAdminRequestDTO(
-        @Size(min = 3, max = 50, message = "El nombre debe tener entre 3 y 50 caracteres")
+        @Schema(description = "Nombre", example = "Saralegusta238", nullable = true)
+        @Size(min = 3, max = 50)
         String userName,
 
-        @Email(message = "Ingresa un email válido")
+        @Schema(description = "Email", example = "sara@gmail.com", nullable = true)
+        @Email
         String email,
 
-        @Size(min = 6, message = "La contraseña debe tener mínimo 6 caracteres")
+        @Schema(description = "Contraseña", example = "nuevaPass1234", nullable = true, minLength = 6)
+        @Size(min = 6)
         String password,
-        String userImage,
 
-        String role  ,
+        @Schema(description = "Rol", example = "EMPLOYEE", allowableValues = {"ADMIN","EMPLOYEE","CLIENT"}, nullable = true)
+        String role,
+
+        @Schema(description = "Teléfono", example = "3001234567", nullable = true)
         String phone
-
-        ) {}
+) {}
