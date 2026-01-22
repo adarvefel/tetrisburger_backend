@@ -13,6 +13,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+
 @Service
 @Transactional
 public class CreateUserByAdminUseCase implements CreateUserByAdmin {
@@ -50,8 +52,8 @@ public class CreateUserByAdminUseCase implements CreateUserByAdmin {
                 hashedPassword,
                 cmd.role(),
                 cmd.phone(),
-                null, // imageKey
-                null, // imageName
+                null,
+                null,
                 cmd.createdBy()
         );
 
@@ -59,12 +61,21 @@ public class CreateUserByAdminUseCase implements CreateUserByAdmin {
 
         // Publicar evento: subir imagen después del commit
         if (cmd.userImage() != null && !cmd.userImage().isEmpty()) {
-            eventPublisher.publishEvent(new UserImageUploadRequestedEvent(
-                    savedUser.getIdUser(),
-                    cmd.userImage(),
-                    cmd.createdBy()
-            ));
+            var file = cmd.userImage();
+            try {
+                eventPublisher.publishEvent(new UserImageUploadRequestedEvent(
+                        savedUser.getIdUser(),
+                        file.getBytes(),
+                        file.getContentType(),
+                        file.getOriginalFilename(),
+                        cmd.createdBy()
+                ));
+            } catch (IOException e) {
+                throw new RuntimeException("No se pudo leer la imagen del usuario", e);
+                // o tu ImageUploadException si prefieres
+            }
         }
+
 
         return savedUser;
     }

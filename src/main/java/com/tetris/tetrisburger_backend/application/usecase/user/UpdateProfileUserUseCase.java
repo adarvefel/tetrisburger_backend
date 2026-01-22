@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.application.usecase.user;
 
 import com.tetris.tetrisburger_backend.application.event.UserProfileImageChangeRequestedEvent;
+import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.UpdateProfileUser;
@@ -48,26 +49,24 @@ public class UpdateProfileUserUseCase implements UpdateProfileUser {
             throw new IllegalStateException("No puedes actualizar un usuario eliminado");
         }
 
-        // Guardar key anterior para borrarla después (best-effort) si hay nueva imagen
         String oldImageKey = user.getUserImageKey();
 
-        // Actualizar perfil básico
         user.updateProfile(command.userName(), command.phone(), currentUserId);
 
-        // Actualizar contraseña si se proporcionó
         if (command.password() != null && !command.password().isBlank()) {
             String hashedPassword = passwordEncoder.encode(command.password());
             user.resetPassword(hashedPassword, currentUserId);
         }
 
-        // Guardar cambios en BD (sin tocar S3)
         User updatedUser = userRepository.saveUser(user);
 
-        // Publicar evento para manejar imagen AFTER_COMMIT
-        if (command.userImage() != null && !command.userImage().isEmpty()) {
+        FileData image = command.userImage();
+        if (image != null && image.bytes() != null && image.bytes().length > 0) {
             eventPublisher.publishEvent(new UserProfileImageChangeRequestedEvent(
                     updatedUser.getIdUser(),
-                    command.userImage(),
+                    image.bytes(),
+                    image.contentType(),
+                    image.originalFilename(),
                     oldImageKey,
                     currentUserId
             ));

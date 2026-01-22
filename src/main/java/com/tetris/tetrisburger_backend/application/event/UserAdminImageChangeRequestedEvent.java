@@ -4,8 +4,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 public record UserAdminImageChangeRequestedEvent(
         Integer idUser,
-        MultipartFile newFile,
+        byte[] newFileBytes,
+        String contentType,
+        String originalFileName,
         String oldImageKey,
         Integer updatedBy
-) {
-}
+) {}

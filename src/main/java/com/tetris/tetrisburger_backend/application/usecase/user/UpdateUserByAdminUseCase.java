@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.application.usecase.user;
 
 import com.tetris.tetrisburger_backend.application.event.UserAdminImageChangeRequestedEvent;
+import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.UpdateUserByAdmin;
@@ -62,14 +63,18 @@ public class UpdateUserByAdminUseCase implements UpdateUserByAdmin {
         User updatedUser = userRepository.saveUser(user);
 
         // Publicar evento para manejar imagen AFTER_COMMIT
-        if (command.userImage() != null && !command.userImage().isEmpty()) {
+        FileData image = command.userImage();
+        if (image != null && image.bytes() != null && image.bytes().length > 0) {
             eventPublisher.publishEvent(new UserAdminImageChangeRequestedEvent(
                     updatedUser.getIdUser(),
-                    command.userImage(),
+                    image.bytes(),
+                    image.contentType(),
+                    image.originalFilename(),
                     oldImageKey,
                     command.updatedBy()
             ));
         }
+
 
         return updatedUser;
     }

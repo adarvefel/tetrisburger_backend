@@ -1,10 +1,9 @@
 package com.tetris.tetrisburger_backend.application.event;
 
-import org.springframework.web.multipart.MultipartFile;
-
 public record UserImageUploadRequestedEvent(
         Integer idUser,
-        MultipartFile file,
+        byte[] fileBytes,
+        String contentType,
+        String originalFileName,
         Integer performedBy
-) {
-}
+) {}

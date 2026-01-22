@@ -1,4 +1,3 @@
-// src/main/java/com/tetris/tetrisburger_backend/application/listener/UserProfileImageChangeListener.java
 package com.tetris.tetrisburger_backend.application.listener;
 
 import com.tetris.tetrisburger_backend.application.event.UserProfileImageChangeRequestedEvent;
@@ -10,6 +9,7 @@ import com.tetris.tetrisburger_backend.domain.port.out.ImageUploadResult;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -26,27 +26,37 @@ public class UserProfileImageChangeListener {
     }
 
     @Async
-    @Transactional
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(UserProfileImageChangeRequestedEvent event) {
         try {
-            ImageUploadResult upload = imageStoragePort.uploadUserImage(event.newFile());
+            // 1) Subir nueva imagen
+            ImageUploadResult upload = imageStoragePort.uploadUserImage(
+                    event.fileBytes(),
+                    event.contentType(),
+                    event.originalFileName()
+            );
             if (upload == null) return;
 
-            User user = userRepository.findUserById(event.idUser())
-                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+            // 2) Guardar metadata en BD (transacción nueva)
+            persistUserImage(event.idUser(), upload, event.updatedBy());
 
-            user.updateImage(upload.imageKey(), upload.originalFileName(), event.updatedBy());
-            userRepository.saveUser(user);
-
+            // 3) Borrar anterior (best-effort)
             if (event.oldImageKey() != null && !event.oldImageKey().isBlank()) {
                 try {
                     imageStoragePort.deleteImage(event.oldImageKey());
-                } catch (Exception ignored) {
-                }
+                } catch (Exception ignored) { }
             }
         } catch (Exception e) {
             throw new ImageUploadException("No se pudo subir la imagen del perfil", e);
         }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected void persistUserImage(Integer idUser, ImageUploadResult upload, Integer updatedBy) {
+        User user = userRepository.findUserById(idUser)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+
+        user.updateImage(upload.imageKey(), upload.originalFileName(), updatedBy);
+        userRepository.saveUser(user);
     }
 }

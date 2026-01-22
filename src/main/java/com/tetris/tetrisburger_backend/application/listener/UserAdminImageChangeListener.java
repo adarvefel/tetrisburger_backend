@@ -9,6 +9,7 @@ import com.tetris.tetrisburger_backend.domain.port.out.ImageUploadResult;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -25,30 +26,39 @@ public class UserAdminImageChangeListener {
     }
 
     @Async
-    @Transactional
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(UserAdminImageChangeRequestedEvent event) {
         try {
-            // 1) Subir nueva imagen
-            ImageUploadResult upload = imageStoragePort.uploadUserImage(event.newFile());
+            // 1) Subir nueva imagen (fuera de transacción)
+            ImageUploadResult upload = imageStoragePort.uploadUserImage(
+                    event.newFileBytes(),
+                    event.contentType(),
+                    event.originalFileName()
+            );
+
             if (upload == null) return;
 
             // 2) Guardar metadata en BD
-            User user = userRepository.findUserById(event.idUser())
-                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
-
-            user.updateImage(upload.imageKey(), upload.originalFileName(), event.updatedBy());
-            userRepository.saveUser(user);
+            persistNewImageKey(event.idUser(), upload, event.updatedBy());
 
             // 3) Borrar anterior (best-effort)
             if (event.oldImageKey() != null && !event.oldImageKey().isBlank()) {
                 try {
                     imageStoragePort.deleteImage(event.oldImageKey());
-                } catch (Exception ignored) {
-                }
+                } catch (Exception ignored) { }
             }
+
         } catch (Exception e) {
             throw new ImageUploadException("No se pudo subir la imagen del usuario", e);
         }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected void persistNewImageKey(Integer idUser, ImageUploadResult upload, Integer updatedBy) {
+        User user = userRepository.findUserById(idUser)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+
+        user.updateImage(upload.imageKey(), upload.originalFileName(), updatedBy);
+        userRepository.saveUser(user);
     }
 }

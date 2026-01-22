@@ -1,10 +1,9 @@
-package com.tetris.tetrisburger_backend.application.event;
+package com.tetris.tetrisburger_backend.domain.port.in.user.command;
 
-public record UserProfileImageChangeRequestedEvent(
+public record UpdateUserImageByAdminCommand(
         Integer idUser,
         byte[] fileBytes,
         String contentType,
         String originalFileName,
-        String oldImageKey,
         Integer updatedBy
 ) {}

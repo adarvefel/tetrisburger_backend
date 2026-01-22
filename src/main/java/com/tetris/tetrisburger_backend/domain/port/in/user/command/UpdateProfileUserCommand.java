@@ -1,12 +1,12 @@
 package com.tetris.tetrisburger_backend.domain.port.in.user.command;
 
-import org.springframework.web.multipart.MultipartFile;
+import com.tetris.tetrisburger_backend.domain.common.FileData;
 
 public record UpdateProfileUserCommand(
         Integer idUser,
         String userName,
         String password,
-        MultipartFile userImage,
+        FileData userImage,
         String phone
 ){
 

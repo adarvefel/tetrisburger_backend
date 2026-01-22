@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.config;
 
+import com.tetris.tetrisburger_backend.infrastructure.security.JwtAuthenticationEntryPoint;
 import com.tetris.tetrisburger_backend.infrastructure.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +31,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint; // ✅ NUEVO
     private final UserDetailsService userDetailsService;
 
     // Swagger / OpenAPI endpoints (permitir sin auth)
@@ -41,8 +43,10 @@ public class SecurityConfig {
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthFilter,
+            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, // ✅ NUEVO
             UserDetailsService userDetailsService) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint; // ✅ NUEVO
         this.userDetailsService = userDetailsService;
     }
 
@@ -72,6 +76,9 @@ public class SecurityConfig {
 
                         // Siempre al final
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint) // ✅ NUEVO - Devuelve 401
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

@@ -30,49 +30,40 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         this.region = region;
     }
 
-    /**
-     * Compatibilidad: el método del puerto sigue existiendo y por defecto guarda en users/.
-     */
+    // ====== NUEVO MÉTODO DEL PUERTO (el que usará tu listener) ======
     @Override
-    public ImageUploadResult uploadUserImage(MultipartFile file) throws IOException {
-        return uploadImage(file, "users/");
+    public ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName) throws Exception {
+        return uploadImage(bytes, contentType, originalFileName, "users/");
     }
 
-    /**
-     * Abierto: permite guardar bajo cualquier "carpeta" (prefijo) como users/, products/, menus/, etc.
-     * En S3 las "carpetas" son prefijos del object key.
-     */
-    public ImageUploadResult uploadImage(MultipartFile file, String prefix) throws IOException {
-        if (file == null || file.isEmpty()) {
+    // ====== Helper para reusar lógica y permitir prefijos ======
+    public ImageUploadResult uploadImage(byte[] bytes, String contentType, String originalFileName, String prefix) {
+        if (bytes == null || bytes.length == 0) {
             return null;
         }
 
         // Validar tipo de archivo
-        String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
             throw new IllegalArgumentException("El archivo debe ser una imagen");
         }
 
         // Validar tamaño (máx 5MB)
-        if (file.getSize() > 5 * 1024 * 1024) {
+        if (bytes.length > 5 * 1024 * 1024) {
             throw new IllegalArgumentException("La imagen no puede superar 5MB");
         }
 
-        // Normalizar prefijo ("products" -> "products/") y bloquear prefijos inválidos
         String normalizedPrefix = normalizePrefix(prefix);
 
-        // Obtener nombre original y extensión
-        String originalFilename = file.getOriginalFilename();
+        // Obtener extensión (si hay)
         String extension = "";
-        String baseName = originalFilename;
+        String baseName = originalFileName;
 
-        if (originalFilename != null && originalFilename.contains(".")) {
-            int lastDot = originalFilename.lastIndexOf(".");
-            extension = originalFilename.substring(lastDot);
-            baseName = originalFilename.substring(0, lastDot);
+        if (originalFileName != null && originalFileName.contains(".")) {
+            int lastDot = originalFileName.lastIndexOf(".");
+            extension = originalFileName.substring(lastDot);
+            baseName = originalFileName.substring(0, lastDot);
         }
 
-        // Generar key único: <prefix>timestamp-uuid-nombre-sanitizado.ext
         String sanitizedName = sanitizeFileName(baseName);
         String uniqueId = UUID.randomUUID().toString().substring(0, 8);
 
@@ -89,19 +80,20 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
                 .contentType(contentType)
                 .build();
 
-        s3Client.putObject(
-                putObjectRequest,
-                RequestBody.fromInputStream(file.getInputStream(), file.getSize())
-        );
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes)); // AWS SDK v2 [web:1752]
 
-        return new ImageUploadResult(key, originalFilename);
+        return new ImageUploadResult(key, originalFileName);
+    }
+
+    // ====== (Opcional) helper para el controller/usecase que todavía tenga MultipartFile ======
+    public ImageUploadResult uploadUserImage(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) return null;
+        return uploadImage(file.getBytes(), file.getContentType(), file.getOriginalFilename(), "users/");
     }
 
     @Override
     public void deleteImage(String imageKey) {
-        if (imageKey == null || imageKey.isEmpty()) {
-            return;
-        }
+        if (imageKey == null || imageKey.isEmpty()) return;
 
         DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                 .bucket(bucketName)
@@ -111,34 +103,20 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         s3Client.deleteObject(deleteObjectRequest);
     }
 
-    // (Opcional) si lo tienes usado en otras partes, lo dejamos como alias:
-    public void delete(String key) {
-        deleteImage(key);
-    }
-
     @Override
     public String getImageUrl(String imageKey) {
-        if (imageKey == null || imageKey.isEmpty()) {
-            return null;
-        }
+        if (imageKey == null || imageKey.isEmpty()) return null;
+
         return String.format("https://%s.s3.%s.amazonaws.com/%s",
                 bucketName,
                 region,
                 imageKey);
     }
 
-    /**
-     * Normaliza y valida el prefijo.
-     * - null/blank => "" (sin carpeta)
-     * - "products" => "products/"
-     * - Bloquea traversal y prefijos raros
-     */
     private String normalizePrefix(String prefix) {
         String p = (prefix == null) ? "" : prefix.trim();
-
         if (p.isEmpty()) return "";
 
-        // Seguridad básica: evitar cosas como "../", rutas absolutas o backslashes
         if (p.contains("..") || p.startsWith("/") || p.contains("\\")) {
             throw new IllegalArgumentException("Prefijo inválido: " + prefix);
         }
@@ -147,11 +125,8 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         return p;
     }
 
-    // Limpiar caracteres especiales del nombre
     private String sanitizeFileName(String fileName) {
-        if (fileName == null) {
-            return "file";
-        }
+        if (fileName == null) return "file";
         return fileName
                 .replaceAll("[^a-zA-Z0-9.-]", "_")
                 .replaceAll("_{2,}", "_")

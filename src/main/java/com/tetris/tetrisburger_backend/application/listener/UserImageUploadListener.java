@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -31,18 +33,27 @@ public class UserImageUploadListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onUserImageUploadRequested(UserImageUploadRequestedEvent event) {
         try {
-            ImageUploadResult upload = imageStoragePort.uploadUserImage(event.file());
+            ImageUploadResult upload = imageStoragePort.uploadUserImage(
+                    event.fileBytes(),
+                    event.contentType(),
+                    event.originalFileName()
+            );
             if (upload == null) return;
 
-            User user = userRepository.findUserById(event.idUser())
-                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
-
-            user.updateImage(upload.imageKey(), upload.originalFileName(), event.performedBy());
-            userRepository.saveUser(user);
+            persistUserImage(event.idUser(), upload, event.performedBy());
 
             logger.info("Imagen subida y usuario actualizado: userId={}", event.idUser());
         } catch (Exception e) {
             throw new ImageUploadException("No se pudo subir la imagen del usuario", e);
         }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected void persistUserImage(Integer idUser, ImageUploadResult upload, Integer updatedBy) {
+        User user = userRepository.findUserById(idUser)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
+
+        user.updateImage(upload.imageKey(), upload.originalFileName(), updatedBy);
+        userRepository.saveUser(user);
     }
 }
