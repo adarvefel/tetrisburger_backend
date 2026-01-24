@@ -1,8 +1,10 @@
 package com.tetris.tetrisburger_backend.domain.port.out;
 
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
+import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.query.ListUsersQuery;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -50,5 +52,7 @@ public interface UserRepository {
 
     void deleteUserById(Integer idUser);
 
+    //Filtrar por Rol (Admin)
+    PageResponse<User> findByRole(Role role, Pageable pageable);
 
 }

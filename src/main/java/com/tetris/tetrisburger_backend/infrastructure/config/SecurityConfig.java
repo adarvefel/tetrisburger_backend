@@ -2,6 +2,7 @@ package com.tetris.tetrisburger_backend.infrastructure.config;
 
 import com.tetris.tetrisburger_backend.infrastructure.security.JwtAuthenticationEntryPoint;
 import com.tetris.tetrisburger_backend.infrastructure.security.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,8 +32,11 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
-    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint; // ✅ NUEVO
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final UserDetailsService userDetailsService;
+
+    @Value("${cors.allowed.origins}")
+    private String allowedOrigins;
 
     // Swagger / OpenAPI endpoints (permitir sin auth)
     private static final String[] SWAGGER_WHITELIST = {
@@ -43,10 +47,10 @@ public class SecurityConfig {
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthFilter,
-            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, // ✅ NUEVO
+            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
             UserDetailsService userDetailsService) {
         this.jwtAuthFilter = jwtAuthFilter;
-        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint; // ✅ NUEVO
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.userDetailsService = userDetailsService;
     }
 
@@ -74,11 +78,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/orders/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLOYEE")
                         .requestMatchers("/api/users/**").authenticated()
 
-                        // Siempre al final
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint) // ✅ NUEVO - Devuelve 401
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -108,10 +111,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",  // Vite
-                "http://localhost:3000"   // React
-        ));
+
+        // Usa la variable de entorno
+        config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
+
         config.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of(

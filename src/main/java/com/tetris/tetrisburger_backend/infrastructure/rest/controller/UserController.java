@@ -1,7 +1,8 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
-
+import com.tetris.tetrisburger_backend.domain.port.in.user.query.FilterUsersByRoleQuery;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.User;
+import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.domain.port.in.user.*;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.CreateUserByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.DeleteUserByAdminCommand;
@@ -53,16 +54,9 @@ public class UserController {
     private final UserRestDtoMapper mapper;
     private final ImageStoragePort imageStoragePort;
     private final SearchUsersByEmail searchUsersByEmail;
+    private final FilterUsersByRole filterUsersByRole;
 
-    public UserController(CreateUserByAdmin createUserByAdmin,
-                          ListUser listUser,
-                          GetUserById getUserById,
-                          UpdateUserByAdmin updateUserByAdmin,
-                          UpdateUserImageByAdmin updateUserImageByAdmin,
-                          DeleteUserByAdmin deleteUserByAdmin,
-                          UserRestDtoMapper mapper,
-                          ImageStoragePort imageStoragePort,
-                          SearchUsersByEmail searchUsersByEmail) {
+    public UserController(CreateUserByAdmin createUserByAdmin, ListUser listUser, GetUserById getUserById, UpdateUserByAdmin updateUserByAdmin, UpdateUserImageByAdmin updateUserImageByAdmin, DeleteUserByAdmin deleteUserByAdmin, UserRestDtoMapper mapper, ImageStoragePort imageStoragePort, SearchUsersByEmail searchUsersByEmail, FilterUsersByRole filterUsersByRole) {
         this.createUserByAdmin = createUserByAdmin;
         this.listUser = listUser;
         this.getUserById = getUserById;
@@ -72,6 +66,7 @@ public class UserController {
         this.mapper = mapper;
         this.imageStoragePort = imageStoragePort;
         this.searchUsersByEmail = searchUsersByEmail;
+        this.filterUsersByRole = filterUsersByRole;
     }
 
     private Integer getUserIdFromDetails(UserDetails userDetails) {
@@ -286,4 +281,57 @@ public class UserController {
 
         return ResponseEntity.ok(dtoList);
     }
+
+
+    @GetMapping("/filter-by-role")
+    @Operation(
+            summary = "Filtrar usuarios por rol",
+            description = "Retorna lista paginada de usuarios filtrados por rol (ADMIN, EMPLOYEE, CLIENT)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuarios filtrados",
+                    content = @Content(schema = @Schema(implementation = ListUserResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Rol inválido"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No tienes rol ADMIN")
+    })
+    public ResponseEntity<ListUserResponseDTO> filterUsersByRole(
+            @Parameter(description = "Rol a filtrar (ADMIN, EMPLOYEE, CLIENT)", example = "CLIENT")
+            @RequestParam String role,
+            @Parameter(description = "Número de página (base 0)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Elementos por página", example = "10")
+            @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Campo para ordenar", example = "idUser")
+            @RequestParam(defaultValue = "idUser") String sortBy
+    ) {
+        Role roleEnum;
+        try {
+            roleEnum = Role.valueOf(role.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Rol inválido. Valores permitidos: ADMIN, EMPLOYEE, CLIENT");
+        }
+
+        FilterUsersByRoleQuery query = new FilterUsersByRoleQuery(roleEnum, page, size, sortBy);
+        PageResponse<User> pageResponse = filterUsersByRole.handle(query);
+
+        List<UserResponseDTO> contentWithUrls = pageResponse.content().stream()
+                .map(u -> {
+                    String imageUrl = resolveImageUrlFromUser(u);
+                    String imageStatus = resolveImageStatus(false, imageUrl);
+                    return mapper.toUserResponseDTO(u, imageUrl, imageStatus);
+                })
+                .toList();
+
+        ListUserResponseDTO responseDTO = new ListUserResponseDTO(
+                contentWithUrls,
+                pageResponse.totalElements(),
+                pageResponse.totalPages(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+
 }

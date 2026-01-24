@@ -263,6 +263,19 @@ json
 "message": "Usuario eliminado correctamente",
 "idUser": 20
 }
+
+
+Filtrar por Rol
+Enpoint: GET /api/admin/users/filter-by-role={Role}
+http://localhost:8080/api/admin/users/filter-by-role?role=EMPLOYEE
+http://localhost:8080/api/admin/users/filter-by-role?role=ADMIN
+http://localhost:8080/api/admin/users/filter-by-role?role=CLIENT
+
+Auth: Authorization: Bearer {token}
+
+Respuesta: 200 OK
+Retorna un arreglo [] con los usuarios que coincidan con ese Rol
+
 cURLs (al final)
 AUTH
 Login
@@ -341,6 +354,11 @@ Get Users by Email
 
 curl --location 'http://localhost:8080/api/admin/users/by-email?email=%40test.com' \
 --header 'Authorization: Bearer {token}'
+
+Filtrar por Rol
+curl --location 'http://localhost:8080/api/admin/users/filter-by-role?role=EMPLOYEE' \
+--header 'Authorization: Bearer {token}'
+
 
 PROFILE
 Get Profile
