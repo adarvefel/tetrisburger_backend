@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.repository;
 
+import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.UserEntity;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,12 @@ public interface UserJpaRepository extends JpaRepository<UserEntity,Integer> {
 
     Optional<UserEntity> findByEmailAndDeletedAtIsNull(String email);
 
+    List<UserEntity> findByEmailContainingIgnoreCaseAndDeletedAtIsNull(String email);
+
+
+    List<UserEntity> findByEmailContainingIgnoreCase(String email);
+
+
     Page<UserEntity> findAllByDeletedAtIsNull(Pageable pageable);
 
     List<UserEntity> findAllByDeletedAtIsNull();
@@ -34,5 +41,8 @@ public interface UserJpaRepository extends JpaRepository<UserEntity,Integer> {
     void softDeleteUser(@Param("idUser") Integer idUser,
                         @Param("deletedAt") LocalDateTime deletedAt,
                         @Param("deletedBy") Integer deletedBy);
+
+    Page<UserEntity> findByRoleAndDeletedAtIsNull(Role role, Pageable pageable);
+
 
 }

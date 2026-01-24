@@ -1,211 +1,337 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
-
+import com.tetris.tetrisburger_backend.domain.port.in.user.query.FilterUsersByRoleQuery;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.User;
+import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.domain.port.in.user.*;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.CreateUserByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.DeleteUserByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.UpdateUserByAdminCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.user.command.UpdateUserImageByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.user.query.ListUsersQuery;
+import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.UserRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-/**
- * Controller REST para gestión de usuarios por ADMIN
- * Sigue Clean Architecture: coordina entre REST y casos de uso
- */
+import java.time.LocalDateTime;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin/users")
-@PreAuthorize("hasRole('ADMIN')")  // ✅ TODOS los métodos requieren ADMIN
+@PreAuthorize("hasRole('ADMIN')")
+@Tag(name = "Admin - Users", description = "Gestión de usuarios (solo ADMIN)")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    // Ports IN (Use Cases)
     private final CreateUserByAdmin createUserByAdmin;
     private final ListUser listUser;
     private final GetUserById getUserById;
     private final UpdateUserByAdmin updateUserByAdmin;
+    private final UpdateUserImageByAdmin updateUserImageByAdmin;
     private final DeleteUserByAdmin deleteUserByAdmin;
-
-    // Mapper
     private final UserRestDtoMapper mapper;
+    private final ImageStoragePort imageStoragePort;
+    private final SearchUsersByEmail searchUsersByEmail;
+    private final FilterUsersByRole filterUsersByRole;
 
-    // ✅ Constructor limpio (sin duplicados)
-    public UserController(
-            CreateUserByAdmin createUserByAdmin,
-            ListUser listUser,
-            GetUserById getUserById,
-            UpdateUserByAdmin updateUserByAdmin,
-            DeleteUserByAdmin deleteUserByAdmin,
-            UserRestDtoMapper mapper) {
+    public UserController(CreateUserByAdmin createUserByAdmin, ListUser listUser, GetUserById getUserById, UpdateUserByAdmin updateUserByAdmin, UpdateUserImageByAdmin updateUserImageByAdmin, DeleteUserByAdmin deleteUserByAdmin, UserRestDtoMapper mapper, ImageStoragePort imageStoragePort, SearchUsersByEmail searchUsersByEmail, FilterUsersByRole filterUsersByRole) {
         this.createUserByAdmin = createUserByAdmin;
         this.listUser = listUser;
         this.getUserById = getUserById;
         this.updateUserByAdmin = updateUserByAdmin;
+        this.updateUserImageByAdmin = updateUserImageByAdmin;
         this.deleteUserByAdmin = deleteUserByAdmin;
         this.mapper = mapper;
+        this.imageStoragePort = imageStoragePort;
+        this.searchUsersByEmail = searchUsersByEmail;
+        this.filterUsersByRole = filterUsersByRole;
     }
 
-    // ============================================
-    // CREATE
-    // ============================================
+    private Integer getUserIdFromDetails(UserDetails userDetails) {
+        if (userDetails instanceof CustomUserDetails customUserDetails) {
+            return customUserDetails.getId();
+        }
+        throw new IllegalStateException("UserDetails no es CustomUserDetails");
+    }
 
-    /**
-     * POST /api/admin/users
-     * Crear nuevo usuario (solo ADMIN)
-     */
-    @PostMapping
+    private String resolveImageUrlFromUser(User user) {
+        if (user == null || user.getUserImageKey() == null || user.getUserImageKey().isBlank()) {
+            return null;
+        }
+        return imageStoragePort.getImageUrl(user.getUserImageKey());
+    }
+
+    private String resolveImageStatus(boolean imageWasSent, String imageUrlResolvedFromUser) {
+        if (imageWasSent) return "PENDING";
+        if (imageUrlResolvedFromUser != null) return "READY";
+        return "NONE";
+    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Crear usuario",
+            description = "Crea un nuevo usuario. Si envías userImage, el imageStatus será PENDING (procesamiento asíncrono)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Usuario creado",
+                    content = @Content(schema = @Schema(implementation = CreateUserByAdminResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o email ya existe"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No tienes rol ADMIN")
+    })
     public ResponseEntity<CreateUserByAdminResponseDTO> createUser(
-            @Valid @RequestBody CreateUserByAdminRequestDTO requestDTO) {
+            @Parameter(description = "Datos del usuario (JSON como archivo)")
+            @Valid @RequestPart("data") CreateUserByAdminRequestDTO requestDTO,
+            @Parameter(description = "Imagen de perfil (opcional)")
+            @RequestPart(value = "userImage", required = false) MultipartFile userImage,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Integer adminId = getUserIdFromDetails(userDetails);
+        boolean imageWasSent = (userImage != null && !userImage.isEmpty());
 
-        logger.info("Admin creando usuario con email: {}", requestDTO.email());
-
-        // 1. DTO → Command
-        CreateUserByAdminCommand command = mapper.toCreateUserByAdminCommand(requestDTO);
-
-        // 2. Ejecutar UseCase
+        CreateUserByAdminCommand command = mapper.toCreateUserByAdminCommand(requestDTO, userImage, adminId);
         User createdUser = createUserByAdmin.handle(command);
 
-        // 3. Domain → DTO
-        CreateUserByAdminResponseDTO responseDTO = mapper.toCreateUserByAdminResponseDTO(createdUser);
+        String imageUrl = resolveImageUrlFromUser(createdUser);
+        String imageStatus = resolveImageStatus(imageWasSent, imageUrl);
 
-        logger.info("Usuario creado exitosamente con ID: {}", createdUser.getIdUser());
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mapper.toCreateUserByAdminResponseDTO(createdUser, imageUrl, imageStatus));
     }
 
-    // ============================================
-    // READ
-    // ============================================
-
-    /**
-     * GET /api/admin/users?page=0&size=10&sortBy=idUser
-     * Listar todos los usuarios con paginación
-     */
     @GetMapping
+    @Operation(summary = "Listar usuarios (paginado)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada",
+                    content = @Content(schema = @Schema(implementation = ListUserResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No tienes rol ADMIN")
+    })
     public ResponseEntity<ListUserResponseDTO> listAllUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "idUser") String sortBy) {
-
-        logger.debug("Admin listando usuarios - page: {}, size: {}, sortBy: {}", page, size, sortBy);
-
-        // 1. Crear Query
+            @Parameter(description = "Número de página (base 0)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Elementos por página") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Campo para ordenar") @RequestParam(defaultValue = "idUser") String sortBy
+    ) {
         ListUsersQuery query = new ListUsersQuery(page, size, sortBy);
-
-        // 2. Ejecutar UseCase
         PageResponse<User> pageResponse = listUser.execute(query);
 
-        // 3. PageResponse<User> → DTO
-        ListUserResponseDTO responseDTO = mapper.toListUserResponseDTO(pageResponse);
+        List<UserResponseDTO> contentWithUrls = pageResponse.content().stream()
+                .map(u -> {
+                    String imageUrl = resolveImageUrlFromUser(u);
+                    String imageStatus = resolveImageStatus(false, imageUrl);
+                    return mapper.toUserResponseDTO(u, imageUrl, imageStatus);
+                })
+                .toList();
 
-        logger.debug("Retornando {} usuarios de {} totales",
-                pageResponse.content().size(),
-                pageResponse.totalElements());
+        ListUserResponseDTO responseDTO = new ListUserResponseDTO(
+                contentWithUrls,
+                pageResponse.totalElements(),
+                pageResponse.totalPages(),
+                LocalDateTime.now()
+        );
 
         return ResponseEntity.ok(responseDTO);
     }
 
-    /**
-     * GET /api/admin/users/{id}
-     * Obtener usuario por ID
-     */
     @GetMapping("/{id}")
+    @Operation(summary = "Obtener usuario por ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuario encontrado",
+                    content = @Content(schema = @Schema(implementation = UserResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No tienes rol ADMIN"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Integer id) {
-        logger.debug("Admin buscando usuario por ID: {}", id);
-
-        // 1. Ejecutar UseCase
         User user = getUserById.handle(id);
 
-        // 2. Domain → DTO
-        UserResponseDTO responseDTO = mapper.toUserResponseDTO(user);
+        String imageUrl = resolveImageUrlFromUser(user);
+        String imageStatus = resolveImageStatus(false, imageUrl);
 
-        logger.debug("Usuario encontrado: {}", user.getEmail());
-        return ResponseEntity.ok(responseDTO);
+        return ResponseEntity.ok(mapper.toUserResponseDTO(user, imageUrl, imageStatus));
     }
 
-    // ============================================
-    // UPDATE
-    // ============================================
-
-    /**
-     * PUT /api/admin/users/{id}
-     * Actualizar usuario
-     */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+            summary = "Actualizar usuario (solo datos)",
+            description = "Actualiza userName, password, role, phone. Para actualizar imagen usar PUT /api/admin/users/{id}/image"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuario actualizado",
+                    content = @Content(schema = @Schema(implementation = UpdateUserByAdminResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No tienes rol ADMIN"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
     public ResponseEntity<UpdateUserByAdminResponseDTO> updateUser(
             @PathVariable Integer id,
-            @Valid @RequestBody UpdateUserByAdminRequestDTO updateDTO) {
+            @Valid @RequestBody UpdateUserByAdminRequestDTO updateDTO,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Integer adminId = getUserIdFromDetails(userDetails);
 
-        logger.info("Admin actualizando usuario con ID: {}", id);
-
-        // 1. DTO → Command
-        UpdateUserByAdminCommand command = mapper.toUpdateUserByAdminCommand(id, updateDTO);
-
-        // 2. Ejecutar UseCase
+        UpdateUserByAdminCommand command = mapper.toUpdateUserByAdminCommand(id, updateDTO, adminId);
         User updatedUser = updateUserByAdmin.handle(command);
 
-        // 3. Domain → DTO
-        UpdateUserByAdminResponseDTO responseDTO = mapper.toUpdateUserByAdminResponseDTO(updatedUser);
+        String imageUrl = resolveImageUrlFromUser(updatedUser);
+        String imageStatus = (imageUrl != null) ? "READY" : "NONE";
 
-        logger.info("Usuario actualizado exitosamente con ID: {}", id);
+        return ResponseEntity.ok(mapper.toUpdateUserByAdminResponseDTO(updatedUser, imageUrl, imageStatus));
+    }
+
+    @PutMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Actualizar solo imagen",
+            description = "Actualiza únicamente la imagen de perfil. Responde con imageStatus PENDING (consulta GET /api/admin/users/{id} para verificar cuando esté READY)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Imagen aceptada (en proceso)",
+                    content = @Content(schema = @Schema(implementation = UpdateUserByAdminResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Archivo inválido"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No tienes rol ADMIN"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
+    public ResponseEntity<UpdateUserByAdminResponseDTO> updateUserImage(
+            @PathVariable Integer id,
+            @RequestPart("userImage") MultipartFile userImage,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Integer adminId = getUserIdFromDetails(userDetails);
+
+        UpdateUserImageByAdminCommand command =
+                mapper.toUpdateUserImageByAdminCommand(id, userImage, adminId);
+
+        User user = updateUserImageByAdmin.handle(command);
+
+        String imageUrl = resolveImageUrlFromUser(user);
+        return ResponseEntity.ok(mapper.toUpdateUserByAdminResponseDTO(user, imageUrl, "PENDING"));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(
+            summary = "Eliminar usuario",
+            description = "Realiza soft delete del usuario (marca deletedAt pero no borra físicamente)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuario eliminado",
+                    content = @Content(schema = @Schema(implementation = DeleteUserByAdminDTO.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No tienes rol ADMIN"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
+    public ResponseEntity<DeleteUserByAdminDTO> deleteUserByAdmin(
+            @PathVariable Integer id,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Integer adminId = getUserIdFromDetails(userDetails);
+
+        DeleteUserByAdminCommand command = new DeleteUserByAdminCommand(id, adminId);
+        deleteUserByAdmin.handle(command);
+
+        return ResponseEntity.ok(mapper.toDeleteUserByAdminDTO(id));
+    }
+
+    @GetMapping("/by-email")
+    @Operation(
+            summary = "Buscar por email",
+            description = "Busca usuarios cuyo email contenga el texto especificado (case-insensitive)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Búsqueda completada",
+                    content = @Content(schema = @Schema(implementation = UserResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No tienes rol ADMIN")
+    })
+    public ResponseEntity<List<UserResponseDTO>> getUsersByEmail(
+            @Parameter(description = "Texto a buscar en el email") @RequestParam String email
+    ) {
+        List<User> users = searchUsersByEmail.handle(email);
+
+        List<UserResponseDTO> dtoList = users.stream()
+                .map(u -> {
+                    String imageUrl = resolveImageUrlFromUser(u);
+                    String imageStatus = resolveImageStatus(false, imageUrl);
+                    return mapper.toUserResponseDTO(u, imageUrl, imageStatus);
+                })
+                .toList();
+
+        return ResponseEntity.ok(dtoList);
+    }
+
+
+    @GetMapping("/filter-by-role")
+    @Operation(
+            summary = "Filtrar usuarios por rol",
+            description = "Retorna lista paginada de usuarios filtrados por rol (ADMIN, EMPLOYEE, CLIENT)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuarios filtrados",
+                    content = @Content(schema = @Schema(implementation = ListUserResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Rol inválido"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No tienes rol ADMIN")
+    })
+    public ResponseEntity<ListUserResponseDTO> filterUsersByRole(
+            @Parameter(description = "Rol a filtrar (ADMIN, EMPLOYEE, CLIENT)", example = "CLIENT")
+            @RequestParam String role,
+            @Parameter(description = "Número de página (base 0)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Elementos por página", example = "10")
+            @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Campo para ordenar", example = "idUser")
+            @RequestParam(defaultValue = "idUser") String sortBy
+    ) {
+        Role roleEnum;
+        try {
+            roleEnum = Role.valueOf(role.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Rol inválido. Valores permitidos: ADMIN, EMPLOYEE, CLIENT");
+        }
+
+        FilterUsersByRoleQuery query = new FilterUsersByRoleQuery(roleEnum, page, size, sortBy);
+        PageResponse<User> pageResponse = filterUsersByRole.handle(query);
+
+        List<UserResponseDTO> contentWithUrls = pageResponse.content().stream()
+                .map(u -> {
+                    String imageUrl = resolveImageUrlFromUser(u);
+                    String imageStatus = resolveImageStatus(false, imageUrl);
+                    return mapper.toUserResponseDTO(u, imageUrl, imageStatus);
+                })
+                .toList();
+
+        ListUserResponseDTO responseDTO = new ListUserResponseDTO(
+                contentWithUrls,
+                pageResponse.totalElements(),
+                pageResponse.totalPages(),
+                LocalDateTime.now()
+        );
+
         return ResponseEntity.ok(responseDTO);
     }
 
-    // ============================================
-    // DELETE
-    // ============================================
 
-    /**
-     * DELETE /api/admin/users/{id}
-     * Eliminar usuario (soft delete)
-     * ✅ SOLO 1 método - sin duplicado
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<DeleteUserByAdminDTO> deleteUserByAdmin(
-            @PathVariable Integer id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        logger.info("Admin eliminando usuario con ID: {}", id);
-
-        Integer adminId = getUserIdFromDetails(userDetails);
-        DeleteUserByAdminCommand command = new DeleteUserByAdminCommand(id, adminId);
-
-        // Ejecutar UseCase (Soft Delete)
-        deleteUserByAdmin.handle(command);
-
-        logger.info("Usuario {} marcado como eliminado por admin {}", id, adminId);
-
-        // ✅ Retorna DTO con mensaje
-        DeleteUserByAdminDTO response = mapper.toDeleteUserByAdminDTO(id);
-        return ResponseEntity.ok(response);  // ✅ OK en lugar de noContent()
-    }
-
-
-
-
-    // ============================================
-    // MÉTODOS PRIVADOS (HELPERS)
-    // ============================================
-
-    /**
-     * Extrae el ID del usuario desde CustomUserDetails
-     * ✅ Auditoría: registra quién hizo la acción
-     */
-    private Integer getUserIdFromDetails(UserDetails userDetails) {
-        if (userDetails instanceof CustomUserDetails) {
-            return ((CustomUserDetails) userDetails).getId();
-        }
-        throw new RuntimeException("UserDetails no es CustomUserDetails");
-    }
 }

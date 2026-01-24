@@ -1,5 +1,7 @@
 package com.tetris.tetrisburger_backend.application.usecase.user;
 
+import com.tetris.tetrisburger_backend.application.event.UserAdminImageChangeRequestedEvent;
+import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.UpdateUserByAdmin;
@@ -7,6 +9,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.user.command.UpdateUserByA
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,55 +22,60 @@ public class UpdateUserByAdminUseCase implements UpdateUserByAdmin {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public UpdateUserByAdminUseCase(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UpdateUserByAdminUseCase(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            ApplicationEventPublisher eventPublisher
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
-    /**
-     * SOLO ADMIN: Puede actualizar ANY usuario con TODOS los campos
-     */
     @Override
     public User handle(UpdateUserByAdminCommand command) {
-        logger.info("Admin actualizando usuario ID: {}", command.idUser());
+        logger.info("Admin {} actualizando usuario ID: {}", command.updatedBy(), command.idUser());
 
-        // 1. Buscar usuario existente
-        User existingUser = userRepository.findUserById(command.idUser())
-                .orElseThrow(() -> {
-                    logger.error("Usuario no encontrado - ID: {}", command.idUser());
-                    return new UserNotFoundException("Usuario no encontrado");
-                });
+        User user = userRepository.findUserById(command.idUser())
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
-        // 2. Actualizar campos (Admin puede actualizar TODO)
-        if (command.userName() != null && !command.userName().isBlank()) {
-            existingUser.setUserName(command.userName());
-        }
+        // Guardar old key para borrar después del commit (si hay nueva imagen)
+        String oldImageKey = user.getUserImageKey();
 
-        if (command.email() != null && !command.email().isBlank()) {
-            existingUser.setEmail(command.email());
-        }
+        // Actualizar perfil completo (BD)
+        user.updateByAdmin(
+                command.userName(),
+                command.email(),
+                command.role(),
+                command.phone(),
+                command.updatedBy()
+        );
 
+        // Actualizar contraseña si se proporcionó
         if (command.password() != null && !command.password().isBlank()) {
-            existingUser.setPassword(passwordEncoder.encode(command.password()));
+            String hashedPassword = passwordEncoder.encode(command.password());
+            user.resetPassword(hashedPassword, command.updatedBy());
         }
 
-        if (command.phone() != null && !command.phone().isBlank()) {
-            existingUser.setPhone(command.phone());
+        // Guardar cambios de usuario (sin imagen todavía)
+        User updatedUser = userRepository.saveUser(user);
+
+        // Publicar evento para manejar imagen AFTER_COMMIT
+        FileData image = command.userImage();
+        if (image != null && image.bytes() != null && image.bytes().length > 0) {
+            eventPublisher.publishEvent(new UserAdminImageChangeRequestedEvent(
+                    updatedUser.getIdUser(),
+                    image.bytes(),
+                    image.contentType(),
+                    image.originalFilename(),
+                    oldImageKey,
+                    command.updatedBy()
+            ));
         }
 
-        if (command.userImage() != null && !command.userImage().isBlank()) {
-            existingUser.setUserImage(command.userImage());
-        }
 
-        if (command.role() != null) {
-            existingUser.setRole(command.role());
-        }
-
-        // 3. Guardar cambios
-        User updatedUser = userRepository.saveUser(existingUser);
-
-        logger.info("Usuario actualizado exitosamente - ID: {}", updatedUser.getIdUser());
         return updatedUser;
     }
 }

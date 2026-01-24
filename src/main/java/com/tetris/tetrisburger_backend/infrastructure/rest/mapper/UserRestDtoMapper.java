@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.mapper;
 
+import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
@@ -10,68 +11,80 @@ import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Mapper para convertir DTOs ↔ Commands ↔ Domain Models
- *
- * Flujo entrada:  RequestDTO → Command
- * Flujo salida:   User (Domain) → ResponseDTO
- */
 @Mapper(componentModel = "spring")
 public interface UserRestDtoMapper {
 
     // ============================================
-    // DTO → COMMAND (ENTRADA)
+    // DTO → COMMAND
     // ============================================
 
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "password", target = "password")
     RegisterUserCommand toRegisterCommand(RegisterUserRequestDTO dto);
 
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "password", target = "password")
     LoginUserCommand toLoginCommand(LoginRequestDTO dto);
 
-
-
     default CreateUserByAdminCommand toCreateUserByAdminCommand(
-            CreateUserByAdminRequestDTO dto) {
+            CreateUserByAdminRequestDTO dto,
+            MultipartFile userImage,
+            Integer createdBy
+    ) {
         if (dto == null) return null;
 
         return new CreateUserByAdminCommand(
                 dto.userName(),
                 dto.email(),
                 dto.password(),
-                dto.userImage(),
+                userImage,
                 stringToRole(dto.role()),
-                dto.phone()
-
+                dto.phone(),
+                createdBy
         );
     }
 
     default UpdateProfileUserCommand toUpdateProfileUserCommand(
             Integer idUser,
-            UpdateProfileUserRequestDTO dto) {
+            UpdateProfileUserRequestDTO dto
+    ) {
         if (dto == null) return null;
 
         return new UpdateProfileUserCommand(
                 idUser,
                 dto.userName(),
                 dto.password(),
-                dto.userImage(),
+                null,
                 dto.phone()
-
         );
     }
 
+    default UpdateProfileImageCommand toUpdateProfileImageCommand(
+            Integer idUser,
+            MultipartFile userImage,
+            Integer updatedBy
+    ) {
+        FileData fd = multipartToFileData(userImage);
+        if (fd == null || fd.bytes() == null || fd.bytes().length == 0) {
+            throw new IllegalArgumentException("userImage es requerido");
+        }
+
+        return new UpdateProfileImageCommand(
+                idUser,
+                fd.bytes(),
+                fd.contentType(),
+                fd.originalFilename(),
+                updatedBy
+        );
+    }
 
     default UpdateUserByAdminCommand toUpdateUserByAdminCommand(
             Integer idUser,
-            UpdateUserByAdminRequestDTO dto) {
+            UpdateUserByAdminRequestDTO dto,
+            Integer updatedBy
+    ) {
         if (dto == null) return null;
 
         return new UpdateUserByAdminCommand(
@@ -79,10 +92,29 @@ public interface UserRestDtoMapper {
                 dto.userName(),
                 dto.email(),
                 dto.password(),
-                dto.userImage(),
+                null,
                 stringToRole(dto.role()),
-                dto.phone()
+                dto.phone(),
+                updatedBy
+        );
+    }
 
+    default UpdateUserImageByAdminCommand toUpdateUserImageByAdminCommand(
+            Integer idUser,
+            MultipartFile userImage,
+            Integer updatedBy
+    ) {
+        FileData fd = multipartToFileData(userImage);
+        if (fd == null || fd.bytes() == null || fd.bytes().length == 0) {
+            throw new IllegalArgumentException("userImage es requerido");
+        }
+
+        return new UpdateUserImageByAdminCommand(
+                idUser,
+                fd.bytes(),
+                fd.contentType(),
+                fd.originalFilename(),
+                updatedBy
         );
     }
 
@@ -92,123 +124,112 @@ public interface UserRestDtoMapper {
 
     @Mapping(source = "idUser", target = "idUser")
     @Mapping(source = "adminId", target = "deletedBy")
-    DeleteUserByAdminCommand toDeleteUserByAdminCommand(
-            Integer idUser,
-            Integer adminId);
-
+    DeleteUserByAdminCommand toDeleteUserByAdminCommand(Integer idUser, Integer adminId);
 
     // ============================================
-    // DOMAIN USER → RESPONSE DTO (SALIDA)
+    // DOMAIN → RESPONSE DTO (salida)
     // ============================================
 
-    // Respuesta de registro
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "userImage", target = "userImage")
-    @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "createdAt", target = "createdAt")
     RegisterUserResponseDTO toRegisterResponseDTO(User user);
 
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "userImage", target = "userImage")
-    @Mapping(source = "phone", target = "phone")
+    // --- Legacy (sin URL) ---
     @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
     UserResponseDTO toUserResponseDTO(User user);
-    // Mapea lista de usuarios (helper method)
-    @Mapping(source = "idUser", target = "id")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
+
     @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
     List<UserResponseDTO> toUserResponseDTOList(List<User> users);
 
-    //  Mapea PageResponse<User> → ListUserResponseDTO
+    @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
+    CreateUserByAdminResponseDTO toCreateUserByAdminResponseDTO(User user);
+
+    @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
+    UpdateUserByAdminResponseDTO toUpdateUserByAdminResponseDTO(User user);
+
+    UpdateProfileUserResponseDTO toUpdateProfileUserResponseDTO(User user);
+
+    @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
+    GetUserProfileResponseDTO toGetUserProfileResponseDTO(User user);
+
+    // --- Con URL + STATUS (los que usan tus controllers) ---
+    @Mapping(source = "user.role", target = "role", qualifiedByName = "roleToString")
+    @Mapping(source = "imageUrl", target = "userImage")
+    @Mapping(source = "imageStatus", target = "imageStatus")
+    UserResponseDTO toUserResponseDTO(User user, String imageUrl, String imageStatus);
+
+    @Mapping(source = "user.role", target = "role", qualifiedByName = "roleToString")
+    @Mapping(source = "imageUrl", target = "userImage")
+    @Mapping(source = "imageStatus", target = "imageStatus")
+    CreateUserByAdminResponseDTO toCreateUserByAdminResponseDTO(User user, String imageUrl, String imageStatus);
+
+    @Mapping(source = "user.role", target = "role", qualifiedByName = "roleToString")
+    @Mapping(source = "imageUrl", target = "userImage")
+    @Mapping(source = "imageStatus", target = "imageStatus")
+    UpdateUserByAdminResponseDTO toUpdateUserByAdminResponseDTO(User user, String imageUrl, String imageStatus);
+
+    @Mapping(source = "imageUrl", target = "userImage")
+    @Mapping(source = "imageStatus", target = "imageStatus")
+    UpdateProfileUserResponseDTO toUpdateProfileUserResponseDTO(User user, String imageUrl, String imageStatus);
+
+    @Mapping(source = "user.role", target = "role", qualifiedByName = "roleToString")
+    @Mapping(source = "imageUrl", target = "userImage")
+    @Mapping(source = "imageStatus", target = "imageStatus")
+    GetUserProfileResponseDTO toGetUserProfileResponseDTO(User user, String imageUrl, String imageStatus);
+
+    // ============================================
+    // Paginación
+    // ============================================
+
     default ListUserResponseDTO toListUserResponseDTO(PageResponse<User> pageResponse) {
         if (pageResponse == null) return null;
 
-        List<UserResponseDTO> userDTOs = toUserResponseDTOList(pageResponse.content());
-
         return new ListUserResponseDTO(
-                userDTOs,
+                toUserResponseDTOList(pageResponse.content()),
                 pageResponse.totalElements(),
                 pageResponse.totalPages(),
                 LocalDateTime.now()
         );
     }
 
-    // Respuesta de admin creando usuario (con auditoría)
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "userImage", target = "userImage")
-    @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
-    @Mapping(source = "createdBy", target = "createdBy")
-    @Mapping(source = "updatedBy", target = "updatedBy")
-    CreateUserByAdminResponseDTO toCreateUserByAdminResponseDTO(User user);
+    default ListUserResponseDTO toListUserResponseDTO(PageResponse<User> pageResponse, List<UserResponseDTO> contentWithUrls) {
+        if (pageResponse == null) return null;
 
-    // Respuesta de admin actualizando usuario (con auditoría)
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "userImage", target = "userImage")
-    @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
-    @Mapping(source = "createdBy", target = "createdBy")
-    @Mapping(source = "updatedBy", target = "updatedBy")
-    UpdateUserByAdminResponseDTO toUpdateUserByAdminResponseDTO(User user);
+        return new ListUserResponseDTO(
+                contentWithUrls,
+                pageResponse.totalElements(),
+                pageResponse.totalPages(),
+                LocalDateTime.now()
+        );
+    }
 
-    // Respuesta de usuario actualizando su perfil
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "userImage", target = "userImage")
-    @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
-    @Mapping(source = "createdBy", target = "createdBy")
-    @Mapping(source = "updatedBy", target = "updatedBy")
-    UpdateProfileUserResponseDTO toUpdateProfileUserResponseDTO(User user);
+    // ============================================
+    // DELETE DTOS
+    // ============================================
 
-    @Mapping(source = "idUser", target = "idUser")
-    @Mapping(source = "userName", target = "userName")
-    @Mapping(source = "email", target = "email")
-    @Mapping(source = "userImage", target = "userImage")
-    @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "createdAt", target = "createdAt")
-    GetUserProfileResponseDTO toGetUserProfileResponseDTO(User user);
-
-    // Respuesta de eliminación de perfil
     default DeleteProfileUserDTO toDeleteProfileUserDTO(Integer idUser) {
-        return new DeleteProfileUserDTO(
-                "Perfil eliminado correctamente",
-                idUser
-        );
+        return new DeleteProfileUserDTO("Perfil eliminado correctamente", idUser);
     }
 
-    // Respuesta de admin eliminando usuario
     default DeleteUserByAdminDTO toDeleteUserByAdminDTO(Integer idUser) {
-        return new DeleteUserByAdminDTO(
-                "Usuario eliminado correctamente",  // message
-                idUser                              // idUser
-        );
+        return new DeleteUserByAdminDTO("Usuario eliminado correctamente", idUser);
     }
 
+    // ============================================
+    // Helpers
+    // ============================================
 
-    // ============================================
-    // CONVERSIONES COMPLEJAS
-    // ============================================
+    @Named("multipartToFileData")
+    default FileData multipartToFileData(MultipartFile file) {
+        if (file == null || file.isEmpty()) return null;
+        try {
+            return new FileData(
+                    file.getOriginalFilename(),
+                    file.getContentType(),
+                    file.getBytes()
+            );
+        } catch (IOException e) {
+            throw new RuntimeException("No se pudo leer el archivo", e);
+        }
+    }
 
     @Named("stringToRole")
     default Role stringToRole(String roleStr) {
@@ -222,8 +243,6 @@ public interface UserRestDtoMapper {
 
     @Named("roleToString")
     default String roleToString(Role role) {
-        if (role == null) return null;
-        return role.name();
+        return role == null ? null : role.name();
     }
-
 }

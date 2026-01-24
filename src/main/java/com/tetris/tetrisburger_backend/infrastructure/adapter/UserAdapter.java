@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.adapter;
 
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
+import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.query.ListUsersQuery;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -115,6 +117,8 @@ public class UserAdapter implements UserRepository {
         }
     }
 
+
+
     @Override
     public void softDeleteUser(Integer idUser, Integer deletedBy) {
         logger.info("Marcando usuario como eliminado (soft delete) - ID: {}, eliminado por: {}",
@@ -146,4 +150,43 @@ public class UserAdapter implements UserRepository {
         // ✅ CAMBIO: Con filtro de soft delete
         return jpa.existsByIdUserAndDeletedAtIsNull(id);
     }
+
+    @Override
+    public List<User> searchUsersByEmail(String emailPart) {
+        logger.debug("Buscando usuarios activos por email parcial: {}", emailPart);
+
+        String term = (emailPart == null) ? "" : emailPart.trim();
+
+        return jpa.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(term)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public PageResponse<User> findByRole(Role role, Pageable pageable) {
+        logger.debug("Consultando usuarios activos con rol {} - página: {}, tamaño: {}",
+                role, pageable.getPageNumber(), pageable.getPageSize());
+
+        Page<UserEntity> page = jpa.findByRoleAndDeletedAtIsNull(role, pageable);
+
+        List<User> users = page.getContent().stream()
+                .map(mapper::toDomain)
+                .toList();
+
+        logger.info("Usuarios con rol {} recuperados: {} de {} (página {}/{})",
+                role, users.size(), page.getTotalElements(),
+                page.getNumber() + 1, page.getTotalPages());
+
+        return new PageResponse<>(
+                users,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages()
+        );
+    }
+
+
+
 }

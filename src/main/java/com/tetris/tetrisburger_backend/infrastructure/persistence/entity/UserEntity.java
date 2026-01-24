@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.entity;
 
+import com.tetris.tetrisburger_backend.domain.model.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,8 +38,12 @@ public class UserEntity {
     @Column(name = "user_image")
     private String userImage;
 
-    @Column(name = "role", nullable = false)
-    private String role;
+    @Column(name = "user_image_key")
+    private String userImageKey;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 20)
+    private Role role;
 
     @Column(name = "phone", length = 20)
     private String phone;

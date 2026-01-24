@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.application.usecase.user;
 
+import com.tetris.tetrisburger_backend.application.event.UserImageUploadRequestedEvent;
 import com.tetris.tetrisburger_backend.domain.exception.UserAlreadyExistsException;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.CreateUserByAdmin;
@@ -8,8 +9,11 @@ import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 
 @Service
 @Transactional
@@ -19,37 +23,60 @@ public class CreateUserByAdminUseCase implements CreateUserByAdmin {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public CreateUserByAdminUseCase(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public CreateUserByAdminUseCase(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            ApplicationEventPublisher eventPublisher
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
     public User handle(CreateUserByAdminCommand cmd) {
-        logger.info("Admin creando usuario con email: {}", cmd.email());
+        logger.info("Admin {} creando usuario con email: {}", cmd.createdBy(), cmd.email());
 
-        // 1. Verificar que el email no existe
         if (userRepository.existsByEmail(cmd.email())) {
-            logger.warn("Email ya registrado: {}", cmd.email());
             throw new UserAlreadyExistsException("El email ya está registrado");
         }
 
-        // 2. Crear usuario (usar setters, no constructor con 13 parámetros)
-        User newUser = new User();
-        newUser.setUserName(cmd.userName());
-        newUser.setEmail(cmd.email());
-        newUser.setPassword(passwordEncoder.encode(cmd.password()));
-        newUser.setPhone(cmd.phone());
-        newUser.setUserImage(cmd.userImage());
-        newUser.setRole(cmd.role());
-        // Los demás (createdAt, updatedAt, etc.) se manejan en la Entity con @CreationTimestamp
+        String hashedPassword = passwordEncoder.encode(cmd.password());
 
-        // 3. Guardar usuario
-        // userRepository.saveUser() usará UserEntityMapper.toEntity() internamente
+        // Crear usuario sin imagen todavía
+        User newUser = User.createByAdmin(
+                cmd.userName(),
+                cmd.email(),
+                hashedPassword,
+                cmd.role(),
+                cmd.phone(),
+                null,
+                null,
+                cmd.createdBy()
+        );
+
         User savedUser = userRepository.saveUser(newUser);
 
-        logger.info("Usuario creado exitosamente con ID: {}", savedUser.getIdUser());
+        // Publicar evento: subir imagen después del commit
+        if (cmd.userImage() != null && !cmd.userImage().isEmpty()) {
+            var file = cmd.userImage();
+            try {
+                eventPublisher.publishEvent(new UserImageUploadRequestedEvent(
+                        savedUser.getIdUser(),
+                        file.getBytes(),
+                        file.getContentType(),
+                        file.getOriginalFilename(),
+                        cmd.createdBy()
+                ));
+            } catch (IOException e) {
+                throw new RuntimeException("No se pudo leer la imagen del usuario", e);
+                // o tu ImageUploadException si prefieres
+            }
+        }
+
+
         return savedUser;
     }
 }

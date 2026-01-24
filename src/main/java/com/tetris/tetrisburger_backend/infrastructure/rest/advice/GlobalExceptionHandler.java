@@ -46,6 +46,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(response);
     }
 
+    // ========================================
+    // USER EXCEPTIONS
+    // ========================================
+
     // 409 CONFLICT — reglas de negocio/únicos
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<MessageResponseDTO> handleUserExists(UserAlreadyExistsException ex, WebRequest request) {
@@ -67,12 +71,38 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Credenciales inválidas");
     }
 
-    // 400 BAD REQUEST — token inválido (puedes cambiar a 401 si prefieres)
+    // 400 BAD REQUEST — token inválido
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<MessageResponseDTO> handleInvalidToken(InvalidTokenException ex, WebRequest request) {
         logger.warn("Token inválido: {} - Path: {}", ex.getMessage(), request.getDescription(false));
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
+
+    // ========================================
+    // IMAGE EXCEPTIONS
+    // ========================================
+
+    // 500 INTERNAL SERVER ERROR — fallo al subir imagen
+    @ExceptionHandler(ImageUploadException.class)
+    public ResponseEntity<MessageResponseDTO> handleImageUpload(ImageUploadException ex, WebRequest request) {
+        logger.error("Error al subir imagen: {} - Path: {}", ex.getMessage(), request.getDescription(false), ex);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo subir la imagen. Intenta de nuevo.");
+    }
+
+    // ========================================
+    // PQRS EXCEPTIONS
+    // ========================================
+
+    // 400 BAD REQUEST — PQRS ya eliminada
+    @ExceptionHandler(PqrsAlreadyDeletedException.class)
+    public ResponseEntity<MessageResponseDTO> handlePqrsAlreadyDeleted(PqrsAlreadyDeletedException ex, WebRequest request) {
+        logger.warn("PQRS ya eliminada o no encontrada: {} - Path: {}", ex.getMessage(), request.getDescription(false));
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    // ========================================
+    // DATABASE EXCEPTIONS
+    // ========================================
 
     // 409 CONFLICT — violación de integridad (únicos/FK)
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -89,6 +119,10 @@ public class GlobalExceptionHandler {
         }
         return buildErrorResponse(HttpStatus.CONFLICT, message);
     }
+
+    // ========================================
+    // VALIDATION EXCEPTIONS
+    // ========================================
 
     // 400 BAD REQUEST — argumentos de negocio inválidos
     @ExceptionHandler(IllegalArgumentException.class)
@@ -143,12 +177,20 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    // ========================================
+    // SECURITY EXCEPTIONS
+    // ========================================
+
     // 403 FORBIDDEN — denegado por seguridad
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<MessageResponseDTO> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
         logger.warn("Access denied - Path: {}", req.getRequestURI());
         return buildErrorResponse(HttpStatus.FORBIDDEN, "Acceso denegado");
     }
+
+    // ========================================
+    // HTTP EXCEPTIONS
+    // ========================================
 
     // 405 METHOD NOT ALLOWED
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -157,6 +199,10 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage());
     }
 
+    // ========================================
+    // FALLBACK
+    // ========================================
+
     // 500 INTERNAL SERVER ERROR — fallback
     @ExceptionHandler(Exception.class)
     public ResponseEntity<MessageResponseDTO> handleGenericException(Exception ex, WebRequest request) {
@@ -164,16 +210,4 @@ public class GlobalExceptionHandler {
                 request.getDescription(false), ex.getClass().getSimpleName(), ex.getMessage(), ex);
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
     }
-
-
-    //PQRS
-
-
-    // 400 BAD REQUEST — PQRS ya eliminada
-    @ExceptionHandler(PqrsAlreadyDeletedException.class)
-    public ResponseEntity<MessageResponseDTO> handlePqrsAlreadyDeleted(PqrsAlreadyDeletedException ex, WebRequest request) {
-        logger.warn("PQRS ya eliminada o no encontrada: {} - Path: {}", ex.getMessage(), request.getDescription(false));
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
-
 }
