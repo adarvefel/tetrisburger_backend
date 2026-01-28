@@ -1,4 +1,3 @@
-// src/main/java/com/tetris/tetrisburger_backend/infrastructure/config/AuditorAwareImpl.java
 package com.tetris.tetrisburger_backend.infrastructure.config;
 
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
@@ -18,30 +17,41 @@ public class AuditorAwareImpl implements AuditorAware<Integer> {
 
     @Override
     public Optional<Integer> getCurrentAuditor() {
+        logger.info("==================== getCurrentAuditor LLAMADO ====================");
+
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if (authentication == null ||
-                    !authentication.isAuthenticated() ||
-                    "anonymousUser".equals(authentication.getPrincipal())) {
-                logger.debug("Usuario no autenticado");
-                return Optional.empty();
+            if (authentication == null) {
+                logger.warn("Authentication es NULL");
+                return Optional.of(999);  // ✅ Valor temporal para debug
+            }
+
+            if (!authentication.isAuthenticated()) {
+                logger.warn("Usuario NO autenticado");
+                return Optional.of(999);
+            }
+
+            if ("anonymousUser".equals(authentication.getPrincipal())) {
+                logger.warn("Usuario anónimo");
+                return Optional.of(999);
             }
 
             Object principal = authentication.getPrincipal();
+            logger.info("Principal class: {}", principal.getClass().getName());
 
             if (principal instanceof CustomUserDetails userDetails) {
                 Integer id = userDetails.getId();
-                logger.debug("Auditor ID registrado desde principal: {}", id);
+                logger.info("Auditor ID registrado desde principal: {}", id);
                 return Optional.of(id);
             }
 
             logger.warn("Principal no soportado para auditoría: {}", principal.getClass());
-            return Optional.empty();
+            return Optional.of(999);
 
         } catch (Exception e) {
             logger.error("Error obteniendo auditor: {}", e.getMessage(), e);
-            return Optional.empty();
+            return Optional.of(999);
         }
     }
 }

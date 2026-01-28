@@ -1,15 +1,22 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.product;
 
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
+
+
 
 @Data
 @Builder
-public class ProductResponseDTO {
+@NoArgsConstructor
+@AllArgsConstructor
+public class DeleteProductResponseDTO {
+
     private Integer id;
     private String name;
     private String description;
@@ -19,12 +26,15 @@ public class ProductResponseDTO {
     private String productType;
     private String ingredientType;
     private Boolean burgerIngredient;
-    private String imageUrl;       // URL completa HTTPS (puede ser null)
-    private String imageStatus;    // ← AGREGAR: "NONE", "PENDING", "READY"
+    private String imageUrl;
+    private String imageStatus;
     private Integer productCategoryId;
     private Integer supplierId;
+
     private Instant createdAt;
     private Instant updatedAt;
+    private Instant deletedAt;
     private Integer createdBy;
     private Integer updatedBy;
+    private Integer deletedBy;
 }

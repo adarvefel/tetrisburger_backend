@@ -1,16 +1,15 @@
 package com.tetris.tetrisburger_backend.infrastructure.adapter;
 
+import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
 import com.tetris.tetrisburger_backend.domain.port.out.ImageUploadResult;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.IOException;
 import java.util.UUID;
 
 @Component
@@ -30,11 +29,24 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         this.region = region;
     }
 
-    // ====== NUEVO MÉTODO DEL PUERTO (el que usará tu listener) ======
+    // ====== MÉTODO PARA USUARIOS ======
     @Override
     public ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName) throws Exception {
         return uploadImage(bytes, contentType, originalFileName, "users/");
     }
+
+    // ====== MÉTODO PARA PRODUCTOS ======
+    @Override
+    public ImageUploadResult uploadProductImage(FileData fileData) {
+        // Retorna ImageUploadResult directamente (no String)
+        return uploadImage(
+                fileData.bytes(),
+                fileData.contentType(),
+                fileData.originalFilename(),
+                "products/"
+        );
+    }
+
 
     // ====== Helper para reusar lógica y permitir prefijos ======
     public ImageUploadResult uploadImage(byte[] bytes, String contentType, String originalFileName, String prefix) {
@@ -80,15 +92,10 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
                 .contentType(contentType)
                 .build();
 
-        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes)); // AWS SDK v2 [web:1752]
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
 
+        // Retorna key y nombre original
         return new ImageUploadResult(key, originalFileName);
-    }
-
-    // ====== (Opcional) helper para el controller/usecase que todavía tenga MultipartFile ======
-    public ImageUploadResult uploadUserImage(MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) return null;
-        return uploadImage(file.getBytes(), file.getContentType(), file.getOriginalFilename(), "users/");
     }
 
     @Override

@@ -381,12 +381,12 @@ curl --location --request DELETE 'http://localhost:8080/api/profile' \
 eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZGFydmVmZWxpcGU1OEBnbWFpbC5jb20iLCJpYXQiOjE3NjE1MDM5MzIsImV4cCI6MTc2MTUwNzUzMn0.QpolO523GCrrVSm8qTh3Tjmyp-LhaSc7C-H4KSDddzc'
 # Módulo de Productos - TetrisBurger API
 
+# API de Productos - TetrisBurger
+
 ## Introducción
 
-El módulo de **Productos** de **TetrisBurger** permite la gestión completa de los productos ofrecidos por el
-restaurante.  
-Todos los endpoints requieren **rol ADMIN**, ya que las operaciones incluyen creación, actualización, eliminación,
-ajuste de stock y disponibilidad, además de la consulta de productos.
+El módulo de **Productos** de **TetrisBurger** permite la gestión completa de los productos ofrecidos por el restaurante.  
+Todos los endpoints requieren autenticación JWT. Las operaciones de escritura (crear, actualizar, eliminar) requieren **rol ADMIN o EMPLOYEE**.
 
 La API se expone en:  
 `http://localhost:8080/api/products`
@@ -396,278 +396,509 @@ Cada producto contiene:
 - `id`: Identificador único.
 - `name`: Nombre del producto.
 - `description`: Descripción breve.
-- `quantity`: Cantidad disponible.
+- `quantity`: Cantidad disponible en stock.
 - `price`: Precio del producto.
-- `availability`: Estado de disponibilidad (`true` o `false`).
-- `productType`: Tipo de producto (FOOD, DRINK, etc.).
-- `ingredientType`: Tipo de ingrediente (BURGER, SAUCE, etc.).
+- `availability`: Estado de disponibilidad (true o false).
+- `productType`: Tipo de producto (FOOD, DRINK, SIDE, MEAT, etc.).
+- `ingredientType`: Tipo de ingrediente (BURGER, SAUCE, VEGETABLE, etc.).
 - `burgerIngredient`: Indica si es ingrediente de hamburguesa.
+- `imageUrl`: URL de la imagen en S3.
+- `imageStatus`: Estado de la imagen (NONE, PENDING, READY).
 - `productCategoryId`: Categoría del producto.
 - `supplierId`: Proveedor del producto.
 
 Ejemplo de producto:
 
-json
+```json
 {
-"id": 16,
-"name": "Burger King XXXL",
-"description": "Mista",
-"quantity": 25,
-"price": 250000.00,
-"availability": true,
-"productType": "FOOD",
-"ingredientType": "BURGER",
-"burgerIngredient": false,
-"productCategoryId": 1,
-"supplierId": 2
+  "id": 33,
+  "name": "Carne de cuca extra  xxxLLnegra",
+  "description": "Porcion de mi mechas de 300gr",
+  "quantity": 20,
+  "price": 2000,
+  "availability": true,
+  "productType": "SIDE",
+  "ingredientType": "SIDE",
+  "burgerIngredient": true,
+  "imageUrl": null,
+  "imageStatus": "NONE",
+  "productCategoryId": 2,
+  "supplierId": 2,
+  "createdAt": "2026-01-27T19:16:57.412166100Z",
+  "updatedAt": "2026-01-27T19:16:57.412166100Z",
+  "createdBy": 2,
+  "updatedBy": 2
 }
-
 Crear un producto
 Método: POST
 URL: /api/products
-Descripción: Crea un nuevo producto.
+Descripción: Crea un nuevo producto con imagen opcional.
+Content-Type: multipart/form-data
+Rol requerido: ADMIN, EMPLOYEE
+
 Cuerpo del Request:
 
+Campo data (JSON string):
+
+json
 {
-"name": "Burger King XXXL",
-"description": "Mista",
-"quantity": 25,
-"price": 250000.00,
-"availability": true,
-"productType": "FOOD",
-"ingredientType": "BURGER",
-"burgerIngredient": false,
-"productCategoryId": 1,
-"supplierId": 2
+  "name": "Carne de mechas",
+  "description": "Porcion de mi mechas de 300gr",
+  "quantity": 20,
+  "price": 2000.00,
+  "availability": true,
+  "productType": "SIDE",
+  "ingredientType": "SIDE",
+  "burgerIngredient": true,
+  "productCategoryId": 2,
+  "supplierId": 2
 }
+Campo productImage: Archivo de imagen (opcional, máx 5MB)
 
-Rol requerido: ADMIN
-Ejemplo de Response: Devuelve el producto creado con id.
+Ejemplo de Response (201 Created):
+
+json
+{
+  "id": 21,
+  "name": "Carne de mechas",
+  "description": "Porcion de mi mechas de 300gr",
+  "quantity": 20,
+  "price": 2000.00,
+  "availability": true,
+  "productType": "SIDE",
+  "ingredientType": "SIDE",
+  "burgerIngredient": true,
+  "imageUrl": null,
+  "imageStatus": "PENDING",
+  "productCategoryId": 2,
+  "supplierId": 2
+}
+bash
 curl --location 'http://localhost:8080/api/products' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzkyMjk2LCJleHAiOjE3NjIzOTU4OTZ9.8FPvuCXMoOGFsL19_ncGQS8gXLhpX4W5BOra4b52P0Y' \
---header 'Content-Type: application/json' \
---data '{
-"name": "Burger King",
-"description": "Mista",
-"quantity": 25,
-"price": 10000.00,
-"availability": true,
-"productType": "FOOD",
-"ingredientType": "BURGER",
-"burgerIngredient": false,
-"productCategoryId": 1,
-"supplierId": 2
-}'
-
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...' \
+--form 'data="{\"name\":\"Carne de mechas\",\"description\":\"Porcion de mi mechas de 300gr\",\"quantity\":20,\"price\":2000.00,\"availability\":true,\"productType\":\"SIDE\",\"ingredientType\":\"SIDE\",\"burgerIngredient\":true,\"productCategoryId\":2,\"supplierId\":2}"' \
+--form 'productImage=@"/path/to/image.jpg"'
 Obtener producto por ID
 Método: GET
 URL: /api/products/{id}
 Descripción: Obtiene un producto específico por su ID.
-Parámetros:
-id (path) – Identificador del producto
-Rol requerido: ADMIN
-Ejemplo de Request: GET http://localhost:8080/api/products/{id}
-curl --location 'http://localhost:8080/api/products/16' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzkyMjk2LCJleHAiOjE3NjIzOTU4OTZ9.8FPvuCXMoOGFsL19_ncGQS8gXLhpX4W5BOra4b52P0Y'
+Rol requerido: Todos los autenticados
 
+Parámetros:
+
+id (path): Identificador del producto
+
+Ejemplo de Response (200 OK):
+
+json
+{
+"id": 33,
+"name": "Carne de cuca extra  xxxLLnegra",
+"description": "Porcion de mi mechas de 300gr",
+"quantity": 20,
+"price": 2000,
+"availability": true,
+"productType": "SIDE",
+"ingredientType": "SIDE",
+"burgerIngredient": true,
+"imageUrl": null,
+"imageStatus": "NONE",
+"productCategoryId": 2,
+"supplierId": 2,
+"createdAt": "2026-01-27T19:16:57.412166100Z",
+"updatedAt": "2026-01-27T19:16:57.412166100Z",
+"createdBy": 2,
+"updatedBy": 2
+}
+
+curl --location 'http://localhost:8080/api/products/9' \
+--header 'Authorization: Bearer YOUR_TOKEN'
 Listar productos
 Método: GET
-URL: /api/products
+URL: /api/products/list
 Descripción: Lista todos los productos con paginación y filtros opcionales.
-Parámetros opcionales:
-productCategoryId – Filtra por categoría
-availability – Filtra por disponibilidad (true o false)
-page – Número de página (default 0)
-size – Cantidad de productos por página (default 12)
-sortBy – Campo de orden
-direction – ASC o DESC (default ASC)
-Rol requerido: ADMIN
-Ejemplo de Request:http://localhost:8080/api/products
-curl --location 'http://localhost:8080/api/products' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzQ3Mjc5LCJleHAiOjE3NjIzNTA4Nzl9.okRVhK8V0BIHtbWXm-j7AQ9uVz7BhZmLJTEXfZvM-1M'
+Rol requerido: Todos los autenticados
 
-Buscar productos por texto
+Parámetros opcionales:
+
+page (default: 0): Número de página
+
+size (default: 10): Productos por página
+
+sortBy (default: name): Campo de orden
+
+direction (default: ASC): ASC o DESC
+
+productCategoryId: Filtra por categoría
+
+availability: Filtra por disponibilidad
+
+Ejemplo de Response (200 OK):
+
+json
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "Burger King",
+      "description": "Mista",
+      "quantity": 25,
+      "price": 10000.00,
+      "availability": true,
+      "productType": "FOOD",
+      "ingredientType": "BURGER",
+      "burgerIngredient": false,
+      "imageUrl": null,
+      "imageStatus": "NONE",
+      "productCategoryId": 1,
+      "supplierId": 2,
+      "createdAt": "2026-01-27T19:16:57.412166100Z",
+      "updatedAt": "2026-01-27T19:16:57.412166100Z",
+      "createdBy": 2,
+      "updatedBy": 2
+    },
+    {
+      "id": 3,
+      "name": "Salsa de tomate",
+      "description": "Salsa de tomate 100gr",
+      "quantity": 10,
+      "price": 2000.00,
+      "availability": true,
+      "productType": "Aderezo",
+      "ingredientType": "Salsa",
+      "burgerIngredient": true,
+      "imageUrl": "https://tetrisburger-image.s3.us-east-2.amazonaws.com/products/1769482183059-747fe492-reborm.jpg",
+      "imageStatus": "READY",
+      "productCategoryId": 3,
+      "supplierId": 3,
+      "createdAt": "2026-01-27T19:16:57.412166100Z",
+      "updatedAt": "2026-01-27T19:16:57.412166100Z",
+      "createdBy": 2,
+      "updatedBy": 2
+    }
+  ],
+  "page": 0,
+  "size": 5,
+  "totalElements": 25,
+  "totalPages": 5
+}
+bash
+curl --location 'http://localhost:8080/api/products/list?page=0&size=5&sortBy=id' \
+--header 'Authorization: Bearer YOUR_TOKEN'
+Buscar productos
 Método: GET
 URL: /api/products/search
 Descripción: Permite buscar productos por nombre o descripción.
-Parámetros:
-q – Término de búsqueda (obligatorio)
-productCategoryId – Filtra por categoría
-availability – Filtra por disponibilidad
-page, size, sortBy, direction – Igual que listar productos
-Rol requerido: ADMIN
-Ejemplo de Request:http://localhost:8080/api/products/search?q=pulga
-curl --location 'http://localhost:8080/api/products/search?q=pulga' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzQ3Mjc5LCJleHAiOjE3NjIzNTA4Nzl9.okRVhK8V0BIHtbWXm-j7AQ9uVz7BhZmLJTEXfZvM-1M'
+Rol requerido: Todos los autenticados
 
-Actualizar un producto
+Parámetros:
+
+q: Término de búsqueda (opcional)
+
+page (default: 0): Número de página
+
+size (default: 10): Productos por página
+
+sortBy: Campo de orden
+
+direction: ASC o DESC
+
+productCategoryId: Filtra por categoría
+
+availability: Filtra por disponibilidad
+
+Ejemplo de Response (200 OK):
+
+json
+{
+  "items": [
+    {
+      "id": 6,
+      "name": "Carne 150g",
+      "description": "Medallón de carne de res 150 gramos",
+      "quantity": 200,
+      "price": 4500.00,
+      "availability": true,
+      "productType": "MEAT",
+      "ingredientType": "MEAT",
+      "burgerIngredient": true,
+      "imageUrl": null,
+      "imageStatus": "NONE",
+      "productCategoryId": 1,
+      "supplierId": 2,
+      "createdAt": "2026-01-27T19:16:57.412166100Z",
+      "updatedAt": "2026-01-27T19:16:57.412166100Z",
+      "createdBy": 2,
+      "updatedBy": 2
+    },
+    {
+      "id": 21,
+      "name": "Carne de mechas",
+      "description": "Porcion de mi mechas de 300gr",
+      "quantity": 20,
+      "price": 2000.00,
+      "availability": true,
+      "productType": "SIDE",
+      "ingredientType": "SIDE",
+      "burgerIngredient": true,
+      "imageUrl": "https://tetrisburger-image.s3.us-east-2.amazonaws.com/products/1769442225055-fd09e279-igor.jpg",
+      "imageStatus": "READY",
+      "productCategoryId": 2,
+      "supplierId": 2,
+      "createdAt": "2026-01-27T19:16:57.412166100Z",
+      "updatedAt": "2026-01-27T19:16:57.412166100Z",
+      "createdBy": 2,
+      "updatedBy": 2
+    }
+  ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 8,
+  "totalPages": 1
+}
+bash
+curl --location 'http://localhost:8080/api/products/search?q=carne' \
+--header 'Authorization: Bearer YOUR_TOKEN'
+Actualizar producto
 Método: PUT
 URL: /api/products/{id}
-Descripción: Actualiza un producto existente.
-Parámetros: id (path)
+Descripción: Actualiza un producto existente (excepto imagen).
+Content-Type: application/json
+Rol requerido: ADMIN, EMPLOYEE
+
+Parámetros:
+
+id (path): Identificador del producto
+
 Cuerpo del Request:
+
+json
 {
-"name": "Burger King Mega",
-"description": "Mista XXL",
-"quantity": 30,
-"price": 270000.00,
-"availability": true,
-"productType": "FOOD",
-"ingredientType": "BURGER",
-"burgerIngredient": false,
-"productCategoryId": 1,
-"supplierId": 2
+  "name": "leche de mi segundo palo",
+  "description": "rica leche",
+  "quantity": 10,
+  "price": 2200.00,
+  "availability": true,
+  "productType": "JUICE",
+  "ingredientType": "SAUCE",
+  "burgerIngredient": true,
+  "productCategoryId": 1,
+  "supplierId": 3,
+  "createdAt": "2026-01-27T19:16:57.412166100Z",
+  "updatedAt": "2026-01-27T19:16:57.412166100Z",
+  "createdBy": 2,
+  "updatedBy": 2
 }
-Rol requerido: ADMIN
-Ejemplo de Response: Producto actualizado.
-curl --location --request PUT 'http://localhost:8080/api/products/16' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzkyMjk2LCJleHAiOjE3NjIzOTU4OTZ9.8FPvuCXMoOGFsL19_ncGQS8gXLhpX4W5BOra4b52P0Y' \
+Ejemplo de Response (200 OK):
+
+json
+{
+  "id": 2,
+  "name": "leche de mi segundo palo",
+  "description": "rica leche",
+  "quantity": 10,
+  "price": 2200.00,
+  "availability": true,
+  "productType": "JUICE",
+  "ingredientType": "SAUCE",
+  "burgerIngredient": true,
+  "imageUrl": null,
+  "imageStatus": "NONE",
+  "productCategoryId": 1,
+  "supplierId": 3,
+  "createdAt": "2026-01-27T19:16:57.412166100Z",
+  "updatedAt": "2026-01-27T19:16:57.412166100Z",
+  "createdBy": 2,
+  "updatedBy": 2
+}
+bash
+curl --location --request PUT 'http://localhost:8080/api/products/2' \
+--header 'Authorization: Bearer YOUR_TOKEN' \
 --header 'Content-Type: application/json' \
 --data '{
-"name": "Burger King XXXL",
-"quantity": 25,
-"price": 250000.00,
-"availability": true,
-"productType": "FOOD",
-"ingredientType": "BURGER",
-"burgerIngredient": false,
-"productCategoryId": 1,
-"supplierId": 2
+  "name": "leche de mi segundo palo",
+  "description": "rica leche",
+  "quantity": 10,
+  "price": 2200.00,
+  "availability": true,
+  "productType": "JUICE",
+  "ingredientType": "SAUCE",
+  "burgerIngredient": true,
+  "productCategoryId": 1,
+  "supplierId": 3,
+  "createdAt": "2026-01-27T19:16:57.412166100Z",
+  "updatedAt": "2026-01-27T19:16:57.412166100Z",
+  "createdBy": 2,
+  "updatedBy": 2
 }'
+Actualizar imagen
+Método: PUT
+URL: /api/products/image/{id}
+Descripción: Actualiza únicamente la imagen del producto.
+Content-Type: multipart/form-data
+Rol requerido: ADMIN, EMPLOYEE
 
-Eliminar un producto
+Parámetros:
+
+id (path): Identificador del producto
+
+productImage (form): Nueva imagen (JPG, PNG, WEBP, máx 5MB)
+
+Ejemplo de Response (200 OK):
+
+json
+{
+  "id": 3,
+  "name": "Salsa de tomate",
+  "description": "Salsa de tomate 100gr",
+  "quantity": 10,
+  "price": 2000.00,
+  "availability": true,
+  "productType": "Aderezo",
+  "ingredientType": "Salsa",
+  "burgerIngredient": true,
+  "imageUrl": "https://tetrisburger-image.s3.us-east-2.amazonaws.com/products/...",
+  "imageStatus": "PENDING",
+  "productCategoryId": 3,
+  "supplierId": 3,
+  "createdAt": "2026-01-27T19:16:57.412166100Z",
+  "updatedAt": "2026-01-27T19:16:57.412166100Z",
+  "createdBy": 2,
+  "updatedBy": 2
+}
+bash
+curl --location --request PUT 'http://localhost:8080/api/products/image/3' \
+--header 'Authorization: Bearer YOUR_TOKEN' \
+--form 'productImage=@"/path/to/image.jpg"'
+Eliminar producto
 Método: DELETE
 URL: /api/products/{id}
-Descripción: Elimina un producto del sistema.
-Parámetros: id (path)
-Rol requerido: ADMIN
-Ejemplo de Response: Código 204 No Content.
-http://localhost:8080/api/products/{id}
-curl --location --request DELETE 'http://localhost:8080/api/products/15' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyMzQ3Mjc5LCJleHAiOjE3NjIzNTA4Nzl9.okRVhK8V0BIHtbWXm-j7AQ9uVz7BhZmLJTEXfZvM-1M'
+Descripción: Elimina un producto del sistema (soft delete).
+Rol requerido: ADMIN, EMPLOYEE
 
-Cambiar disponibilidad
-Método: PATCH
-URL: /api/products/{id}/availability
-Descripción: Cambia el estado de disponibilidad de un producto.
 Parámetros:
-id (path)
-availability (query) – true o false
-Rol requerido: ADMIN
-Ejemplo de Request: PATCH http://localhost:8080/api/products/16/availability?availability=false
-curl --location --request PATCH 'http://localhost:8080/api/products/10/availability?availability=false' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjaGVAZ21haWwuY29tIiwiaWF0IjoxNzYyMzA2MTQ1LCJleHAiOjE3NjIzMDk3NDV9.KBUTqaP5NY_Sc_2iJ_X-VWQV3Uhs57x9HoELtfPxEb4'
 
+id (path): Identificador del producto
+
+Ejemplo de Response (200 OK):
+
+json
+{
+  "message": "Producto eliminado exitosamente",
+  "success": true,
+  "timestamp": 1769483087680
+}
+bash
+curl --location --request DELETE 'http://localhost:8080/api/products/23' \
+--header 'Authorization: Bearer YOUR_TOKEN'
 Ajustar stock
 Método: PATCH
 URL: /api/products/{id}/stock
 Descripción: Ajusta la cantidad disponible de un producto.
+Rol requerido: ADMIN, EMPLOYEE
+
 Parámetros:
-id (path)
-delta (query) – Positivo para aumentar, negativo para disminuir
-Rol requerido: ADMIN
-Ejemplo de Request: PATCH http://localhost:8080/api/products/{id}/availability?availability=false
-curl --location --request PATCH 'http://localhost:8080/api/products/10/stock?delta=10' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjaGVAZ21haWwuY29tIiwiaWF0IjoxNzYyMzA2MTQ1LCJleHAiOjE3NjIzMDk3NDV9.KBUTqaP5NY_Sc_2iJ_X-VWQV3Uhs57x9HoELtfPxEb4'
 
-# Módulo de Categorías de Producto - TetrisBurger API
+id (path): Identificador del producto
 
-## Introducción
+delta (query): Cantidad a ajustar (positivo para aumentar, negativo para disminuir)
 
-El módulo de **Categorías de Producto** de **TetrisBurger** gestiona las distintas categorías a las que pueden
-pertenecer los productos del restaurante.  
-Este módulo permite **crear, actualizar, eliminar, listar y consultar categorías**, garantizando una organización clara
-dentro del catálogo de productos.
+Ejemplo de Response (200 OK) - Aumentar 20 unidades:
 
-Todos los endpoints requieren **rol ADMIN**, ya que las operaciones afectan directamente la estructura de clasificación
-del inventario.
+Request: /api/products/9/stock?delta=20
 
-La API se expone en:  
-`http://localhost:8080/api/product-categories`
-
-Cada categoría de producto contiene los siguientes atributos:
-
-- `id`: Identificador único de la categoría.
-- `name`: Nombre de la categoría.
-- `description`: Descripción breve de la categoría.
-- `available`: Estado de disponibilidad (`true` o `false`).
-
-Ejemplo de categoría:
 json
 {
-"name": "Snacks",
-"description": "Acompañamientos",
-"available": true
+  "id": 9,
+  "name": "Tomate fresco",
+  "description": "Rodajas de tomate",
+  "quantity": 270,
+  "price": 500.00,
+  "availability": true,
+  "productType": "VEGETABLE",
+  "ingredientType": "VEGETABLE",
+  "burgerIngredient": true,
+  "imageUrl": null,
+  "imageStatus": "NONE",
+  "productCategoryId": 1,
+  "supplierId": 4,
+  "createdAt": "2026-01-27T19:16:57.412166100Z",
+  "updatedAt": "2026-01-27T19:16:57.412166100Z",
+  "createdBy": 2,
+  "updatedBy": 2
 }
+Ejemplo de Response (200 OK) - Disminuir 20 unidades:
 
-GET públicos
-Listar categorías
-URL: http://localhost:8080/api/product-categories (sin Authorization)
-Respuesta 200 ejemplo:
+Request: /api/products/9/stock?delta=-20
 
-Obtener por id
-URL: http://localhost:8080/api/product-categories/{id} (sin Authorization)
-Respuesta 200 ejemplo:
-{ "id": 1, "name": "Burgers", "description": "Clásicas", "available": true }
-
-POST crear (ADMIN)
-URL: http://localhost:8080/api/product-categories
-Headers:
-Content-Type: application/json
-Authorization: Bearer <JWT_ADMIN> (en Postman Auth Type = Bearer Token, pega el JWT)
-Body JSON:
+json
 {
-"name": "Sides",
-"description": "Acompañamientos",
-"available": true
+  "id": 9,
+  "name": "Tomate fresco",
+  "description": "Rodajas de tomate",
+  "quantity": 240,
+  "price": 500.00,
+  "availability": true,
+  "productType": "VEGETABLE",
+  "ingredientType": "VEGETABLE",
+  "burgerIngredient": true,
+  "imageUrl": null,
+  "imageStatus": "NONE",
+  "productCategoryId": 1,
+  "supplierId": 4
 }
-Respuesta esperada: 201 Created con el recurso creado en el body.
-curl --location 'http://localhost:8080/api/product-categories' \
---header 'Content-Type: application/json' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyNTMxNjA1LCJleHAiOjE3NjI1MzUyMDV9.rkEaEE0wOSqItPW4FOiUI_XM-GG0hjhGXc1XsBPY-rw' \
---data '
-{
-"name": "Snacks",
-"description": "Acompañamientos",
-"available": true
-}'
+bash
+curl --location --request PATCH 'http://localhost:8080/api/products/9/stock?delta=20' \
+--header 'Authorization: Bearer YOUR_TOKEN'
 
-PUT actualizar (ADMIN)
-URL: http://localhost:8080/api/product-categories/{id}
-Headers: Content-Type: application/json, Authorization: Bearer <JWT_ADMIN>
-Body JSON:
+curl --location --request PATCH 'http://localhost:8080/api/products/9/stock?delta=-20' \
+--header 'Authorization: Bearer YOUR_TOKEN'
+Cambiar disponibilidad
+Método: PATCH
+URL: /api/products/{id}/availability
+Descripción: Cambia el estado de disponibilidad de un producto.
+Rol requerido: ADMIN, EMPLOYEE
+
+Parámetros:
+
+id (path): Identificador del producto
+
+availability (query): true o false
+
+Ejemplo de Response (200 OK):
+
+Request: /api/products/9/availability?availability=false
+
+json
 {
-"name": "Sides & Snacks",
-"description": "Acompañamientos y bocados",
-"available": true
+  "id": 9,
+  "name": "Tomate fresco",
+  "description": "Rodajas de tomate",
+  "quantity": 240,
+  "price": 500.00,
+  "availability": false,
+  "productType": "VEGETABLE",
+  "ingredientType": "VEGETABLE",
+  "burgerIngredient": true,
+  "imageUrl": null,
+  "imageStatus": "NONE",
+  "productCategoryId": 1,
+  "supplierId": 4,"createdAt": "2026-01-27T19:16:57.412166100Z",
+  "updatedAt": "2026-01-27T19:16:57.412166100Z",
+  "createdBy": 2,
+  "updatedBy": 2,
+        
+        
 }
-Respuesta esperada: 200 OK con la categoría actualizada.
-curl --location --request PUT 'http://localhost:8080/api/product-categories/4' \
---header 'Content-Type: application/json' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyNTMxNjA1LCJleHAiOjE3NjI1MzUyMDV9.rkEaEE0wOSqItPW4FOiUI_XM-GG0hjhGXc1XsBPY-rw' \
---data '{
-"name": "Sides & Snacks",
-"description": "Acompañamientos y bocados",
-"available": true
-}'
+bash
+curl --location --request PATCH 'http://localhost:8080/api/products/9/availability?availability=false' 
+--header 'Authorization: Bearer YOUR_TOKEN'
 
-DELETE eliminar (ADMIN)
-URL: http://localhost:8080/api/product-categories/{id}
-Headers: Authorization: Bearer <JWT_ADMIN>
-Respuesta esperada: 204 No Content sin body.
-curl --location --request DELETE 'http://localhost:8080/api/product-categories/2' \
---header 'Authorization: Bearer
-eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWZmcmV5bWcxMjNAZ21haWwuY29tIiwiaWF0IjoxNzYyNTMxNjA1LCJleHAiOjE3NjI1MzUyMDV9.rkEaEE0wOSqItPW4FOiUI_XM-GG0hjhGXc1XsBPY-rw'
+curl --location --request PATCH 'http://localhost:8080/api/products/9/availability?availability=true' 
+--header 'Authorization: Bearer YOUR_TOKEN'
+
+
+
 
 ## Módulo de Proveedores - TetrisBurger API
 
@@ -682,17 +913,16 @@ Los endpoints GET son públicos, es decir, no requieren autenticación, mientras
 requieren el rol ADMIN, ya que modifican la información del sistema.
 
 La API se expone en:
-`http://localhost:8080/api/suppliers`
-
-Cada proveedor contiene los siguientes atributos:
-
-id: Identificador único del proveedor.
-`name`: Nombre del proveedor o empresa.
-`phone`: Número de teléfono de contacto.
-`email`: Correo electrónico del proveedor.
-`address`: Dirección física.
+http://localhost:8080/api/suppliers
+}
+Cada proveedor contiene los siguientes atributos: {
+"id": Identificador único del proveedor.
+"name": Nombre del proveedor o empresa.
+"phone": Número de teléfono de contacto.
+"email": Correo electrónico del proveedor.
+`address: Dirección física.
 `registrationDate`: Fecha de registro del proveedor.
-
+}
 Endpoints
 🔹 Listar proveedores (GET público)
 
