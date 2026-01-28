@@ -3,27 +3,22 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.advice;
 import com.tetris.tetrisburger_backend.domain.exception.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.validation.BindException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 @RestControllerAdvice
+@Order(100)
 public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
@@ -34,16 +29,6 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<MessageResponseDTO> buildErrorResponse(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(new MessageResponseDTO(message, false));
-    }
-
-    private ResponseEntity<Map<String, Object>> buildValidationErrorResponse(
-            HttpStatus status, String message, Map<String, String> errors) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", message);
-        response.put("success", false);
-        response.put("timestamp", System.currentTimeMillis());
-        response.put("errors", errors);
-        return ResponseEntity.status(status).body(response);
     }
 
     // ========================================
@@ -129,45 +114,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<MessageResponseDTO> handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
         logger.warn("Argumento inválido: {} - Path: {}", ex.getMessage(), request.getDescription(false));
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
-
-    // 400 BAD REQUEST — @Valid en body (Bean Validation)
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex, WebRequest request) {
-        logger.warn("Errores de validación - Path: {}", request.getDescription(false));
-        Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
-                .collect(Collectors.toMap(
-                        err -> err.getField(),
-                        err -> err.getDefaultMessage() != null ? err.getDefaultMessage() : "Error de validación",
-                        (existing, replacement) -> existing
-                ));
-        return buildValidationErrorResponse(HttpStatus.BAD_REQUEST, "Errores de validación", errors);
-    }
-
-    // 400 BAD REQUEST — validación en @RequestParam/@PathVariable
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
-        logger.warn("Constraint violation - Path: {}", req.getRequestURI());
-        Map<String, String> errors = ex.getConstraintViolations().stream()
-                .collect(Collectors.toMap(
-                        v -> v.getPropertyPath().toString(),
-                        v -> v.getMessage(),
-                        (a, b) -> a
-                ));
-        return buildValidationErrorResponse(HttpStatus.BAD_REQUEST, "Errores de validación", errors);
-    }
-
-    // 400 BAD REQUEST — binding de query/form
-    @ExceptionHandler(BindException.class)
-    public ResponseEntity<Map<String, Object>> handleBindException(BindException ex, HttpServletRequest req) {
-        logger.warn("BindException - Path: {}", req.getRequestURI());
-        Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
-                .collect(Collectors.toMap(
-                        err -> err.getField(),
-                        err -> err.getDefaultMessage() != null ? err.getDefaultMessage() : "Error de validación",
-                        (a, b) -> a
-                ));
-        return buildValidationErrorResponse(HttpStatus.BAD_REQUEST, "Errores de validación", errors);
     }
 
     // 400 BAD REQUEST — request mal formado o parámetro faltante

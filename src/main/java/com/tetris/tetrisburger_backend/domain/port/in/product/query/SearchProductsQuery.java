@@ -5,4 +5,7 @@ public record SearchProductsQuery(
         Integer productCategoryId,
         Boolean availability
 ) {
+    public SearchProductsQuery() {
+        this(null, null, null);
+    }
 }

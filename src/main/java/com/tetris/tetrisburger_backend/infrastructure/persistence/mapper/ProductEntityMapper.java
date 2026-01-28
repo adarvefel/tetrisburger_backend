@@ -24,7 +24,8 @@ public interface ProductEntityMapper {
                 trim(e.getProductType()),
                 trim(e.getIngredientType()),
                 e.getBurgerIngredient(),
-                trim(e.getImageUrl()),
+                trim(e.getImageUrl()),      // ← Nombre original
+                trim(e.getImageKey()),      // ← Key S3 (AGREGADO)
                 e.getProductCategoryId(),
                 e.getSupplierId(),
                 e.getCreatedAt(),
@@ -49,7 +50,8 @@ public interface ProductEntityMapper {
         e.setProductType(trim(d.getProductType()));
         e.setIngredientType(trim(d.getIngredientType()));
         e.setBurgerIngredient(d.getBurgerIngredient());
-        e.setImageUrl(trim(d.getImageUrl())); // imageUrl
+        e.setImageUrl(trim(d.getImageUrl()));      // ← Nombre original
+        e.setImageKey(trim(d.getImageKey()));      // ← Key S3 (AGREGADO)
         e.setProductCategoryId(d.getProductCategoryId());
         e.setSupplierId(d.getSupplierId());
         e.setCreatedAt(d.getCreatedAt());

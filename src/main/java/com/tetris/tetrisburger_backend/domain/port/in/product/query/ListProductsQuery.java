@@ -4,4 +4,7 @@ public record ListProductsQuery(
         Integer productCategoryId,
         Boolean availability
 ) {
+    public ListProductsQuery() {
+        this(null, null);
+    }
 }
