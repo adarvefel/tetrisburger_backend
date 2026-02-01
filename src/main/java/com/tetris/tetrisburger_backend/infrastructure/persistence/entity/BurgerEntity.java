@@ -58,6 +58,9 @@ public class BurgerEntity {
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
+    @Column(name = "image_key")
+    private String imageKey;
+
     @Column(name = "id_user")
     private Integer idUser;
 
@@ -97,6 +100,14 @@ public class BurgerEntity {
     private List<BurgerIngredientEntity> ingredients = new ArrayList<>();
 
     // Helpers para la relación bidireccional
+    @OneToMany(
+            mappedBy = "burger",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+
+    // ========= HELPERS =========
+
     public void addIngredient(BurgerIngredientEntity ingredient) {
         if (ingredient == null) return;
         ingredient.setBurger(this);

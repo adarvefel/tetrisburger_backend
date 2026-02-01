@@ -5,7 +5,7 @@ import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.exception.ImageUploadException;
 import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
-import com.tetris.tetrisburger_backend.domain.port.out.ImageUploadResult;
+import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

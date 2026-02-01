@@ -2,7 +2,9 @@ package com.tetris.tetrisburger_backend.infrastructure.adapter;
 
 import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
-import com.tetris.tetrisburger_backend.domain.port.out.ImageUploadResult;
+import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -14,6 +16,8 @@ import java.util.UUID;
 
 @Component
 public class S3ImageStorageAdapter implements ImageStoragePort {
+
+    private static final Logger logger = LoggerFactory.getLogger(S3ImageStorageAdapter.class);
 
     private final S3Client s3Client;
     private final String bucketName;
@@ -27,46 +31,79 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
         this.region = region;
+
+        logger.info("S3ImageStorageAdapter initialized - Bucket: {}, Region: {}",
+                bucketName, region);
+    }
+
+    // ====== MÉTODO GENÉRICO NUEVO (PARA BURGERS) ======
+    @Override
+    public ImageUploadResult uploadImage(FileData fileData, String folder) {
+        if (fileData == null || fileData.bytes() == null || fileData.bytes().length == 0) {
+            logger.warn("FileData is null or empty, skipping upload");
+            return null;
+        }
+
+        logger.info("Uploading image to folder: {}, originalFileName: {}",
+                folder, fileData.originalFilename());
+
+        return uploadImageInternal(
+                fileData.bytes(),
+                fileData.contentType(),
+                fileData.originalFilename(),
+                folder
+        );
     }
 
     // ====== MÉTODO PARA USUARIOS ======
     @Override
     public ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName) throws Exception {
-        return uploadImage(bytes, contentType, originalFileName, "users/");
+        logger.info("Uploading user image: {}", originalFileName);
+        return uploadImageInternal(bytes, contentType, originalFileName, "users");
     }
 
     // ====== MÉTODO PARA PRODUCTOS ======
     @Override
     public ImageUploadResult uploadProductImage(FileData fileData) {
-        // Retorna ImageUploadResult directamente (no String)
-        return uploadImage(
+        logger.info("Uploading product image: {}", fileData.originalFilename());
+        return uploadImageInternal(
                 fileData.bytes(),
                 fileData.contentType(),
                 fileData.originalFilename(),
-                "products/"
+                "products"
         );
     }
 
-
-    // ====== Helper para reusar lógica y permitir prefijos ======
-    public ImageUploadResult uploadImage(byte[] bytes, String contentType, String originalFileName, String prefix) {
+    // ====== MÉTODO INTERNO REUTILIZABLE (PRIVATE) ======
+    private ImageUploadResult uploadImageInternal(
+            byte[] bytes,
+            String contentType,
+            String originalFileName,
+            String folder
+    ) {
         if (bytes == null || bytes.length == 0) {
+            logger.warn("Bytes are null or empty, skipping upload");
             return null;
         }
 
         // Validar tipo de archivo
         if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("El archivo debe ser una imagen");
+            throw new IllegalArgumentException(
+                    "El archivo debe ser una imagen. ContentType: " + contentType
+            );
         }
 
         // Validar tamaño (máx 5MB)
         if (bytes.length > 5 * 1024 * 1024) {
-            throw new IllegalArgumentException("La imagen no puede superar 5MB");
+            throw new IllegalArgumentException(
+                    String.format("La imagen no puede superar 5MB. Tamaño: %.2f MB",
+                            bytes.length / (1024.0 * 1024.0))
+            );
         }
 
-        String normalizedPrefix = normalizePrefix(prefix);
+        String normalizedFolder = normalizeFolder(folder);
 
-        // Obtener extensión (si hay)
+        // Obtener extensión
         String extension = "";
         String baseName = originalFileName;
 
@@ -79,64 +116,104 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         String sanitizedName = sanitizeFileName(baseName);
         String uniqueId = UUID.randomUUID().toString().substring(0, 8);
 
+        // Formato: folder/timestamp-uuid-filename.ext
         String key = String.format("%s%d-%s-%s%s",
-                normalizedPrefix,
+                normalizedFolder,
                 System.currentTimeMillis(),
                 uniqueId,
                 sanitizedName,
                 extension);
 
-        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key(key)
-                .contentType(contentType)
-                .build();
+        logger.info("Generated S3 key: {}", key);
 
-        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
+        try {
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .contentType(contentType)
+                    .build();
 
-        // Retorna key y nombre original
-        return new ImageUploadResult(key, originalFileName);
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
+
+            logger.info("Image uploaded successfully. Bucket: {}, Key: {}", bucketName, key);
+
+            // Retorna key y nombre original
+            return new ImageUploadResult(key, originalFileName);
+
+        } catch (Exception e) {
+            logger.error("Error uploading to S3. Bucket: {}, Key: {}", bucketName, key, e);
+            throw new RuntimeException("Error al subir imagen a S3: " + e.getMessage(), e);
+        }
     }
 
+    // ====== DELETE IMAGE ======
     @Override
     public void deleteImage(String imageKey) {
-        if (imageKey == null || imageKey.isEmpty()) return;
+        if (imageKey == null || imageKey.isEmpty()) {
+            logger.warn("ImageKey is null or empty, skipping deletion");
+            return;
+        }
 
-        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                .bucket(bucketName)
-                .key(imageKey)
-                .build();
+        logger.info("Deleting image: {}", imageKey);
 
-        s3Client.deleteObject(deleteObjectRequest);
+        try {
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(imageKey)
+                    .build();
+
+            s3Client.deleteObject(deleteObjectRequest);
+            logger.info("Image deleted successfully: {}", imageKey);
+
+        } catch (Exception e) {
+            logger.error("Error deleting image: {}", imageKey, e);
+            // No lanzar excepción para no fallar el flujo principal
+        }
     }
 
+    // ====== GET IMAGE URL ======
     @Override
     public String getImageUrl(String imageKey) {
-        if (imageKey == null || imageKey.isEmpty()) return null;
+        if (imageKey == null || imageKey.isEmpty()) {
+            return null;
+        }
 
-        return String.format("https://%s.s3.%s.amazonaws.com/%s",
+        String url = String.format("https://%s.s3.%s.amazonaws.com/%s",
                 bucketName,
                 region,
                 imageKey);
+
+        logger.debug("Generated image URL: {}", url);
+        return url;
     }
 
-    private String normalizePrefix(String prefix) {
-        String p = (prefix == null) ? "" : prefix.trim();
-        if (p.isEmpty()) return "";
+    // ====== HELPER: NORMALIZE FOLDER ======
+    private String normalizeFolder(String folder) {
+        String f = (folder == null) ? "" : folder.trim();
+        if (f.isEmpty()) return "";
 
-        if (p.contains("..") || p.startsWith("/") || p.contains("\\")) {
-            throw new IllegalArgumentException("Prefijo inválido: " + prefix);
+        // Validaciones de seguridad
+        if (f.contains("..") || f.startsWith("/") || f.contains("\\")) {
+            throw new IllegalArgumentException("Folder inválido: " + folder);
         }
 
-        if (!p.endsWith("/")) p += "/";
-        return p;
+        // Agregar "/" al final si no lo tiene
+        if (!f.endsWith("/")) {
+            f += "/";
+        }
+
+        return f;
     }
 
+    // ====== HELPER: SANITIZE FILENAME ======
     private String sanitizeFileName(String fileName) {
-        if (fileName == null) return "file";
+        if (fileName == null || fileName.isEmpty()) {
+            return "file";
+        }
+
         return fileName
-                .replaceAll("[^a-zA-Z0-9.-]", "_")
-                .replaceAll("_{2,}", "_")
-                .toLowerCase();
+                .replaceAll("[^a-zA-Z0-9.-]", "_")  // Reemplazar caracteres especiales
+                .replaceAll("_{2,}", "_")            // Eliminar múltiples underscores
+                .toLowerCase();                       // Convertir a minúsculas
     }
 }

@@ -1,18 +1,14 @@
 package com.tetris.tetrisburger_backend.domain.common;
 
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 
 public record FileData(
         String originalFilename,
         String contentType,
         byte[] bytes
+
 ) {
-    /**
-     * Convierte MultipartFile a FileData.
-     * Punto de entrada desde infraestructura a dominio.
-     */
     public static FileData from(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return null;
@@ -25,7 +21,14 @@ public record FileData(
                     file.getBytes()
             );
         } catch (IOException e) {
-            throw new RuntimeException("Error al leer el archivo", e);
+            throw new IllegalArgumentException("Error al leer archivo: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Validación: verifica que el archivo sea válido
+     */
+    public boolean isValid() {
+        return bytes != null && bytes.length > 0 && originalFilename != null;
     }
 }

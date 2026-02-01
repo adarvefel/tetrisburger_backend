@@ -10,7 +10,14 @@ public record UpdateMenuBurgerCommand(
         List<IngredientRequest> ingredients,
         Boolean availability,
         Boolean favorite,
-        Boolean onMenu
+        Boolean isOnMenu,
+        Integer updatedBy
 
 ) {
+    public record IngredientRequest(
+            Integer idProduct,
+            Integer quantity,
+            Boolean isOptional
+    ) {}
+
 }

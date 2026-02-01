@@ -33,7 +33,7 @@ public class CreateProductUseCase implements CreateProduct {
     public Product create(CreateProductCommand cmd) {
         String productName = cmd.name() != null ? cmd.name().trim() : "";
 
-        logger.info("🔍 Admin {} creando producto: '{}'", cmd.createdBy(), productName);
+        logger.info("Admin {} creando producto: '{}'", cmd.createdBy(), productName);
 
         boolean exists = productRepository.existsByNameIgnoreCase(productName);
         logger.info("¿Existe '{}' en BD? → {}", productName, exists);
@@ -62,7 +62,7 @@ public class CreateProductUseCase implements CreateProduct {
         );
 
         Product savedProduct = productRepository.save(product);
-        logger.info("✅ Producto creado con ID: {}", savedProduct.getId());
+        logger.info(" Producto creado con ID: {}", savedProduct.getId());
 
         if (cmd.productImageData() != null) {
             eventPublisher.publishEvent(new ProductImageUploadRequestedEvent(

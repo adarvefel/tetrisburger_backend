@@ -1,7 +1,12 @@
 package com.tetris.tetrisburger_backend.application.usecase.burger;
 
+import com.tetris.tetrisburger_backend.domain.exception.BurgerCreationException;
+import com.tetris.tetrisburger_backend.domain.exception.BurgerNotFoundException;
+import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
+import com.tetris.tetrisburger_backend.domain.exception.ProductNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.model.BurgerIngredient;
+import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.UpdateMenuBurger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuBurgerCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
@@ -31,41 +36,122 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
 
     @Override
     public Burger handle(UpdateMenuBurgerCommand command) {
-        logger.info("Actualizando burger de menú id={}", command.idBurger());
+        logger.info("Actualizando hamburguesa de menú: idBurger={}", command.idBurger());
 
-        Burger burger = burgerRepository.findActiveMenuById(command.idBurger())
-                .orElseThrow(() -> new IllegalArgumentException("Burger de menú no encontrada"));
+        try {
+            // 1. Validaciones
+            validateCommand(command);
 
-        List<BurgerIngredient> newIngredients = command.ingredients().stream()
-                .map(req -> {
-                    var product = productRepository.findById(req.idProduct())
-                            .orElseThrow(() -> new IllegalArgumentException(
-                                    "Producto no encontrado con id " + req.idProduct()));
+            // 2. Buscar burger de menú
+            Burger burger = burgerRepository.findActiveMenuById(command.idBurger())
+                    .orElseThrow(() -> new BurgerNotFoundException(
+                            "Hamburguesa de menú no encontrada o ya eliminada. ID: " + command.idBurger()
+                    ));
 
-                    BigDecimal priceAtTime = product.getPrice();
+            // 3. Validar que sea burger de menú
+            if (!burger.isOnMenu()) {
+                throw new InvalidBurgerException(
+                        "La hamburguesa no es una hamburguesa de menú. ID: " + command.idBurger()
+                );
+            }
 
-                    return BurgerIngredient.create(
-                            req.idProduct(),
-                            priceAtTime,
-                            req.quantity(),
-                            req.isOptional()
-                    );
-                })
-                .toList();
+            if (burger.isCustomBurger()) {
+                throw new InvalidBurgerException(
+                        "No se puede actualizar una hamburguesa personalizada con este método. ID: " + command.idBurger()
+                );
+            }
 
-        burger.updateMenuBurger(
-                command.name(),
-                command.description(),
-                command.imageUrl(),
-                newIngredients,
-                command.availability(),
-                command.onMenu(),
-                command.favorite()
-        );
+            logger.debug("Estado actual de la hamburguesa: name={}, ingredients={}, finalPrice={}",
+                    burger.getName(), burger.getIngredients().size(), burger.getFinalPrice());
 
-        Burger updated = burgerRepository.save(burger);
-        logger.info("Burger de menú actualizada id={}", updated.getIdBurger());
-        return updated;
+            // 4. Crear nuevos ingredientes con validaciones
+            List<BurgerIngredient> newIngredients = command.ingredients().stream()
+                    .map(req -> createBurgerIngredient(req.idProduct(), req.quantity(), req.isOptional()))
+                    .toList();
+
+            // 5. Delegar la actualización al dominio
+            burger.updateMenuBurger(
+                    command.name(),
+                    command.description(),
+                    newIngredients,
+                    command.availability(),
+                    command.isOnMenu(),
+                    command.favorite(),
+                    command.updatedBy()
+            );
+
+            logger.debug("Estado actualizado de la hamburguesa: name={}, ingredients={}, finalPrice={}",
+                    burger.getName(), burger.getIngredients().size(), burger.getFinalPrice());
+
+            // 6. Guardar
+            Burger updated = burgerRepository.save(burger);
+
+            if (updated == null) {
+                throw new BurgerCreationException("Error al guardar la hamburguesa de menú actualizada");
+            }
+
+            logger.info("Hamburguesa de menú actualizada exitosamente: burgerId={}", updated.getIdBurger());
+
+            return updated;
+
+        } catch (BurgerNotFoundException | ProductNotFoundException | InvalidBurgerException e) {
+            throw e;
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw new InvalidBurgerException(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error inesperado actualizando hamburguesa de menú: burgerId={}",
+                    command.idBurger(), e);
+            throw new BurgerCreationException("Error actualizando hamburguesa de menú", e);
+        }
     }
 
+    private void validateCommand(UpdateMenuBurgerCommand command) {
+        if (command == null) {
+            throw new InvalidBurgerException("El comando no puede ser nulo");
+        }
+
+        if (command.idBurger() == null) {
+            throw new InvalidBurgerException("El ID de la hamburguesa no puede ser nulo");
+        }
+
+        if (command.name() == null || command.name().isBlank()) {
+            throw new InvalidBurgerException("El nombre no puede estar vacío");
+        }
+
+        if (command.ingredients() == null || command.ingredients().isEmpty()) {
+            throw new InvalidBurgerException(
+                    "La hamburguesa debe tener al menos un ingrediente"
+            );
+        }
+    }
+
+    private BurgerIngredient createBurgerIngredient(Integer productId, Integer quantity, Boolean isOptional) {
+        logger.debug("Creando ingrediente: productId={}, quantity={}", productId, quantity);
+
+        if (productId == null) {
+            throw new InvalidBurgerException("El ID del producto no puede ser nulo");
+        }
+
+        if (quantity == null || quantity <= 0) {
+            throw new InvalidBurgerException("La cantidad debe ser mayor a 0");
+        }
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+
+        if (!product.isAvailable()) {
+            throw new InvalidBurgerException(
+                    "El producto '" + product.getName() + "' no está disponible"
+            );
+        }
+
+        BigDecimal priceAtTime = product.getPrice();
+
+        return BurgerIngredient.create(
+                productId,
+                priceAtTime,
+                quantity,
+                isOptional != null ? isOptional : false
+        );
+    }
 }

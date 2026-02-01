@@ -5,7 +5,7 @@ import com.tetris.tetrisburger_backend.domain.exception.ImageUploadException;
 import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
-import com.tetris.tetrisburger_backend.domain.port.out.ImageUploadResult;
+import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

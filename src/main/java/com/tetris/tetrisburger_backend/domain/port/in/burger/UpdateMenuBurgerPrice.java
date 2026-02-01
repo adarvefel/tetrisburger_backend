@@ -6,4 +6,5 @@ import java.math.BigDecimal;
 
 public interface UpdateMenuBurgerPrice {
     Burger handle(Integer idBurger, BigDecimal newPrice);
+
 }

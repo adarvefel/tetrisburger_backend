@@ -5,8 +5,10 @@ import java.math.BigDecimal;
 public record MenuBurgerIngredientResponseDTO(
         Integer idBurgerIngredient,
         Integer idProduct,
+        String productName,
         BigDecimal priceAtTime,
         Integer quantity,
-        boolean isOptional
-) {
+        BigDecimal subtotal,
+        Boolean isOptional
+){
 }

@@ -15,13 +15,14 @@ public record MenuBurgerResponseDTO(
         boolean isCustom,
         boolean availability,
         String imageUrl,
+        String imageStatus,
         Integer timesOrdered,
+        List<MenuBurgerIngredientResponseDTO> ingredients,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime deletedAt,
         Integer updatedBy,
         Integer createdBy,
-        Integer deletedBy,
-        List<MenuBurgerIngredientResponseDTO> ingredients
+        Integer deletedBy
 ) {
 }

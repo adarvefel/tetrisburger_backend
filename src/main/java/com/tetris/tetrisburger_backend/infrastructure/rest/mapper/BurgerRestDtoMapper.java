@@ -1,122 +1,308 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.mapper;
 
+import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.model.BurgerIngredient;
-import com.tetris.tetrisburger_backend.domain.port.in.burger.command.*;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.command.CreateBurgerCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.command.CreateCustomBurgerCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateCustomBurgerCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuBurgerCommand;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.*;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface BurgerRestDtoMapper {
 
-    // ========= Custom burger: Request DTO -> Command =========
+    // ==================== CREATE MENU BURGER ====================
+
+    default CreateBurgerCommand toCreateBurgerCommand(
+            CreateMenuBurgerRequestDTO dto,
+            MultipartFile burgerImage,
+            Integer createdBy) {
+
+        if (dto == null) return null;
+
+        FileData imageData = FileData.from(burgerImage);
+
+        // ✅ Usa la clase interna de CreateBurgerCommand
+        List<CreateBurgerCommand.IngredientRequest> ingredients = dto.ingredients() == null ? List.of() :
+                dto.ingredients().stream()
+                        .map(ing -> new CreateBurgerCommand.IngredientRequest(
+                                ing.idProduct(),
+                                ing.quantity(),
+                                ing.isOptional()
+                        ))
+                        .collect(Collectors.toList());
+
+        return new CreateBurgerCommand(
+                dto.name(),
+                dto.description(),
+                imageData,
+                ingredients,
+                dto.isFavorite() != null ? dto.isFavorite() : false,
+                dto.finalPrice(),
+                createdBy
+        );
+    }
+
+    // ==================== CREATE CUSTOM BURGER ====================
+
+    default CreateCustomBurgerCommand toCreateCustomBurgerCommand(
+            CreateCustomBurgerRequestDTO dto,
+            MultipartFile burgerImage,
+            Integer userId) {
+
+        if (dto == null) return null;
+
+        FileData imageData = FileData.from(burgerImage);
+
+        // ✅ Usa la clase interna de CreateCustomBurgerCommand
+        List<CreateCustomBurgerCommand.IngredientRequest> ingredients = dto.ingredients() == null ? List.of() :
+                dto.ingredients().stream()
+                        .map(ing -> new CreateCustomBurgerCommand.IngredientRequest(
+                                ing.idProduct(),
+                                ing.quantity(),
+                                ing.isOptional()
+                        ))
+                        .collect(Collectors.toList());
+
+        return new CreateCustomBurgerCommand(
+                dto.name(),
+                dto.description(),
+                imageData,
+                userId,
+                ingredients
+
+        );
+    }
+
+    // ==================== UPDATE MENU BURGER ====================
+
+    default UpdateMenuBurgerCommand toUpdateMenuBurgerCommand(
+            Integer burgerId,
+            UpdateMenuBurgerRequestDTO dto,
+            Integer updatedBy) {
+
+        if (dto == null) return null;
+
+        List<UpdateMenuBurgerCommand.IngredientRequest> ingredients =
+                dto.ingredients() == null ? List.of() :
+                        dto.ingredients().stream()
+                                .map(ing -> new UpdateMenuBurgerCommand.IngredientRequest(
+                                        ing.idProduct(),
+                                        ing.quantity(),
+                                        ing.isOptional()
+                                ))
+                                .collect(Collectors.toList());
+
+        return new UpdateMenuBurgerCommand(
+                burgerId,
+                dto.name(),
+                dto.description(),
+                null,                   // imageUrl (se actualiza por separado)
+                ingredients,
+                dto.availability(),
+                dto.isFavorite(),       // ← va a "favorite" en el command
+                dto.isOnMenu(),         // ← va a "onMenu" en el command
+                updatedBy
+        );
+    }
 
 
-    CreateCustomBurgerCommand toCustomCommand(CreateCustomBurgerRequestDTO request,Integer idUser);
+    // ==================== UPDATE CUSTOM BURGER ====================
 
-    @Mapping(source = "idProduct", target = "idProduct")
-    IngredientRequest toIngredientRequest(IngredientRequestDTO dto);
+    default UpdateCustomBurgerCommand toUpdateCustomBurgerCommand(
+            Integer burgerId,
+            UpdateCustomBurgerRequestDTO dto,
+            Integer userId) {
 
-    List<IngredientRequest> toIngredientRequestList(List<IngredientRequestDTO> dtos);
+        if (dto == null) return null;
 
-    // ========= Custom burger: Domain -> Response DTO =========
+        // ✅ Records usan el nombre del campo, NO getters
+        List<UpdateCustomBurgerCommand.IngredientRequest> ingredients =
+                dto.ingredients() == null ? List.of() :      // ← SIN "get"
+                        dto.ingredients().stream()
+                                .map(ing -> new UpdateCustomBurgerCommand.IngredientRequest(
+                                        ing.idProduct(),         // ← SIN "get"
+                                        ing.quantity(),          // ← SIN "get"
+                                        ing.isOptional()         // ← SIN "get"
+                                ))
+                                .collect(Collectors.toList());
 
-    @Mapping(source = "onMenu",   target = "isOnMenu")
-    @Mapping(source = "favorite", target = "isFavorite")
-    @Mapping(source = "custom",   target = "isCustom")
-    @Mapping(source = "createdBy", target = "createdBy")
-    @Mapping(source = "updatedBy", target = "updatedBy")
-    @Mapping(source = "deletedBy", target = "deletedBy")
-    BurgerResponseDTO toResponse(Burger burger);
-
-    List<BurgerResponseDTO> toResponseList(List<Burger> burgers);
-
-    BurgerIngredientResponseDTO toIngredientResponse(BurgerIngredient ingredient);
-
-    List<BurgerIngredientResponseDTO> toIngredientResponseList(List<BurgerIngredient> ingredients);
-
-    // ========= Menu burger: Request DTO -> Command =========
-
-    @Mapping(source = "name",        target = "name")
-    @Mapping(source = "description", target = "description")
-    @Mapping(source = "imageUrl",    target = "imageUrl")
-    @Mapping(source = "ingredients", target = "ingredients")
-    @Mapping(source = "favorite",    target = "isFavorite")
-    CreateBurgerCommand toMenuCommand(CreateMenuBurgerRequestDTO request);
+        return new UpdateCustomBurgerCommand(
+                burgerId,
+                userId,
+                dto.name(),           // ← SIN "get"
+                dto.description(),    // ← SIN "get"
+                ingredients
+        );
+    }
 
 
-    UpdateMenuBurgerCommand toUpdateMenuBurgerCommand(
-            Integer idBurger,
-            UpdateMenuBurgerRequestDTO dto
-    );
+    // ==================== RESPONSE: MENU BURGER ====================
 
+    default MenuBurgerResponseDTO toMenuBurgerResponseDTO(Burger burger) {
+        if (burger == null) return null;
 
-    // ========= Menu burger: Domain -> Response DTO =========
+        return new MenuBurgerResponseDTO(
+                burger.getIdBurger(),
+                burger.getName(),
+                burger.getDescription(),
+                burger.getBasePrice(),
+                burger.getFinalPrice(),
+                burger.isOnMenu(),
+                burger.isFavorite(),
+                burger.isCustom(),
+                burger.isAvailability(),
+                burger.getImageUrl(),
+                burger.getImageKey(),
+                burger.getTimesOrdered(),
+                toMenuBurgerIngredientResponseDTOList(burger.getIngredients()),
+                burger.getCreatedAt(),
+                burger.getUpdatedAt(),
+                burger.getDeletedAt(),
+                burger.getCreatedBy(),
+                burger.getUpdatedBy(),
+                burger.getDeletedBy()
+        );
+    }
 
-    @Mapping(source = "onMenu",   target = "isOnMenu")
-    @Mapping(source = "favorite", target = "isFavorite")
-    @Mapping(source = "custom",   target = "isCustom")
-    @Mapping(source = "createdBy", target = "createdBy")
-    @Mapping(source = "updatedBy", target = "updatedBy")
-    @Mapping(source = "deletedBy", target = "deletedBy")
-    MenuBurgerResponseDTO toMenuResponse(Burger burger);
-
-    List<MenuBurgerResponseDTO> toMenuResponseList(List<Burger> burgers);
-
-    MenuBurgerIngredientResponseDTO toMenuIngredientResponse(BurgerIngredient ingredient);
-
-    List<MenuBurgerIngredientResponseDTO> toMenuIngredientResponseList(List<BurgerIngredient> ingredients);
-
-    // ========= PageResponse<Burger> -> MenuBurgerPageResponseDTO =========
+    default List<MenuBurgerResponseDTO> toMenuBurgerResponseDTOList(List<Burger> burgers) {
+        if (burgers == null) return List.of();
+        return burgers.stream()
+                .map(this::toMenuBurgerResponseDTO)
+                .collect(Collectors.toList());
+    }
 
     default MenuBurgerPageResponseDTO toMenuBurgerPageResponseDTO(PageResponse<Burger> page) {
-        List<MenuBurgerResponseDTO> content = toMenuResponseList(page.content());
+        if (page == null) return null;
+
         return new MenuBurgerPageResponseDTO(
-                content,
+                toMenuBurgerResponseDTOList(page.content()),
                 page.page(),
                 page.size(),
                 page.totalElements(),
                 page.totalPages(),
-                page.isFirst(),
-                page.isLast()
+                page.page() == 0,
+                page.page() >= page.totalPages() - 1
         );
     }
 
-    UpdateCustomBurgerCommand toUpdateCustomBurgerCommand(
-            Integer idBurger,
-            Integer idUser,
-            UpdateCustomBurgerRequestDTO dto
-    );
+    // ==================== RESPONSE: CUSTOM BURGER ====================
 
-    // ========= PageResponse<Burger> -> BurgerPageResponseDTO (custom/mine) =========
+    default BurgerResponseDTO toBurgerResponseDTO(Burger burger) {
+        if (burger == null) return null;
+
+        return new BurgerResponseDTO(
+                burger.getIdBurger(),
+                burger.getName(),
+                burger.getDescription(),
+                burger.getBasePrice(),
+                burger.getFinalPrice(),
+                burger.isOnMenu(),
+                burger.isFavorite(),
+                burger.isCustom(),
+                burger.isAvailability(),
+                burger.getImageUrl(),
+                burger.getImageKey(),
+                burger.getImageStatus(),
+                burger.getIdUser(),
+                burger.getTimesOrdered(),
+                toBurgerIngredientResponseDTOList(burger.getIngredients()),
+                toInstant(burger.getCreatedAt()),
+                toInstant(burger.getUpdatedAt()),
+                toInstant(burger.getDeletedAt()),
+                burger.getCreatedBy(),
+                burger.getUpdatedBy(),
+                burger.getDeletedBy()
+        );
+    }
+
+    default List<BurgerResponseDTO> toBurgerResponseDTOList(List<Burger> burgers) {
+        if (burgers == null) return List.of();
+        return burgers.stream()
+                .map(this::toBurgerResponseDTO)
+                .collect(Collectors.toList());
+    }
 
     default BurgerPageResponseDTO toBurgerPageResponseDTO(PageResponse<Burger> page) {
-        List<BurgerResponseDTO> content = toResponseList(page.content());
+        if (page == null) return null;
+
         return new BurgerPageResponseDTO(
-                content,
+                toBurgerResponseDTOList(page.content()),
                 page.page(),
                 page.size(),
                 page.totalElements(),
                 page.totalPages(),
-                page.isFirst(),
-                page.isLast()
+                page.page() == 0,
+                page.page() >= page.totalPages() - 1
         );
     }
 
-    // ========= Conversores de fechas Instant <-> LocalDateTime =========
+    // ==================== HELPERS: INGREDIENTES ====================
+    // ==================== HELPERS: INGREDIENTES MENU BURGER ====================
 
-    default LocalDateTime map(Instant value) {
-        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
+    /**
+     * Convierte BurgerIngredient → MenuBurgerIngredientResponseDTO
+     * Para hamburguesas del menú (vista de administrador)
+     */
+    default MenuBurgerIngredientResponseDTO toMenuBurgerIngredientResponseDTO(BurgerIngredient ingredient) {
+        if (ingredient == null) return null;
+
+        return new MenuBurgerIngredientResponseDTO(
+                ingredient.getIdBurgerIngredient(),
+                ingredient.getIdProduct(),
+                ingredient.getProductName(),
+                ingredient.getPriceAtTime(),
+                ingredient.getQuantity(),
+                ingredient.calculateSubtotal(),
+                ingredient.isOptional()
+        );
+    }
+    default List<MenuBurgerIngredientResponseDTO> toMenuBurgerIngredientResponseDTOList(List<BurgerIngredient> ingredients) {
+        if (ingredients == null) return List.of();
+        return ingredients.stream()
+                .map(this::toMenuBurgerIngredientResponseDTO)
+                .collect(Collectors.toList());
     }
 
-    default Instant map(LocalDateTime value) {
-        return value == null ? null : value.toInstant(ZoneOffset.UTC);
+// ==================== HELPERS: INGREDIENTES CUSTOM BURGER ====================
+
+    /**
+     * Convierte BurgerIngredient → BurgerIngredientResponseDTO
+     * Para hamburguesas personalizadas (vista de cliente)
+     */
+    default BurgerIngredientResponseDTO toBurgerIngredientResponseDTO(BurgerIngredient ingredient) {
+        if (ingredient == null) return null;
+
+        return new BurgerIngredientResponseDTO(
+                ingredient.getIdBurgerIngredient(),
+                ingredient.getIdProduct(),
+                ingredient.getProductName(),
+                ingredient.getPriceAtTime(),
+                ingredient.getQuantity(),
+                ingredient.calculateSubtotal(),
+                ingredient.isOptional()
+        );
+    }
+
+    default List<BurgerIngredientResponseDTO> toBurgerIngredientResponseDTOList(List<BurgerIngredient> ingredients) {
+        if (ingredients == null) return List.of();
+        return ingredients.stream()
+                .map(this::toBurgerIngredientResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+
+    // ==================== HELPER: LocalDateTime → Instant ====================
+
+    default java.time.Instant toInstant(java.time.LocalDateTime localDateTime) {
+        return localDateTime != null ? localDateTime.toInstant(ZoneOffset.UTC) : null;
     }
 }

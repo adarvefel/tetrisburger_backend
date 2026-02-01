@@ -1,6 +1,5 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger;
 
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -16,14 +15,16 @@ public record BurgerResponseDTO(
         Boolean isCustom,
         Boolean availability,
         String imageUrl,
+        String imageKey,
+        String imageStatus,
         Integer idUser,
         Integer timesOrdered,
+        List<BurgerIngredientResponseDTO> ingredients,
         Instant createdAt,
         Instant updatedAt,
         Instant deletedAt,
-        Integer createdBy,   // ← AGREGAR
+        Integer createdBy,
         Integer updatedBy,
-        Integer deletedBy,
-        List<BurgerIngredientResponseDTO> ingredients
+        Integer deletedBy
 ) {
 }

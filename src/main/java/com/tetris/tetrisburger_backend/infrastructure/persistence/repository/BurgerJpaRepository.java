@@ -14,24 +14,97 @@ import java.util.Optional;
 @Repository
 public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer> {
 
-    // ========= LISTAR =========
-    // Burgers de menú (sin usuario, con pageable)
+    // ========================================
+    // LISTAR BURGERS DE MENÚ
+    // ========================================
+
+    /**
+     * Lista todas las burgers de menú disponibles y activas
+     */
     Page<BurgerEntity> findAllByIsOnMenuTrueAndAvailabilityTrueAndDeletedAtIsNull(Pageable pageable);
 
-    // Burgers custom de un usuario (con usuario, con pageable)
+    /**
+     * Lista todas las burgers de menú activas (sin filtrar por availability)
+     */
+    Page<BurgerEntity> findByIsOnMenuTrueAndDeletedAtIsNull(Pageable pageable);
+
+    // ========================================
+    // LISTAR BURGERS CUSTOM
+    // ========================================
+
+    /**
+     * Lista todas las burgers custom de un usuario activas
+     */
     Page<BurgerEntity> findAllByIdUserAndIsCustomTrueAndDeletedAtIsNull(Integer idUser, Pageable pageable);
 
-    // ========= BUSCAR POR ID =========
-    Optional<BurgerEntity> findByIdBurgerAndIdUserAndIsCustomTrueAndDeletedAtIsNull(Integer idBurger, Integer idUser);
+    // ========================================
+    // BUSCAR BURGER POR ID
+    // ========================================
 
+    /**
+     * Busca una burger custom por ID que pertenezca al usuario
+     */
+    Optional<BurgerEntity> findByIdBurgerAndIdUserAndIsCustomTrueAndDeletedAtIsNull(
+            Integer idBurger,
+            Integer idUser
+    );
+
+    /**
+     * Busca una burger de menú por ID (incluye eliminadas)
+     */
     Optional<BurgerEntity> findByIdBurgerAndIsOnMenuTrue(Integer idBurger);
 
+    /**
+     * Busca una burger de menú activa por ID
+     */
     Optional<BurgerEntity> findByIdBurgerAndIsOnMenuTrueAndDeletedAtIsNull(Integer idBurger);
 
-    // ========= BÚSQUEDA SIN PAGINACIÓN =========
+    // ========================================
+    // VALIDACIÓN DE DUPLICADOS
+    // ========================================
+
+    /**
+     * ✅ Verifica si existe una burger de menú activa con el nombre dado (case insensitive)
+     * Solo considera burgers de menú (isOnMenu=true) que no estén eliminadas (deletedAt IS NULL)
+     *
+     * @param name Nombre de la burger a verificar
+     * @return true si existe, false si no
+     */
+    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END FROM BurgerEntity b " +
+            "WHERE LOWER(b.name) = LOWER(:name) " +
+            "AND b.isOnMenu = true " +
+            "AND b.deletedAt IS NULL")
+    boolean existsByNameAndIsOnMenuTrueAndDeletedAtIsNull(@Param("name") String name);
+
+    /**
+     * ✅ Busca una burger de menú activa por nombre exacto (para UPDATE)
+     * Útil cuando necesitas validar duplicados excluyendo la burger actual
+     *
+     * @param name Nombre de la burger
+     * @return Optional con la burger si existe
+     */
+    @Query("SELECT b FROM BurgerEntity b " +
+            "WHERE LOWER(b.name) = LOWER(:name) " +
+            "AND b.isOnMenu = true " +
+            "AND b.deletedAt IS NULL")
+    Optional<BurgerEntity> findByNameAndIsOnMenuTrueAndDeletedAtIsNull(@Param("name") String name);
+
+    // ========================================
+    // BÚSQUEDA SIN PAGINACIÓN
+    // ========================================
+
+    /**
+     * Busca burgers de menú por nombre que contenga el texto (case insensitive)
+     */
     List<BurgerEntity> findByNameContainingIgnoreCaseAndIsOnMenuTrueAndDeletedAtIsNull(String name);
 
-    // ========= BÚSQUEDA CON PAGINACIÓN =========
+    // ========================================
+    // BÚSQUEDA CON PAGINACIÓN
+    // ========================================
+
+    /**
+     * Busca burgers de menú disponibles por nombre con paginación
+     */
     @Query("SELECT b FROM BurgerEntity b " +
             "WHERE b.isOnMenu = true " +
             "AND LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%')) " +
@@ -43,6 +116,9 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
             Pageable pageable
     );
 
+    /**
+     * Busca burgers custom del usuario por nombre con paginación
+     */
     @Query("SELECT b FROM BurgerEntity b " +
             "WHERE b.isCustom = true " +
             "AND b.idUser = :idUser " +

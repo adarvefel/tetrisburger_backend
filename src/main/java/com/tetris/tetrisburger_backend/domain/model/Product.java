@@ -1,4 +1,3 @@
-// src/main/java/com/tetris/tetrisburger_backend/domain/model/Product.java
 package com.tetris.tetrisburger_backend.domain.model;
 
 import java.math.BigDecimal;
@@ -8,7 +7,7 @@ public class Product {
     private Integer id;
     private String name;
     private String description;
-    private Integer quantity;
+    private Integer quantity;  // También llamado stock
     private BigDecimal price;
     private Boolean availability;
     private String productType;
@@ -57,9 +56,6 @@ public class Product {
 
     // ==================== FACTORY METHODS ====================
 
-    /**
-     * Factory method para crear nuevo producto (usado por repositorio/mappers)
-     */
     public static Product ofNew(String name, String description, Integer quantity, BigDecimal price,
                                 Boolean availability, String productType, String ingredientType, Boolean burgerIngredient,
                                 String imageUrl, String imageKey, Integer productCategoryId, Integer supplierId,
@@ -69,9 +65,6 @@ public class Product {
                 null, null, null, createdBy, null, null);
     }
 
-    /**
-     * Factory method para reconstruir desde BD
-     */
     public static Product of(Integer id, String name, String description, Integer quantity, BigDecimal price,
                              Boolean availability, String productType, String ingredientType, Boolean burgerIngredient,
                              String imageUrl, String imageKey, Integer productCategoryId, Integer supplierId,
@@ -82,9 +75,6 @@ public class Product {
                 createdAt, updatedAt, deletedAt, createdBy, updatedBy, deletedBy);
     }
 
-    /**
-     * Factory method para crear con validaciones (usado por use cases)
-     */
     public static Product create(
             String name,
             String description,
@@ -173,11 +163,8 @@ public class Product {
         }
     }
 
-    // ==================== MÉTODOS DE ACTUALIZACIÓN (COMANDOS) ====================
+    // ==================== MÉTODOS DE ACTUALIZACIÓN ====================
 
-    /**
-     * Actualiza los datos principales del producto
-     */
     public void updateDetails(
             String name,
             String description,
@@ -212,9 +199,6 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Actualiza la imagen del producto (key + nombre original)
-     */
     public void updateImage(String imageKey, String imageUrl, Integer updatedBy) {
         this.imageKey = imageKey;
         this.imageUrl = imageUrl;
@@ -222,9 +206,6 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Actualiza solo el nombre
-     */
     public void updateName(String name, Integer updatedBy) {
         validateName(name);
         this.name = name;
@@ -232,18 +213,12 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Actualiza solo la descripción
-     */
     public void updateDescription(String description, Integer updatedBy) {
         this.description = description;
         this.updatedAt = Instant.now();
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Actualiza el precio
-     */
     public void updatePrice(BigDecimal price, Integer updatedBy) {
         validatePrice(price);
         this.price = price;
@@ -251,9 +226,6 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Actualiza el stock/cantidad estableciendo un valor específico
-     */
     public void updateQuantity(Integer newQuantity, Integer updatedBy) {
         validateQuantity(newQuantity);
         this.quantity = newQuantity;
@@ -261,10 +233,6 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Ajusta el stock (suma o resta)
-     * @param delta cantidad a ajustar (puede ser negativo)
-     */
     public void adjustStock(int delta, Integer updatedBy) {
         int newQuantity = this.quantity + delta;
         if (newQuantity < 0) {
@@ -275,9 +243,6 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Reduce el stock (para ventas)
-     */
     public void reduceStock(int amount, Integer updatedBy) {
         if (amount <= 0) {
             throw new IllegalArgumentException("La cantidad a reducir debe ser positiva");
@@ -292,9 +257,6 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Aumenta el stock (para reabastecimiento)
-     */
     public void increaseStock(int amount, Integer updatedBy) {
         if (amount <= 0) {
             throw new IllegalArgumentException("La cantidad a aumentar debe ser positiva");
@@ -304,36 +266,24 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Actualiza la disponibilidad del producto
-     */
     public void updateAvailability(Boolean availability, Integer updatedBy) {
         this.availability = availability;
         this.updatedAt = Instant.now();
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Habilita el producto
-     */
     public void enable(Integer updatedBy) {
         this.availability = true;
         this.updatedAt = Instant.now();
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Deshabilita el producto
-     */
     public void disable(Integer updatedBy) {
         this.availability = false;
         this.updatedAt = Instant.now();
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Actualiza la categoría
-     */
     public void updateCategory(Integer productCategoryId, Integer updatedBy) {
         validateCategoryId(productCategoryId);
         this.productCategoryId = productCategoryId;
@@ -341,9 +291,6 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Actualiza el proveedor
-     */
     public void updateSupplier(Integer supplierId, Integer updatedBy) {
         validateSupplierId(supplierId);
         this.supplierId = supplierId;
@@ -351,17 +298,11 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Marca el producto como eliminado (soft delete)
-     */
     public void markAsDeleted(Integer deletedBy) {
         this.deletedAt = Instant.now();
         this.deletedBy = deletedBy;
     }
 
-    /**
-     * Restaura un producto eliminado
-     */
     public void restore(Integer updatedBy) {
         this.deletedAt = null;
         this.deletedBy = null;
@@ -369,49 +310,53 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    // ==================== MÉTODOS DE CONSULTA (QUERIES) ====================
+    // ==================== MÉTODOS DE CONSULTA ====================
 
-    /**
-     * Verifica si el producto está disponible
-     */
     public boolean isAvailable() {
         return Boolean.TRUE.equals(this.availability) && this.deletedAt == null;
     }
 
-    /**
-     * Verifica si el producto tiene stock
-     */
     public boolean hasStock() {
         return this.quantity != null && this.quantity > 0;
     }
 
-    /**
-     * Verifica si el producto puede venderse
-     */
     public boolean canBeSold() {
         return isAvailable() && hasStock();
     }
 
-    /**
-     * Verifica si el producto está eliminado
-     */
     public boolean isDeleted() {
         return this.deletedAt != null;
     }
 
-    /**
-     * Verifica si el producto tiene imagen
-     */
     public boolean hasImage() {
         return this.imageKey != null && !this.imageKey.isEmpty();
     }
 
-    // ==================== GETTERS ====================
+    /**
+     *   Verifica si el producto puede ser ingrediente de burger
+     */
+    public boolean isBurgerIngredient() {
+        return Boolean.TRUE.equals(this.burgerIngredient);
+    }
+
+    /**
+     *
+     * Verifica si hay suficiente stock para una cantidad
+     */
+    public boolean hasSufficientStock(Integer requiredQuantity) {
+        return this.quantity != null && this.quantity >= requiredQuantity;
+    }
 
     public Integer getId() { return id; }
     public String getName() { return name; }
     public String getDescription() { return description; }
     public Integer getQuantity() { return quantity; }
+
+    /**
+     *   Alias para getQuantity (compatibilidad con Use Cases)
+     */
+    public Integer getStock() { return quantity; }
+
     public BigDecimal getPrice() { return price; }
     public Boolean getAvailability() { return availability; }
     public String getProductType() { return productType; }
@@ -428,7 +373,7 @@ public class Product {
     public Integer getUpdatedBy() { return updatedBy; }
     public Integer getDeletedBy() { return deletedBy; }
 
-    // ==================== SETTERS (para JPA/MyBatis) ====================
+    // ==================== SETTERS ====================
 
     public void setId(Integer id) { this.id = id; }
     public void setName(String name) { this.name = name; }

@@ -1,5 +1,7 @@
 package com.tetris.tetrisburger_backend.application.usecase.burger;
 
+import com.tetris.tetrisburger_backend.domain.exception.BurgerNotFoundException;
+import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.UpdateMenuBurgerPrice;
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
@@ -14,8 +16,7 @@ import java.math.BigDecimal;
 @Transactional
 public class UpdateMenuBurgerPriceUseCase implements UpdateMenuBurgerPrice {
 
-    private static final Logger logger =
-            LoggerFactory.getLogger(UpdateMenuBurgerPriceUseCase.class);
+    private static final Logger logger = LoggerFactory.getLogger(UpdateMenuBurgerPriceUseCase.class);
 
     private final BurgerRepository burgerRepository;
 
@@ -25,16 +26,36 @@ public class UpdateMenuBurgerPriceUseCase implements UpdateMenuBurgerPrice {
 
     @Override
     public Burger handle(Integer idBurger, BigDecimal newPrice) {
-        logger.info("Actualizando precio de burger de menú id={} a {}", idBurger, newPrice);
+        logger.info("Actualizando precio de hamburguesa de menú: idBurger={}, newPrice={}",
+                idBurger, newPrice);
 
-        Burger burger = burgerRepository.findActiveMenuById(idBurger)
-                .orElseThrow(() -> new IllegalArgumentException("Burger de menú no encontrada"));
+        // 1. Validaciones
+        if (idBurger == null) {
+            throw new InvalidBurgerException("El ID de la hamburguesa no puede ser nulo");
+        }
 
-        burger.updatePrice(newPrice);
+        if (newPrice == null || newPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidBurgerException("El precio debe ser mayor a 0");
+        }
 
+        // 2. Buscar burger
+        Burger burger = burgerRepository.findById(idBurger)
+                .orElseThrow(() -> new BurgerNotFoundException(idBurger));
+
+        // 3. Validar que sea burger de menú
+        if (!burger.isOnMenu()) {
+            throw new InvalidBurgerException(
+                    "Solo hamburguesas de menú pueden actualizar precio. ID: " + idBurger
+            );
+        }
+
+        // 4. Actualizar precio (null = JPA Auditing automático)
+        burger.updatePrice(newPrice, null);
+
+        // 5. Guardar (JPA Auditing llenará updatedBy y updatedAt)
         Burger updated = burgerRepository.save(burger);
 
-        logger.info("Precio actualizado de burger de menú id={} a {}", updated.getIdBurger(), updated.getBasePrice());
+        logger.info("Precio de hamburguesa de menú actualizado exitosamente: idBurger={}", idBurger);
 
         return updated;
     }

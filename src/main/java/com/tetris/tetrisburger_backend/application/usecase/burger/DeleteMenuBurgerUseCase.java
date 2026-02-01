@@ -1,5 +1,7 @@
 package com.tetris.tetrisburger_backend.application.usecase.burger;
 
+import com.tetris.tetrisburger_backend.domain.exception.BurgerNotFoundException;
+import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.DeleteMenuBurger;
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
@@ -19,16 +21,21 @@ public class DeleteMenuBurgerUseCase implements DeleteMenuBurger {
     public DeleteMenuBurgerUseCase(BurgerRepository burgerRepository) {
         this.burgerRepository = burgerRepository;
     }
-
     @Override
-    public void handle(Integer idBurger) {
-        logger.info("Eliminando burger de menú id={}", idBurger);
+    public void handle(Integer idBurger, Integer deletedBy) {
+        logger.info("Eliminando burger de menú: idBurger={}, adminUserId={}",
+                idBurger, deletedBy);
 
         Burger burger = burgerRepository.findActiveMenuById(idBurger)
-                .orElseThrow(() -> new IllegalArgumentException("Burger de menú no encontrada"));
+                .orElseThrow(() -> new BurgerNotFoundException(
+                        "Burger no encontrada con ID: " + idBurger
+                ));
 
-        burger.markAsDeleted();
-
+        burger.markAsDeleted(deletedBy);
         burgerRepository.save(burger);
+
+        logger.info("Burger de menú eliminada: idBurger={}, nombre={}",
+                burger.getIdBurger(), burger.getName());
     }
+
 }

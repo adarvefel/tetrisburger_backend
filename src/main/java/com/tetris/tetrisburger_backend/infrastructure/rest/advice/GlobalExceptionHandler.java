@@ -42,6 +42,9 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+
+
+
     // 404 NOT FOUND — recursos no encontrados
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<MessageResponseDTO> handleUserNotFound(UserNotFoundException ex, WebRequest request) {

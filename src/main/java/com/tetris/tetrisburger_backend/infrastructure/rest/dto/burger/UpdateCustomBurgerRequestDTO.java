@@ -5,7 +5,6 @@ import java.util.List;
 public record UpdateCustomBurgerRequestDTO(
         String name,
         String description,
-        String imageUrl,
         List<IngredientRequestDTO> ingredients
 ) {
 }

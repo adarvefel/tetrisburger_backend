@@ -1,4 +1,3 @@
-// src/main/java/com/tetris/tetrisburger_backend/domain/model/BurgerIngredient.java
 package com.tetris.tetrisburger_backend.domain.model;
 
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;
@@ -17,6 +16,9 @@ public class BurgerIngredient {
 
     // Referencia al producto (solo ID, no objeto) - mapea a id_product
     private final Integer idProduct;
+
+    // Nombre del producto (snapshot) - NO se persiste, solo para DTOs
+    private String productName;
 
     // Snapshot del precio en el momento de agregarlo
     private final BigDecimal priceAtTime;
@@ -62,12 +64,15 @@ public class BurgerIngredient {
         if (snapshot == null) {
             throw new IllegalArgumentException("El snapshot no puede ser null");
         }
-        return create(
+        BurgerIngredient ingredient = create(
                 snapshot.productId(),
                 snapshot.price(),
                 snapshot.quantity(),
                 snapshot.isOptional()
         );
+        //  Capturar el nombre del producto desde el snapshot
+        ingredient.productName = snapshot.name();
+        return ingredient;
     }
 
     /**
@@ -87,6 +92,7 @@ public class BurgerIngredient {
                 isOptional
         );
         ingredient.idBurgerIngredient = idBurgerIngredient;
+        // productName se dejará null, se cargará bajo demanda si es necesario
         return ingredient;
     }
 
@@ -116,6 +122,14 @@ public class BurgerIngredient {
         return priceAtTime.multiply(BigDecimal.valueOf(quantity));
     }
 
+    /**
+     * Enriquece el ingrediente con el nombre del producto
+     * (útil cuando se carga desde BD y necesitas mostrarlo al usuario)
+     */
+    public void enrichWithProductName(String productName) {
+        this.productName = productName;
+    }
+
     // ============================================
     // GETTERS
     // ============================================
@@ -128,6 +142,10 @@ public class BurgerIngredient {
         return idProduct;
     }
 
+    public String getProductName() {
+        return productName;
+    }
+
     public BigDecimal getPriceAtTime() {
         return priceAtTime;
     }
@@ -138,6 +156,10 @@ public class BurgerIngredient {
 
     public Boolean getIsOptional() {
         return isOptional;
+    }
+
+    public boolean isOptional() {
+        return isOptional != null && isOptional;
     }
 
     // ============================================
@@ -165,6 +187,7 @@ public class BurgerIngredient {
         return "BurgerIngredient{" +
                 "idBurgerIngredient=" + idBurgerIngredient +
                 ", idProduct=" + idProduct +
+                ", productName='" + productName + '\'' +
                 ", priceAtTime=" + priceAtTime +
                 ", quantity=" + quantity +
                 ", isOptional=" + isOptional +

@@ -17,94 +17,94 @@ public abstract class BurgerEntityMapper {
     @Autowired
     protected BurgerIngredientEntityMapper ingredientMapper;
 
-    // Entity -> Domain (reconstitución del agregado)
-    public Burger toDomain(BurgerEntity e) {
-        if (e == null) {
+    // ==================== Entity -> Domain (reconstitución del agregado) ====================
+
+    public Burger toDomain(BurgerEntity entity) {
+        if (entity == null) {
             return null;
         }
 
-        List<BurgerIngredient> ingredients = ingredientMapper.toDomainList(e.getIngredients());
+        List<BurgerIngredient> ingredients = ingredientMapper.toDomainList(entity.getIngredients());
 
-        Burger burger = Burger.reconstitute(
-                e.getIdBurger(),
-                safeTrim(e.getName()),
-                safeTrim(e.getDescription()),
-                e.getBasePrice(),
-                e.getFinalPrice(),
-                bool(e.getIsOnMenu()),
-                bool(e.getIsFavorite()),
-                bool(e.getIsCustom()),
-                bool(e.getAvailability()),
-                safeTrim(e.getImageUrl()),
-                e.getIdUser(),
-                e.getTimesOrdered(),
-                e.getCreatedAt(),
-                e.getUpdatedAt(),
-                e.getDeletedAt(),
+        return Burger.reconstitute(
+                entity.getIdBurger(),
+                safeTrim(entity.getName()),
+                safeTrim(entity.getDescription()),
+                entity.getBasePrice(),
+                entity.getFinalPrice(),
+                bool(entity.getIsOnMenu()),
+                bool(entity.getIsFavorite()),
+                bool(entity.getIsCustom()),
+                bool(entity.getAvailability()),
+                safeTrim(entity.getImageKey()),
+                safeTrim(entity.getImageUrl()),
+                entity.getIdUser(),
+                entity.getTimesOrdered(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt(),
+                entity.getDeletedAt(),
+                entity.getCreatedBy(),
+                entity.getUpdatedBy(),
+                entity.getDeletedBy(),
                 ingredients
         );
-
-        burger.setCreatedBy(e.getCreatedBy());
-        burger.setUpdatedBy(e.getUpdatedBy());
-        burger.setDeletedBy(e.getDeletedBy());
-
-
-        return burger;
     }
 
+    // ==================== Domain -> Entity (incluye hijos) ====================
 
-
-    // Domain -> Entity (incluye hijos)
-    public BurgerEntity toEntity(Burger d) {
-        if (d == null) {
+    public BurgerEntity toEntity(Burger domain) {
+        if (domain == null) {
             return null;
         }
 
-        BurgerEntity e = new BurgerEntity();
-        e.setIdBurger(d.getIdBurger());
-        e.setName(d.getName());
-        e.setDescription(d.getDescription());
-        e.setBasePrice(d.getBasePrice());
-        e.setFinalPrice(d.getFinalPrice());
-        e.setIsOnMenu(d.isOnMenu());
-        e.setIsCustom(d.isCustom());
-        e.setIsFavorite(d.isFavorite());
-        e.setAvailability(d.isAvailability());
-        e.setImageUrl(d.getImageUrl());
-        e.setTimesOrdered(d.getTimesOrdered());
-        e.setIdUser(d.getIdUser());
-        e.setCreatedAt(d.getCreatedAt());
-        e.setUpdatedAt(d.getUpdatedAt());
-        e.setDeletedAt(d.getDeletedAt());
-        e.setCreatedBy(d.getCreatedBy());
-        e.setUpdatedBy(d.getUpdatedBy());
-        e.setDeletedBy(d.getDeletedBy());
+        BurgerEntity entity = new BurgerEntity();
+        entity.setIdBurger(domain.getIdBurger());          
+        entity.setName(domain.getName());
+        entity.setDescription(domain.getDescription());
+        entity.setBasePrice(domain.getBasePrice());
+        entity.setFinalPrice(domain.getFinalPrice());
+        entity.setIsOnMenu(domain.isOnMenu());
+        entity.setIsCustom(domain.isCustom());
+        entity.setIsFavorite(domain.isFavorite());
+        entity.setAvailability(domain.isAvailability());
+        entity.setImageKey(domain.getImageKey());
+        entity.setImageUrl(domain.getImageUrl());
+        entity.setTimesOrdered(domain.getTimesOrdered());
+        entity.setIdUser(domain.getIdUser());
+        entity.setCreatedAt(domain.getCreatedAt());
+        entity.setUpdatedAt(domain.getUpdatedAt());
+        entity.setDeletedAt(domain.getDeletedAt());
+        entity.setCreatedBy(domain.getCreatedBy());
+        entity.setUpdatedBy(domain.getUpdatedBy());
+        entity.setDeletedBy(domain.getDeletedBy());
 
+        // Mapear ingredientes
         List<BurgerIngredientEntity> childEntities =
-                ingredientMapper.toEntityList(d.getIngredients());
-        e.setIngredients(childEntities);
+                ingredientMapper.toEntityList(domain.getIngredients());
+        entity.setIngredients(childEntities);
 
-        setParentToChildren(e);
+        // Establecer referencia bidireccional
+        setParentToChildren(entity);
 
-        return e;
+        return entity;
     }
 
+    // ==================== Helper Methods ====================
 
     @AfterMapping
-    protected void setParentToChildren(@MappingTarget BurgerEntity e) {
-        if (e.getIngredients() != null) {
-            for (BurgerIngredientEntity child : e.getIngredients()) {
-                child.setBurger(e);
+    protected void setParentToChildren(@MappingTarget BurgerEntity entity) {
+        if (entity.getIngredients() != null) {
+            for (BurgerIngredientEntity child : entity.getIngredients()) {
+                child.setBurger(entity);
             }
         }
     }
 
-    // Util
-    protected static boolean bool(Boolean v) {
-        return Boolean.TRUE.equals(v);
+    protected static boolean bool(Boolean value) {
+        return Boolean.TRUE.equals(value);
     }
 
-    protected static String safeTrim(String v) {
-        return v == null ? null : v.trim();
+    protected static String safeTrim(String value) {
+        return value == null ? null : value.trim();
     }
 }

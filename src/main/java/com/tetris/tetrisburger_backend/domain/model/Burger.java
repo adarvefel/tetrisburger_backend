@@ -1,6 +1,6 @@
-// src/main/java/com/tetris/tetrisburger_backend/domain/model/Burger.java
 package com.tetris.tetrisburger_backend.domain.model;
 
+import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;
 
 import java.math.BigDecimal;
@@ -35,8 +35,9 @@ public class Burger {
 
     // 5. Estado
     private boolean availability;
-    private String imageUrl;
-    private Integer idUser;        // Cliente dueño (si is_custom = true)
+    private String imageKey;              // Ruta S3: products/1769535390022-b29db968-reborm.jpg
+    private String imageUrl;              //  Nombre original: reborm.jpg
+    private Integer idUser;               // Cliente dueño (si is_custom = true)
     private Integer timesOrdered;
 
     // 6. Ingredientes (agregado)
@@ -47,11 +48,9 @@ public class Burger {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
-    private Integer createdBy;
-    private Integer updatedBy;
-    private Integer deletedBy;
-
-
+    private Integer createdBy;            // Quién creó
+    private Integer updatedBy;            // Quién actualizó
+    private Integer deletedBy;            // Quién eliminó
 
     // ============================================
     // CONSTRUCTOR PRIVADO
@@ -79,12 +78,16 @@ public class Burger {
             boolean isFavorite,
             boolean isCustom,
             boolean availability,
-            String imageUrl,
+            String imageKey,              // ✅ Ruta S3
+            String imageUrl,              // ✅ Nombre original
             Integer idUser,
             Integer timesOrdered,
             LocalDateTime createdAt,
             LocalDateTime updatedAt,
             LocalDateTime deletedAt,
+            Integer createdBy,
+            Integer updatedBy,
+            Integer deletedBy,
             List<BurgerIngredient> ingredients
     ) {
         Burger b = new Burger();
@@ -92,25 +95,28 @@ public class Burger {
         b.name = name;
         b.description = description;
         b.basePrice = basePrice != null ? basePrice : BigDecimal.ZERO;
-        b.finalPrice = finalPrice != null ? finalPrice : BigDecimal.ZERO;  // ← ASIGNAR AQUÍ
+        b.finalPrice = finalPrice != null ? finalPrice : BigDecimal.ZERO;
         b.isOnMenu = isOnMenu;
         b.isFavorite = isFavorite;
         b.isCustom = isCustom;
         b.availability = availability;
+        b.imageKey = imageKey;
         b.imageUrl = imageUrl;
         b.idUser = idUser;
         b.timesOrdered = timesOrdered != null ? timesOrdered : 0;
         b.createdAt = createdAt;
         b.updatedAt = updatedAt;
         b.deletedAt = deletedAt;
+        b.createdBy = createdBy;
+        b.updatedBy = updatedBy;
+        b.deletedBy = deletedBy;
         b.setIngredients(ingredients);
 
         return b;
     }
 
-
     // ============================================
-    // FACTORY METHOD: Hamburguesa del MENÚ
+    // FACTORY METHOD: Hamburguesa del MENÚ (simple)
     // ============================================
 
     public static Burger createMenuBurger(String name, BigDecimal basePrice) {
@@ -137,6 +143,59 @@ public class Burger {
     }
 
     // ============================================
+    // FACTORY METHOD: Hamburguesa de MENÚ (con ingredientes)
+    // ============================================
+
+    public static Burger menuBurger(
+            String name,
+            String description,
+            String imageUrl,
+            List<ProductSnapshot> ingredients,
+            boolean isFavorite
+    ) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
+        }
+
+        Burger burger = new Burger();
+        burger.name = name;
+        burger.description = description;
+        burger.imageUrl = imageUrl;
+        burger.imageKey = null;
+
+        burger.isOnMenu = true;
+        burger.isCustom = false;
+        burger.isFavorite = isFavorite;
+        burger.availability = true;
+        burger.idUser = null;
+        burger.timesOrdered = 0;
+        burger.createdAt = LocalDateTime.now();
+
+        // Cargar ingredientes desde snapshots
+        if (ingredients != null) {
+            for (ProductSnapshot snapshot : ingredients) {
+                if (snapshot == null) continue;
+                BurgerIngredient ingredient = BurgerIngredient.fromSnapshot(snapshot);
+                burger.ingredients.add(ingredient);
+            }
+        }
+
+        // basePrice = suma de ingredientes
+        burger.basePrice = burger.calculateTotalPriceInternal(
+                burger.ingredients,
+                BigDecimal.ZERO
+        );
+
+        // finalPrice = igual al basePrice al crear
+        burger.finalPrice = burger.basePrice;
+
+        return burger;
+    }
+
+    public void updateImage(String s) {
+    }
+
+    // ============================================
     // FACTORY METHOD: Builder para CUSTOM
     // ============================================
 
@@ -160,9 +219,10 @@ public class Burger {
             burger.idUser = userId;
             burger.createdAt = LocalDateTime.now();
             burger.basePrice = BigDecimal.ZERO;
+            burger.finalPrice = BigDecimal.ZERO;
 
-
-            burger.finalPrice = burger.basePrice;
+            //  AUDITORÍA
+            burger.createdBy = userId;
         }
 
         public CustomBuilder addIngredient(ProductSnapshot snapshot) {
@@ -171,7 +231,6 @@ public class Burger {
             }
 
             BurgerIngredient ingredient = BurgerIngredient.fromSnapshot(snapshot);
-
             burger.ingredients.add(ingredient);
             burger.finalPrice = burger.finalPrice.add(ingredient.calculateSubtotal());
 
@@ -198,80 +257,54 @@ public class Burger {
         }
     }
 
-    // FACTORY METHOD: Hamburguesa de MENÚ usando snapshots
+    // ============================================
+    // COMPORTAMIENTO: Menu Burger
     // ============================================
 
-    public static Burger menuBurger(
-            String name,
-            String description,
-            String imageUrl,
-            List<ProductSnapshot> ingredients,
-            boolean isFavorite
-    ) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("El nombre es obligatorio");
-        }
-
-        Burger burger = new Burger();
-        burger.name = name;
-        burger.description = description;
-        burger.imageUrl = imageUrl;
-
-        burger.isOnMenu = true;      // pertenece al catálogo / menú
-        burger.isCustom = false;     // no es de un usuario
-        burger.isFavorite = isFavorite;
-        burger.availability = true;
-        burger.idUser = null;
-        burger.timesOrdered = 0;
-        burger.createdAt = LocalDateTime.now();
-
-        // Cargar ingredientes desde snapshots
-        if (ingredients != null) {
-            for (ProductSnapshot snapshot : ingredients) {
-                if (snapshot == null) continue;
-                BurgerIngredient ingredient = BurgerIngredient.fromSnapshot(snapshot);
-                burger.ingredients.add(ingredient);
-            }
-        }
-
-        ///basePrice = suma de ingredientes (costo, nunca cambia)
-        burger.basePrice = burger.calculateTotalPriceInternal(
-                burger.ingredients,
-                BigDecimal.ZERO
-        );
-
-        // finalPrice = igual al basePrice al crear
-        burger.finalPrice = burger.basePrice;
-
-        return burger;
-    }
-
+    // Burger.java (Domain)
     public void updateMenuBurger(
             String name,
             String description,
-            String imageUrl,
             List<BurgerIngredient> newIngredients,
             Boolean availability,
             Boolean onMenu,
-            Boolean favorite
+            Boolean favorite,
+            Integer updatedBy
     ) {
+        // Validar que sea burger de menú
         if (!this.isOnMenu) {
-            throw new IllegalStateException(
-                    "Solo hamburguesas del menú pueden actualizarse por este método"
+            throw new InvalidBurgerException(
+                    "Solo hamburguesas del menú pueden actualizarse con este método. Burger ID: " + this.idBurger
             );
         }
+
+        // Validaciones
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
+            throw new InvalidBurgerException("El nombre no puede estar vacío");
         }
 
+        if (updatedBy == null) {
+            throw new InvalidBurgerException("El ID del usuario que actualiza no puede ser nulo");
+        }
+
+        if (newIngredients == null || newIngredients.isEmpty()) {
+            throw new InvalidBurgerException("La hamburguesa debe tener al menos un ingrediente");
+        }
+
+        // Actualizar campos
         this.name = name;
         this.description = description;
-        this.imageUrl = imageUrl;
 
         // Reemplazar ingredientes
         setIngredients(newIngredients);
-        // Recalcular precio total a partir de basePrice + ingredientes
+
+        // Recalcular precio base
         this.basePrice = calculateTotalPriceInternal(this.ingredients, BigDecimal.ZERO);
+
+        // Si no hay precio final personalizado, actualizar también el final
+        if (this.finalPrice.compareTo(this.basePrice) == 0) {
+            this.finalPrice = this.basePrice;
+        }
 
         // Flags de estado
         if (availability != null) {
@@ -284,14 +317,12 @@ public class Burger {
             this.isFavorite = favorite;
         }
 
+        // Auditoría
         this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
+
     }
 
-
-
-    // ============================================
-    // COMPORTAMIENTO DE DOMINIO
-    // ============================================
 
     public void addIngredient(BurgerIngredient ingredient) {
         if (!this.isOnMenu) {
@@ -305,9 +336,125 @@ public class Burger {
         }
 
         this.ingredients.add(ingredient);
-
         this.basePrice = this.basePrice.add(ingredient.calculateSubtotal());
         this.finalPrice = this.basePrice;
+    }
+
+    public void updatePrice(BigDecimal newPrice, Integer updatedBy) {
+        if (!this.isOnMenu) {
+            throw new IllegalStateException(
+                    "Solo hamburguesas del menú pueden cambiar de precio"
+            );
+        }
+
+        if (newPrice == null || newPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(
+                    "El precio debe ser mayor a 0"
+            );
+        }
+
+        this.basePrice = newPrice;
+        this.finalPrice = newPrice;
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
+    }
+
+    public void updateInfo(String name, String description, Integer updatedBy) {
+        if (!this.isOnMenu) {
+            throw new IllegalStateException(
+                    "Solo hamburguesas del menú pueden actualizarse"
+            );
+        }
+
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("El nombre no puede estar vacío");
+        }
+
+        this.name = name;
+        this.description = description;
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
+    }
+
+    public void markAsDeleted(Integer deletedBy) {
+        if (deletedBy == null) {
+            throw new InvalidBurgerException("El ID del usuario que elimina no puede ser null");
+        }
+
+        if (this.deletedAt != null) {
+            throw new InvalidBurgerException(
+                    "La burger con ID " + this.idBurger + " ya está eliminada"
+            );
+        }
+
+        this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedBy;
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = deletedBy;
+        this.availability = false;
+
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
+
+
+    public void setAvailability(boolean available, Integer updatedBy) {
+        if (!this.isOnMenu) {
+            throw new IllegalStateException(
+                    "Solo hamburguesas del menú pueden cambiar disponibilidad"
+            );
+        }
+
+        this.availability = available;
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
+    }
+
+    // ============================================
+    // COMPORTAMIENTO: Custom Burger
+    // ============================================
+
+    public void updateCustomBurger(
+            Integer idUser,
+            String name,
+            String description,
+            List<BurgerIngredient> newIngredients
+    ) {
+        if (!this.isCustom) {
+            throw new IllegalStateException("Solo hamburguesas personalizadas pueden actualizarse");
+        }
+        if (!belongsToUser(idUser)) {
+            throw new IllegalArgumentException("La hamburguesa no pertenece a este usuario");
+        }
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("El nombre no puede estar vacío");
+        }
+
+        this.name = name;
+        this.description = description;
+        setIngredients(newIngredients);
+        this.finalPrice = calculateTotalPriceInternal(this.ingredients, this.basePrice);
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = idUser;
+    }
+
+    public void markCustomAsDeleted(Integer idUser) {
+        if (!this.isCustom) {
+            throw new IllegalStateException(
+                    "Solo hamburguesas personalizadas pueden eliminarse"
+            );
+        }
+        if (!belongsToUser(idUser)) {
+            throw new IllegalArgumentException(
+                    "La hamburguesa no pertenece a este usuario"
+            );
+        }
+
+        this.deletedAt = LocalDateTime.now();
+        this.availability = false;
+        this.deletedBy = idUser;
     }
 
     public void markAsFavorite(Integer userId) {
@@ -324,9 +471,9 @@ public class Burger {
         }
 
         this.isFavorite = true;
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = userId;
     }
-
-
 
     public void unmarkAsFavorite(Integer userId) {
         if (!this.idUser.equals(userId)) {
@@ -336,63 +483,29 @@ public class Burger {
         }
 
         this.isFavorite = false;
-    }
-
-    public void updatePrice(BigDecimal newPrice) {
-        if (!this.isOnMenu) {
-            throw new IllegalStateException(
-                    "Solo hamburguesas del menú pueden cambiar de precio"
-            );
-        }
-
-        if (newPrice == null || newPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException(
-                    "El precio debe ser mayor a 0"
-            );
-        }
-
-        this.basePrice = newPrice;
-        this.finalPrice = newPrice;
         this.updatedAt = LocalDateTime.now();
+        this.updatedBy = userId;
     }
 
-    public void updateInfo(String name, String description) {
-        if (!this.isOnMenu) {
-            throw new IllegalStateException(
-                    "Solo hamburguesas del menú pueden actualizarse"
-            );
+    // ============================================
+    // COMPORTAMIENTO: Imagen
+    // ============================================
+
+
+    public void updateImageComplete(String imageKey, String imageUrl, Integer updatedBy) {
+        if (imageKey == null || imageKey.isBlank()) {
+            throw new IllegalArgumentException("El imageKey no puede estar vacío");
         }
 
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
-        }
-
-        this.name = name;
-        this.description = description;
+        this.imageKey = imageKey;      //  Ruta S3
+        this.imageUrl = imageUrl;      // Nombre original
         this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
     }
 
-    public void markAsDeleted() {
-        if (!this.isOnMenu) {
-            throw new IllegalStateException(
-                    "Solo hamburguesas del menú pueden eliminarse (soft delete)"
-            );
-        }
-
-        this.deletedAt = LocalDateTime.now();
-        this.availability = false;
-    }
-
-    public void setAvailability(boolean available) {
-        if (!this.isOnMenu) {
-            throw new IllegalStateException(
-                    "Solo hamburguesas del menú pueden cambiar disponibilidad"
-            );
-        }
-
-        this.availability = available;
-        this.updatedAt = LocalDateTime.now();
-    }
+    // ============================================
+    // COMPORTAMIENTO GENERAL
+    // ============================================
 
     public void incrementOrders() {
         this.timesOrdered++;
@@ -415,51 +528,33 @@ public class Burger {
         return base.add(ingTotal);
     }
 
-
-
-    // Reglas de CustomBurger
-
-    public void updateCustomBurger(
-            Integer idUser,
-            String name,
-            String description,
-            String imageUrl,
-            List<BurgerIngredient> newIngredients
-    ) {
-        if (!this.isCustom) {
-            throw new IllegalStateException("Solo hamburguesas personalizadas pueden actualizarse");
-        }
-        if (!belongsToUser(idUser)) {
-            throw new IllegalArgumentException("La hamburguesa no pertenece a este usuario");
-        }
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
+    public void setFavorite(Boolean isFavorite, Integer updatedBy) {
+        if (!this.isOnMenu) {
+            throw new InvalidBurgerException(
+                    "Solo burgers de menú pueden marcarse como destacadas. Burger ID: " + this.idBurger
+            );
         }
 
-        this.name = name;
-        this.description = description;
-        this.imageUrl = imageUrl;
-        setIngredients(newIngredients);  // método ya existente en el agregado
-        this.finalPrice = calculateTotalPriceInternal(this.ingredients, this.basePrice);
+        if (updatedBy == null) {
+            throw new InvalidBurgerException("updatedBy no puede ser null");
+        }
+
+        if (isFavorite == null) {
+            throw new InvalidBurgerException("isFavorite no puede ser null");
+        }
+
+        this.isFavorite = isFavorite;
         this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
     }
 
-    public void markCustomAsDeleted(Integer idUser) {
-        if (!this.isCustom) {
-            throw new IllegalStateException(
-                    "Solo hamburguesas personalizadas pueden eliminarse"
-            );
+    public String getImageStatus() {
+        if (this.imageKey == null || this.imageKey.isBlank()) {
+            return "NONE";
         }
-        if (!belongsToUser(idUser)) {
-            throw new IllegalArgumentException(
-                    "La hamburguesa no pertenece a este usuario"
-            );
-        }
-
-        this.deletedAt = LocalDateTime.now();
-        this.availability = false;
+        return "READY";
     }
-
+    
 
 
 
@@ -523,8 +618,12 @@ public class Burger {
         return availability;
     }
 
+    public String getImageKey() {
+        return imageKey;              //  Ruta S3
+    }
+
     public String getImageUrl() {
-        return imageUrl;
+        return imageUrl;              //  Nombre original
     }
 
     public Integer getIdUser() {
