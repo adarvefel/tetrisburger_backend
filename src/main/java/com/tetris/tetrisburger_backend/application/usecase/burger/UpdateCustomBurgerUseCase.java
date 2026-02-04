@@ -4,7 +4,9 @@ import com.tetris.tetrisburger_backend.domain.exception.*;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.model.BurgerIngredient;
 import com.tetris.tetrisburger_backend.domain.model.Product;
+import com.tetris.tetrisburger_backend.domain.model.ProductType;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.UpdateCustomBurger;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateCustomBurgerCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
@@ -16,12 +18,18 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
 public class UpdateCustomBurgerUseCase implements UpdateCustomBurger {
 
     private static final Logger logger = LoggerFactory.getLogger(UpdateCustomBurgerUseCase.class);
+
+    // Tipos de productos permitidos para ingredientes de hamburguesa
+    private static final Set<ProductType> ALLOWED_INGREDIENT_TYPES = Set.of(
+            ProductType.INGREDIENT
+    );
 
     private final BurgerRepository burgerRepository;
     private final ProductRepository productRepository;
@@ -39,38 +47,39 @@ public class UpdateCustomBurgerUseCase implements UpdateCustomBurger {
 
     @Override
     public Burger handle(UpdateCustomBurgerCommand command) {
-        logger.info("Updating custom burger: burgerId={}, userId={}",
+        logger.info("🔵 Actualizando hamburguesa personalizada: burgerId={}, userId={}",
                 command.idBurger(), command.idUser());
 
         try {
-            // 1. Validaciones
+            // 1. Validaciones básicas
             validateCommand(command);
             validateUser(command.idUser());
 
-            // 2. Cargar burger y validar dueño + que sea custom
+            // 2. Cargar burger y validar dueño
             Burger burger = burgerRepository.findCustomByIdAndUser(
                             command.idBurger(), command.idUser())
                     .orElseThrow(() -> new BurgerNotFoundException(
                             "Hamburguesa no encontrada o no pertenece al usuario. ID: " + command.idBurger()
                     ));
 
-            // 3. Validar que es custom burger
-            if (!burger.isCustomBurger()) {
-                throw new InvalidBurgerException(
-                        "Solo hamburguesas personalizadas pueden actualizarse con este método. Burger ID: "
-                                + command.idBurger()
-                );
-            }
+            // 3. Validar que es custom burger y no está eliminada
+            validateIsCustomBurger(burger);
 
-            logger.debug("Current burger state: name={}, ingredients={}, finalPrice={}",
+            logger.debug("📊 Estado actual: name={}, ingredients={}, price={}",
                     burger.getName(), burger.getIngredients().size(), burger.getFinalPrice());
 
-            // 4. Crear nuevos ingredientes con validaciones
+            // 4. Validar ingredientes duplicados
+            validateNoDuplicateIngredients(command.ingredients());
+
+            // 5. Crear nuevos ingredientes con validaciones completas
             List<BurgerIngredient> newIngredients = command.ingredients().stream()
-                    .map(req -> createBurgerIngredient(req.idProduct(), req.quantity(), req.isOptional()))
+                    .map(this::createBurgerIngredient)
                     .toList();
 
-            // 5. Delegar la actualización al dominio
+            // 6. Guardar precios actuales para logging
+            BigDecimal oldPrice = burger.getFinalPrice();
+
+            // 7. Delegar la actualización al dominio
             burger.updateCustomBurger(
                     command.idUser(),
                     command.name(),
@@ -78,20 +87,24 @@ public class UpdateCustomBurgerUseCase implements UpdateCustomBurger {
                     newIngredients
             );
 
-            logger.debug("Updated burger state: name={}, ingredients={}, finalPrice={}",
-                    burger.getName(), burger.getIngredients().size(), burger.getFinalPrice());
+            logger.debug("✅ Estado actualizado: name={}, ingredients={}, price={} (antes: {})",
+                    burger.getName(),
+                    burger.getIngredients().size(),
+                    burger.getFinalPrice(),
+                    oldPrice);
 
-            // 6. Guardar
+            // 8. Guardar
             Burger updated = burgerRepository.save(burger);
 
             if (updated == null) {
-                throw new BurgerCreationException("Failed to save updated custom burger");
+                throw new BurgerCreationException("Error al guardar hamburguesa actualizada");
             }
 
-            logger.info("Custom burger updated successfully: burgerId={}, userId={}",
-                    updated.getIdBurger(), command.idUser());
-
-            // La imagen se actualiza con UpdateCustomBurgerImageUseCase
+            logger.info("✅ Hamburguesa personalizada actualizada: burgerId={}, userId={}, precio: ${} → ${}",
+                    updated.getIdBurger(),
+                    command.idUser(),
+                    oldPrice,
+                    updated.getFinalPrice());
 
             return updated;
 
@@ -102,23 +115,25 @@ public class UpdateCustomBurgerUseCase implements UpdateCustomBurger {
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new InvalidBurgerException(e.getMessage());
         } catch (Exception e) {
-            logger.error("Unexpected error updating custom burger: burgerId={}",
+            logger.error("❌ Error inesperado actualizando hamburguesa: burgerId={}",
                     command.idBurger(), e);
-            throw new BurgerCreationException("Error updating custom burger", e);
+            throw new BurgerCreationException("Error actualizando hamburguesa personalizada", e);
         }
     }
 
+    // ==================== VALIDACIONES ====================
+
     private void validateCommand(UpdateCustomBurgerCommand command) {
         if (command == null) {
-            throw new InvalidBurgerException("Command cannot be null");
+            throw new InvalidBurgerException("El comando no puede ser nulo");
         }
 
         if (command.idBurger() == null) {
-            throw new InvalidBurgerException("Burger ID cannot be null");
+            throw new InvalidBurgerException("El ID de la hamburguesa no puede ser nulo");
         }
 
         if (command.idUser() == null) {
-            throw new InvalidBurgerException("User ID cannot be null");
+            throw new InvalidBurgerException("El ID del usuario no puede ser nulo");
         }
 
         if (command.name() == null || command.name().isBlank()) {
@@ -138,41 +153,126 @@ public class UpdateCustomBurgerUseCase implements UpdateCustomBurger {
         }
     }
 
-    private BurgerIngredient createBurgerIngredient(Integer productId, Integer quantity, Boolean isOptional) {
-        logger.debug("Creating burger ingredient: productId={}, quantity={}", productId, quantity);
-
-        if (productId == null) {
-            throw new InvalidBurgerException("Product ID cannot be null");
+    /**
+     * Valida que sea custom burger y no esté eliminada
+     */
+    private void validateIsCustomBurger(Burger burger) {
+        if (!burger.isCustomBurger()) {
+            throw new InvalidBurgerException(
+                    "Solo hamburguesas personalizadas pueden actualizarse con este método. " +
+                            "Burger ID: " + burger.getIdBurger()
+            );
         }
 
-        if (quantity == null || quantity <= 0) {
-            throw new InvalidBurgerException("La cantidad debe ser mayor a 0");
+        if (burger.isDeleted()) {
+            throw new InvalidBurgerException(
+                    "No se puede actualizar una hamburguesa eliminada. " +
+                            "Burger ID: " + burger.getIdBurger()
+            );
         }
+    }
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException(productId));
+    /**
+     * Valida que no haya ingredientes duplicados
+     */
+    private void validateNoDuplicateIngredients(
+            List<UpdateCustomBurgerCommand.IngredientRequest> ingredients) {
 
-        if (!product.isAvailable()) {
+        long uniqueProducts = ingredients.stream()
+                .map(UpdateCustomBurgerCommand.IngredientRequest::idProduct)
+                .distinct()
+                .count();
+
+        if (uniqueProducts < ingredients.size()) {
+            throw new InvalidBurgerException(
+                    "La hamburguesa contiene ingredientes duplicados. " +
+                            "Si deseas más cantidad, aumenta el campo 'quantity'"
+            );
+        }
+    }
+
+    // ==================== CREAR INGREDIENTE ====================
+
+    /**
+     * Crea y valida un BurgerIngredient desde un IngredientRequest
+     * ✅ Usa ProductSnapshot para capturar el estado del producto
+     */
+    private BurgerIngredient createBurgerIngredient(
+            UpdateCustomBurgerCommand.IngredientRequest request) {
+
+        logger.debug("🔍 Validando ingrediente: productId={}, quantity={}",
+                request.idProduct(), request.quantity());
+
+        // 1. Buscar producto
+        Product product = productRepository.findById(request.idProduct())
+                .orElseThrow(() -> new ProductNotFoundException(request.idProduct()));
+
+        // 2. Validar producto completo (incluye stock)
+        validateProductForBurger(product, request.quantity());
+
+        // 3. Crear snapshot del producto
+        ProductSnapshot snapshot = ProductSnapshot.fromProduct(
+                product,
+                request.quantity(),
+                request.isOptional()
+        );
+
+        logger.debug("✓ Ingrediente válido: {} x{} = ${}",
+                product.getName(),
+                request.quantity(),
+                snapshot.calculateSubtotal());
+
+        // 4. Crear ingrediente desde snapshot
+        return BurgerIngredient.fromSnapshot(snapshot);
+    }
+
+    /**
+     * Validación completa del producto para hamburguesa personalizada
+     * ⚠️ IMPORTANTE: Custom burgers SÍ requieren stock disponible
+     */
+    private void validateProductForBurger(Product product, Integer quantity) {
+
+        // 1. Validar disponibilidad
+        if (!product.getAvailability()) {
             throw new InvalidBurgerException(
                     "El producto '" + product.getName() + "' no está disponible"
             );
         }
 
-        if (product.getStock() != null && product.getStock() < quantity) {
-            throw new InsufficientStockException(
-                    product.getName(),
-                    quantity,
-                    product.getStock()
+        // 2. Validar que sea ingrediente de hamburguesa
+        if (product.getIsBurgerIngredient() == null || !product.getIsBurgerIngredient()) {
+            throw new InvalidBurgerException(
+                    "El producto '" + product.getName() + "' no es un ingrediente de hamburguesa"
             );
         }
 
-        BigDecimal priceAtTime = product.getPrice();
+        // 3. Validar tipo de producto
+        if (!ALLOWED_INGREDIENT_TYPES.contains(product.getProductType())) {
+            throw new InvalidBurgerException(
+                    "El producto '" + product.getName() + "' debe ser de tipo INGREDIENT. " +
+                            "Tipo actual: " + product.getProductType()
+            );
+        }
 
-        return BurgerIngredient.create(
-                productId,
-                priceAtTime,
-                quantity,
-                isOptional != null ? isOptional : false
-        );
+        // 4. ⚠️ CRÍTICO: Validar stock disponible (Custom burgers SÍ requieren stock)
+        if (product.getQuantity() == null || product.getQuantity() <= 0) {
+            throw new InsufficientStockException(
+                    "El producto '" + product.getName() + "' no tiene stock disponible"
+            );
+        }
+
+        // 5. Validar cantidad suficiente
+        if (product.getQuantity() < quantity) {
+            throw new InsufficientStockException(
+                    "Stock insuficiente para '" + product.getName() + "'. " +
+                            "Disponible: " + product.getQuantity() + ", Solicitado: " + quantity
+            );
+        }
+
+        logger.debug("✅ Producto validado: {} | Categoría: {} | Stock: {} | Solicitado: {}",
+                product.getName(),
+                product.getCategoryName(),
+                product.getQuantity(),
+                quantity);
     }
 }

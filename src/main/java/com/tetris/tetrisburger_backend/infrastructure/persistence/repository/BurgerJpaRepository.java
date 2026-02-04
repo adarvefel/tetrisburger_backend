@@ -28,6 +28,16 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
      */
     Page<BurgerEntity> findByIsOnMenuTrueAndDeletedAtIsNull(Pageable pageable);
 
+    /**
+     * ✅ Lista todas las burgers de menú destacadas (favoritas)
+     */
+    Page<BurgerEntity> findAllByIsOnMenuTrueAndIsFavoriteTrueAndDeletedAtIsNull(Pageable pageable);
+
+    /**
+     * ✅ Lista todas las burgers de menú destacadas y disponibles
+     */
+    Page<BurgerEntity> findAllByIsOnMenuTrueAndIsFavoriteTrueAndAvailabilityTrueAndDeletedAtIsNull(Pageable pageable);
+
     // ========================================
     // LISTAR BURGERS CUSTOM
     // ========================================
@@ -36,6 +46,22 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
      * Lista todas las burgers custom de un usuario activas
      */
     Page<BurgerEntity> findAllByIdUserAndIsCustomTrueAndDeletedAtIsNull(Integer idUser, Pageable pageable);
+
+    /**
+     * ✅ Lista burgers custom favoritas de un usuario
+     */
+    Page<BurgerEntity> findAllByIdUserAndIsCustomTrueAndIsFavoriteTrueAndDeletedAtIsNull(
+            Integer idUser,
+            Pageable pageable
+    );
+
+    Optional<BurgerEntity> findByIdBurgerAndDeletedAtIsNull(Integer idBurger);
+
+
+    /**
+     * ✅ Lista todas las burgers custom de un usuario (sin paginación)
+     */
+    List<BurgerEntity> findAllByIdUserAndIsCustomTrueAndDeletedAtIsNull(Integer idUser);
 
     // ========================================
     // BUSCAR BURGER POR ID
@@ -64,11 +90,7 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     // ========================================
 
     /**
-     * ✅ Verifica si existe una burger de menú activa con el nombre dado (case insensitive)
-     * Solo considera burgers de menú (isOnMenu=true) que no estén eliminadas (deletedAt IS NULL)
-     *
-     * @param name Nombre de la burger a verificar
-     * @return true si existe, false si no
+     * Verifica si existe una burger de menú activa con el nombre dado (case insensitive)
      */
     @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END FROM BurgerEntity b " +
             "WHERE LOWER(b.name) = LOWER(:name) " +
@@ -77,11 +99,21 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     boolean existsByNameAndIsOnMenuTrueAndDeletedAtIsNull(@Param("name") String name);
 
     /**
-     * ✅ Busca una burger de menú activa por nombre exacto (para UPDATE)
-     * Útil cuando necesitas validar duplicados excluyendo la burger actual
-     *
-     * @param name Nombre de la burger
-     * @return Optional con la burger si existe
+     *  Verifica si existe otra burger de menú con el mismo nombre (excluyendo una específica)
+     * Útil para validar UPDATE sin conflicto con el mismo registro
+     */
+    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END FROM BurgerEntity b " +
+            "WHERE LOWER(b.name) = LOWER(:name) " +
+            "AND b.isOnMenu = true " +
+            "AND b.deletedAt IS NULL " +
+            "AND b.idBurger <> :excludeId")
+    boolean existsByNameAndIsOnMenuTrueAndDeletedAtIsNullAndIdBurgerNot(
+            @Param("name") String name,
+            @Param("excludeId") Integer excludeId
+    );
+
+    /**
+     * Busca una burger de menú activa por nombre exacto
      */
     @Query("SELECT b FROM BurgerEntity b " +
             "WHERE LOWER(b.name) = LOWER(:name) " +
@@ -97,6 +129,11 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
      * Busca burgers de menú por nombre que contenga el texto (case insensitive)
      */
     List<BurgerEntity> findByNameContainingIgnoreCaseAndIsOnMenuTrueAndDeletedAtIsNull(String name);
+
+    /**
+     * ✅ Lista todas las burgers de menú sin paginación (para admin/reportes)
+     */
+    List<BurgerEntity> findAllByIsOnMenuTrueAndDeletedAtIsNull();
 
     // ========================================
     // BÚSQUEDA CON PAGINACIÓN
@@ -130,4 +167,123 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
             @Param("name") String name,
             Pageable pageable
     );
+
+    // ========================================
+    // ✅ ESTADÍSTICAS Y CONTADORES
+    // ========================================
+
+    /**
+     * Cuenta burgers de menú activas
+     */
+    @Query("SELECT COUNT(b) FROM BurgerEntity b " +
+            "WHERE b.isOnMenu = true " +
+            "AND b.deletedAt IS NULL")
+    long countActiveMenuBurgers();
+
+    /**
+     * Cuenta burgers custom de un usuario
+     */
+    @Query("SELECT COUNT(b) FROM BurgerEntity b " +
+            "WHERE b.isCustom = true " +
+            "AND b.idUser = :idUser " +
+            "AND b.deletedAt IS NULL")
+    long countCustomBurgersByUser(@Param("idUser") Integer idUser);
+
+    /**
+     * Cuenta burgers de menú favoritas/destacadas
+     */
+    @Query("SELECT COUNT(b) FROM BurgerEntity b " +
+            "WHERE b.isOnMenu = true " +
+            "AND b.isFavorite = true " +
+            "AND b.deletedAt IS NULL")
+    long countFavoriteMenuBurgers();
+
+    // ========================================
+    // ✅ BURGERS MÁS POPULARES (por timesOrdered)
+    // ========================================
+
+    /**
+     * Obtiene las burgers de menú más pedidas
+     */
+    @Query("SELECT b FROM BurgerEntity b " +
+            "WHERE b.isOnMenu = true " +
+            "AND b.deletedAt IS NULL " +
+            "AND b.availability = true " +
+            "ORDER BY b.timesOrdered DESC, b.createdAt DESC")
+    Page<BurgerEntity> findTopOrderedMenuBurgers(Pageable pageable);
+
+    /**
+     * Obtiene las burgers custom más pedidas de un usuario
+     */
+    @Query("SELECT b FROM BurgerEntity b " +
+            "WHERE b.isCustom = true " +
+            "AND b.idUser = :idUser " +
+            "AND b.deletedAt IS NULL " +
+            "ORDER BY b.timesOrdered DESC, b.createdAt DESC")
+    Page<BurgerEntity> findTopOrderedCustomBurgersByUser(
+            @Param("idUser") Integer idUser,
+            Pageable pageable
+    );
+
+    // ========================================
+    // ✅ BÚSQUEDA AVANZADA
+    // ========================================
+
+    /**
+     * Busca burgers de menú con filtros múltiples
+     */
+    @Query("SELECT b FROM BurgerEntity b " +
+            "WHERE b.isOnMenu = true " +
+            "AND b.deletedAt IS NULL " +
+            "AND (:name IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+            "AND (:availability IS NULL OR b.availability = :availability) " +
+            "AND (:isFavorite IS NULL OR b.isFavorite = :isFavorite) " +
+            "ORDER BY b.createdAt DESC")
+    Page<BurgerEntity> searchMenuBurgersWithFilters(
+            @Param("name") String name,
+            @Param("availability") Boolean availability,
+            @Param("isFavorite") Boolean isFavorite,
+            Pageable pageable
+    );
+
+    /**
+     * Busca burgers custom con filtros múltiples
+     */
+    @Query("SELECT b FROM BurgerEntity b " +
+            "WHERE b.isCustom = true " +
+            "AND b.idUser = :idUser " +
+            "AND b.deletedAt IS NULL " +
+            "AND (:name IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+            "AND (:isFavorite IS NULL OR b.isFavorite = :isFavorite) " +
+            "ORDER BY b.createdAt DESC")
+    Page<BurgerEntity> searchCustomBurgersWithFilters(
+            @Param("idUser") Integer idUser,
+            @Param("name") String name,
+            @Param("isFavorite") Boolean isFavorite,
+            Pageable pageable
+    );
+
+    // ========================================
+    // ✅ ORDENAMIENTO POR PRECIO
+    // ========================================
+
+    /**
+     * Lista burgers de menú ordenadas por precio (menor a mayor)
+     */
+    @Query("SELECT b FROM BurgerEntity b " +
+            "WHERE b.isOnMenu = true " +
+            "AND b.deletedAt IS NULL " +
+            "AND b.availability = true " +
+            "ORDER BY b.finalPrice ASC")
+    Page<BurgerEntity> findMenuBurgersOrderByPriceAsc(Pageable pageable);
+
+    /**
+     * Lista burgers de menú ordenadas por precio (mayor a menor)
+     */
+    @Query("SELECT b FROM BurgerEntity b " +
+            "WHERE b.isOnMenu = true " +
+            "AND b.deletedAt IS NULL " +
+            "AND b.availability = true " +
+            "ORDER BY b.finalPrice DESC")
+    Page<BurgerEntity> findMenuBurgersOrderByPriceDesc(Pageable pageable);
 }

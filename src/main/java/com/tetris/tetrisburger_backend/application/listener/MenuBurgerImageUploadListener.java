@@ -45,8 +45,6 @@ public class MenuBurgerImageUploadListener {
                     event.originalFileName(),
                     event.contentType(),
                     event.fileBytes()
-
-
             );
 
             // Validar FileData
@@ -56,7 +54,7 @@ public class MenuBurgerImageUploadListener {
             }
 
             logger.info("FileData creado: originalFilename={}, size={} bytes",
-                    fileData.originalFilename());
+                    fileData.originalFilename(), fileData.bytes().length);
 
             // 3. Subir imagen a S3
             ImageUploadResult result = imageStoragePort.uploadImage(fileData, "burgers");
@@ -66,21 +64,24 @@ public class MenuBurgerImageUploadListener {
                 return;
             }
 
-            logger.info("Imagen subida exitosamente: imageKey={}, originalFileName={}, idBurger={}",
-                    result.imageKey(), result.originalFileName(), event.idBurger());
+            // ✅ 4. Generar URL completa desde imageKey
+            String imageKey = result.imageKey();
+            String imageUrl = imageStoragePort.getImageUrl(imageKey);
 
-            // 4. Actualizar burger con imageKey e imageUrl
-            //  updateImageComplete YA setea updatedBy y updatedAt internamente
+            logger.info("Imagen subida exitosamente: imageKey={}, imageUrl={}, idBurger={}",
+                    imageKey, imageUrl, event.idBurger());
+
+            // ✅ 5. Actualizar burger con imageKey e imageUrl COMPLETA
             burger.updateImageComplete(
-                    result.imageKey(),           //  imageKey (ruta S3)
-                    result.originalFileName(),   // originalFileName (nombre original)
-                    event.uploadedBy()           // uploadedBy
+                    imageKey,          // "burgers/123-uuid-clasica.jpg"
+                    imageUrl,          // "https://tetrisburger-images.s3.us-east-1.amazonaws.com/burgers/123-uuid-clasica.jpg"
+                    event.uploadedBy()
             );
 
             burgerRepository.save(burger);
 
             logger.info("Burger actualizado con imagen exitosamente: idBurger={}, imageKey={}",
-                    event.idBurger(), result.imageKey());
+                    event.idBurger(), imageKey);
 
         } catch (BurgerNotFoundException e) {
             logger.error("Burger no encontrado: idBurger={}", event.idBurger(), e);
@@ -91,4 +92,5 @@ public class MenuBurgerImageUploadListener {
             // No lanzar excepción para evitar que falle el proceso asíncrono
         }
     }
+
 }

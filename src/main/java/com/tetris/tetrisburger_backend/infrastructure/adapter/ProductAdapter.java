@@ -7,6 +7,7 @@ import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.ProductEntity;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.mapper.ProductEntityMapper;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.ProductJpaRepository;
+import jakarta.persistence.criteria.JoinType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -48,17 +49,16 @@ public class ProductAdapter implements ProductRepository {
         jpa.deleteById(id);
     }
 
+
     @Override
     public PageResponse<Product> findAll(Integer productCategoryId, Boolean availability, PaginationRequest page) {
         Specification<ProductEntity> spec = notDeleted()
+                .and(withCategory())
                 .and(byCategory(productCategoryId))
                 .and(byAvailability(availability));
 
-        Sort sort = Sort.by(
-                page.getDirection().equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC,
-                page.getSortBy()
-        );
-        Pageable pageable = PageRequest.of(page.getPage(), page.getSize(), sort);
+        // ✅ SOLUCIÓN: Usar toPageable() en lugar de crear Sort directamente
+        Pageable pageable = toPageable(page);
         Page<ProductEntity> productPage = jpa.findAll(spec, pageable);
 
         List<Product> products = productPage.getContent().stream()
@@ -74,29 +74,28 @@ public class ProductAdapter implements ProductRepository {
         );
     }
 
+
     @Override
     public PageResponse<Product> search(String q, Integer productCategoryId, Boolean availability, PaginationRequest pageReq) {
-        Specification<ProductEntity> spec = notDeleted();
-
-        if (q != null && !q.isBlank()) {
-            spec = spec.and(likeNameOrDescription(q));
-        }
-        if (productCategoryId != null) {
-            spec = spec.and(eqCategory(productCategoryId));
-        }
-        if (availability != null) {
-            spec = spec.and(eqAvailability(availability));
-        }
-
         Pageable pageable = toPageable(pageReq);
-        Page<ProductEntity> page = jpa.findAll(spec, pageable);
+        String normalizedQuery = (q != null && q.trim().isEmpty()) ? null : q;
+
+        Page<ProductEntity> page = jpa.searchProducts(
+                normalizedQuery,
+                productCategoryId,
+                availability,
+                pageable
+        );
+
         return toPageResponse(page);
     }
+
+
 
     @Override
     public boolean existsByNameIgnoreCase(String name) {
         boolean exists = jpa.existsByNameIgnoreCaseAndDeletedAtIsNull(name);
-        log.info("Verificando si existe producto con nombre '{}': {}", name, exists);
+        log.info("✅ Verificando si existe producto con nombre '{}': {}", name, exists);
         return exists;
     }
 
@@ -106,25 +105,30 @@ public class ProductAdapter implements ProductRepository {
         return (root, query, cb) -> cb.isNull(root.get("deletedAt"));
     }
 
-    private Specification<ProductEntity> byCategory(Integer categoryId) {
-        return (root, query, cb) -> categoryId == null ?
-                cb.conjunction() :
-                cb.equal(root.get("productCategory").get("id"), categoryId);
+    // ✅ NUEVO: JOIN FETCH para productCategory
+    private Specification<ProductEntity> withCategory() {
+        return (root, query, cb) -> {
+            if (query.getResultType() != Long.class && query.getResultType() != long.class) {
+                root.fetch("productCategory", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
     }
 
+    private Specification<ProductEntity> byCategory(Integer categoryId) {
+        return (root, query, cb) -> {
+            if (categoryId == null) {
+                return cb.conjunction();
+            }
+            // ✅ Usa join en lugar de get directo
+            return cb.equal(root.join("productCategory", JoinType.LEFT).get("id"), categoryId);
+        };
+    }
 
     private Specification<ProductEntity> byAvailability(Boolean availability) {
         return (root, query, cb) -> availability == null ?
                 cb.conjunction() :
                 cb.equal(root.get("availability"), availability);
-    }
-
-    private Specification<ProductEntity> eqCategory(Integer categoryId) {
-        return (root, query, cb) -> cb.equal(root.get("productCategoryId"), categoryId);
-    }
-
-    private Specification<ProductEntity> eqAvailability(boolean availability) {
-        return (root, query, cb) -> cb.equal(root.get("availability"), availability);
     }
 
     private Specification<ProductEntity> likeNameOrDescription(String q) {

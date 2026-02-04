@@ -68,22 +68,21 @@ public class CustomBurgerImageUploadListener {
                     event.originalFileName(),
                     event.contentType(),
                     event.fileBytes()
-
             );
 
             // Validar FileData
             if (!fileData.isValid()) {
                 logger.error("FileData inválido para custom burger idBurger: {}", event.idBurger());
-                return;
+                throw new ImageUploadException("FileData inválido para burger: " + event.idBurger());
             }
 
             logger.info("FileData creado para custom burger: originalFilename={}, size={} bytes",
-                    fileData.originalFilename());
+                    fileData.originalFilename(), fileData.bytes().length);
 
             // 5. Subir la imagen a S3 (carpeta custom-burgers)
             ImageUploadResult uploadResult = imageStoragePort.uploadImage(
                     fileData,
-                    CUSTOM_BURGER_FOLDER  // ✅ "custom-burgers"
+                    CUSTOM_BURGER_FOLDER  // "custom-burgers"
             );
 
             if (uploadResult == null) {
@@ -91,22 +90,25 @@ public class CustomBurgerImageUploadListener {
                 throw new ImageUploadException("La subida de imagen falló para burger: " + event.idBurger());
             }
 
-            logger.info("Imagen de custom burger subida exitosamente: imageKey={}, imageUrl={}, idBurger={}",
-                    uploadResult.imageKey(), uploadResult.originalFileName(), event.idBurger());
+            // ✅ 6. Generar URL completa desde imageKey
+            String imageKey = uploadResult.imageKey();
+            String imageUrl = imageStoragePort.getImageUrl(imageKey);
 
-            // 6. Actualizar la imagen del burger
-            // ✅ updateImageComplete setea imageKey, imageUrl, updatedBy y updatedAt
+            logger.info("Imagen de custom burger subida exitosamente: imageKey={}, imageUrl={}, idBurger={}",
+                    imageKey, imageUrl, event.idBurger());
+
+            // ✅ 7. Actualizar con imageUrl completa
             burger.updateImageComplete(
-                    uploadResult.imageKey(),
-                    uploadResult.originalFileName(),
-                    event.idUser()  // ✅ idUser (el cliente es quien actualiza)
+                    imageKey,          // "custom-burgers/123-uuid-miburguer.jpg"
+                    imageUrl,          // "https://tetrisburger-images.s3.us-east-1.amazonaws.com/custom-burgers/123-uuid-miburguer.jpg"
+                    event.idUser()
             );
 
-            // 7. Guardar cambios
+            // 8. Guardar cambios
             burgerRepository.save(burger);
 
             logger.info("Custom burger actualizado con imagen exitosamente: idBurger={}, idUser={}, imageKey={}",
-                    event.idBurger(), event.idUser(), uploadResult.imageKey());
+                    event.idBurger(), event.idUser(), imageKey);
 
         } catch (BurgerNotFoundException e) {
             logger.error("Custom burger no encontrado: idBurger={}", event.idBurger(), e);
@@ -122,4 +124,7 @@ public class CustomBurgerImageUploadListener {
             );
         }
     }
+
+
+
 }

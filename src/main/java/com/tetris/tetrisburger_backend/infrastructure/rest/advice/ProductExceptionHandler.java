@@ -2,7 +2,9 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.advice;
 
 import com.tetris.tetrisburger_backend.domain.exception.ProductAlreadyDeletedException;
 import com.tetris.tetrisburger_backend.domain.exception.ProductAlreadyExistsException;
+import com.tetris.tetrisburger_backend.domain.exception.ProductNotAvailableException;
 import com.tetris.tetrisburger_backend.domain.exception.ProductNotFoundException;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.ErrorResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+
+import java.time.LocalDateTime;
 
 @RestControllerAdvice
 @Order(10)
@@ -43,4 +47,18 @@ public class ProductExceptionHandler {
         logger.warn("Producto ya eliminado: {} - Path: {}", ex.getMessage(), request.getDescription(false));
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
+
+    @ExceptionHandler(ProductNotAvailableException.class)
+    public ResponseEntity<ErrorResponseDTO> handleProductNotAvailable(
+            ProductNotAvailableException ex
+    ) {
+        ErrorResponseDTO error = new ErrorResponseDTO(
+                HttpStatus.CONFLICT.value(),              // status: 409
+                HttpStatus.CONFLICT.getReasonPhrase(),    // error: "Conflict"
+                ex.getMessage(),                          // message: "Producto no disponible: Pan Brioche"
+                LocalDateTime.now()                       // timestamp
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
 }

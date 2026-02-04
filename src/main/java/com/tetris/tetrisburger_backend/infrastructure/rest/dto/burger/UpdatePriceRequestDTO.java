@@ -1,8 +1,14 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger;
 
+import jakarta.validation.constraints.Digits;
+
 import java.math.BigDecimal;
 
 public record UpdatePriceRequestDTO(
-        BigDecimal newPrice
+        @Digits(integer = 6, fraction = 2, message = "El precio debe tener máximo 6 dígitos enteros y 2 decimales")
+        BigDecimal newPrice,
+        String reason
+
+
 ) {
 }

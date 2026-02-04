@@ -3,136 +3,78 @@ package com.tetris.tetrisburger_backend.domain.model;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;
 
 import java.math.BigDecimal;
-import java.util.Objects;
 
-/**
- * Value Object: BurgerIngredient
- * Mapea a la tabla: burger_ingredient
- */
 public class BurgerIngredient {
 
-    // ID de la tabla burger_ingredient (solo para persistencia)
     private Integer idBurgerIngredient;
-
-    // Referencia al producto (solo ID, no objeto) - mapea a id_product
-    private final Integer idProduct;
-
-    // Nombre del producto (snapshot) - NO se persiste, solo para DTOs
+    private Integer idProduct;
     private String productName;
+    private BigDecimal priceAtTime;
+    private Integer quantity;
+    private BigDecimal subtotal;
+    private boolean isOptional;
 
-    // Snapshot del precio en el momento de agregarlo
-    private final BigDecimal priceAtTime;
+    // Constructor privado
+    private BurgerIngredient() {}
 
-    // Datos propios del ingrediente - mapean a quantity, is_optional
-    private final Integer quantity;
-    private final Boolean isOptional;
-
-    // ============================================
-    // CONSTRUCTOR PRIVADO
-    // ============================================
-
-    private BurgerIngredient(Integer idProduct,
-                             BigDecimal priceAtTime,
-                             Integer quantity,
-                             Boolean isOptional) {
-        this.idProduct = idProduct;
-        this.priceAtTime = priceAtTime;
-        this.quantity = quantity;
-        this.isOptional = isOptional;
-    }
-
-    // ============================================
-    // FACTORY METHODS
-    // ============================================
-
-    public static BurgerIngredient create(
-            Integer idProduct,
-            BigDecimal priceAtTime,
-            Integer quantity,
-            Boolean isOptional
-    ) {
-        validateInputs(idProduct, priceAtTime, quantity);
-        return new BurgerIngredient(
-                idProduct,
-                priceAtTime,
-                quantity,
-                isOptional != null ? isOptional : Boolean.FALSE
-        );
-    }
-
-    public static BurgerIngredient fromSnapshot(ProductSnapshot snapshot) {
-        if (snapshot == null) {
-            throw new IllegalArgumentException("El snapshot no puede ser null");
-        }
-        BurgerIngredient ingredient = create(
-                snapshot.productId(),
-                snapshot.price(),
-                snapshot.quantity(),
-                snapshot.isOptional()
-        );
-        //  Capturar el nombre del producto desde el snapshot
-        ingredient.productName = snapshot.name();
-        return ingredient;
-    }
+    // ==================== Factory Method: Reconstitución ====================
 
     /**
-     * Factory Method: Reconstruir desde BD (usado por mapper JPA)
+     * ✅ Reconstitución completa desde persistencia
      */
     public static BurgerIngredient reconstitute(
             Integer idBurgerIngredient,
             Integer idProduct,
+            String productName,
             BigDecimal priceAtTime,
             Integer quantity,
+            BigDecimal subtotal,
             Boolean isOptional
     ) {
-        BurgerIngredient ingredient = create(
-                idProduct,
-                priceAtTime,
-                quantity,
-                isOptional
-        );
+        BurgerIngredient ingredient = new BurgerIngredient();
         ingredient.idBurgerIngredient = idBurgerIngredient;
-        // productName se dejará null, se cargará bajo demanda si es necesario
+        ingredient.idProduct = idProduct;
+        ingredient.productName = productName;
+        ingredient.priceAtTime = priceAtTime;
+        ingredient.quantity = quantity;
+        ingredient.subtotal = subtotal != null ? subtotal : BigDecimal.ZERO;
+        ingredient.isOptional = isOptional != null ? isOptional : false;
         return ingredient;
     }
 
-    // ============================================
-    // VALIDACIONES
-    // ============================================
-
-    private static void validateInputs(Integer idProduct,
-                                       BigDecimal priceAtTime,
-                                       Integer quantity) {
-        if (idProduct == null) {
-            throw new IllegalArgumentException("El ID del producto es obligatorio");
-        }
-        if (priceAtTime == null || priceAtTime.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("El precio debe ser mayor o igual a 0");
-        }
-        if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
-        }
-    }
-
-    // ============================================
-    // COMPORTAMIENTO DE NEGOCIO
-    // ============================================
-
-    public BigDecimal calculateSubtotal() {
-        return priceAtTime.multiply(BigDecimal.valueOf(quantity));
-    }
+    // ==================== Factory Method: Desde Snapshot ====================
 
     /**
-     * Enriquece el ingrediente con el nombre del producto
-     * (útil cuando se carga desde BD y necesitas mostrarlo al usuario)
+     * Crea un ingrediente desde un ProductSnapshot (al crear burger)
      */
-    public void enrichWithProductName(String productName) {
-        this.productName = productName;
+    public static BurgerIngredient fromSnapshot(ProductSnapshot snapshot) {
+        if (snapshot == null) {
+            throw new IllegalArgumentException("ProductSnapshot no puede ser null");
+        }
+
+        BurgerIngredient ingredient = new BurgerIngredient();
+        ingredient.idProduct = snapshot.idProduct();
+        ingredient.productName = snapshot.name();
+        ingredient.priceAtTime = snapshot.price();
+        ingredient.quantity = snapshot.quantity();
+        ingredient.subtotal = snapshot.price().multiply(new BigDecimal(snapshot.quantity()));
+        ingredient.isOptional = snapshot.isOptional();
+        return ingredient;
     }
 
-    // ============================================
-    // GETTERS
-    // ============================================
+    // ==================== Comportamiento ====================
+
+    /**
+     * Calcula el subtotal (precio × cantidad)
+     */
+    public BigDecimal calculateSubtotal() {
+        if (priceAtTime == null || quantity == null) {
+            return BigDecimal.ZERO;
+        }
+        return priceAtTime.multiply(new BigDecimal(quantity));
+    }
+
+    // ==================== Getters ====================
 
     public Integer getIdBurgerIngredient() {
         return idBurgerIngredient;
@@ -154,43 +96,49 @@ public class BurgerIngredient {
         return quantity;
     }
 
-    public Boolean getIsOptional() {
-        return isOptional;
+    public BigDecimal getSubtotal() {
+        if (subtotal == null) {
+            return calculateSubtotal();
+        }
+        return subtotal;
     }
 
     public boolean isOptional() {
-        return isOptional != null && isOptional;
+        return isOptional;
     }
 
-    // ============================================
-    // EQUALS & HASHCODE (igualdad por valor)
-    // ============================================
+    // ==================== Setters (solo para infraestructura) ====================
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        BurgerIngredient that = (BurgerIngredient) o;
-        return Objects.equals(idProduct, that.idProduct) &&
-                Objects.equals(priceAtTime, that.priceAtTime) &&
-                Objects.equals(quantity, that.quantity) &&
-                Objects.equals(isOptional, that.isOptional);
+    public void setIdBurgerIngredient(Integer idBurgerIngredient) {
+        this.idBurgerIngredient = idBurgerIngredient;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(idProduct, priceAtTime, quantity, isOptional);
+    public void setIdProduct(Integer idProduct) {
+        this.idProduct = idProduct;
     }
 
-    @Override
-    public String toString() {
-        return "BurgerIngredient{" +
-                "idBurgerIngredient=" + idBurgerIngredient +
-                ", idProduct=" + idProduct +
-                ", productName='" + productName + '\'' +
-                ", priceAtTime=" + priceAtTime +
-                ", quantity=" + quantity +
-                ", isOptional=" + isOptional +
-                '}';
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public void setPriceAtTime(BigDecimal priceAtTime) {
+        this.priceAtTime = priceAtTime;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public void setSubtotal(BigDecimal subtotal) {
+        this.subtotal = subtotal;
+    }
+
+    public void setOptional(boolean optional) {
+        this.isOptional = optional;
+    }
+
+    // Para compatibilidad con mappers
+    public Boolean getIsOptional() {
+        return isOptional;
     }
 }

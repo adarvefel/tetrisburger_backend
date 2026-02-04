@@ -4,6 +4,7 @@ import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +26,8 @@ public class Burger {
     private String description;
 
     // 3. Precios
-    private BigDecimal basePrice;
-    private BigDecimal finalPrice;
+    private BigDecimal basePrice;   // Costo real de ingredientes (NO cambia con updatePrice)
+    private BigDecimal finalPrice;  // Precio de venta (puede ser modificado por admin)
 
     // 4. Discriminadores de tipo
     private boolean isOnMenu;
@@ -36,7 +37,7 @@ public class Burger {
     // 5. Estado
     private boolean availability;
     private String imageKey;              // Ruta S3: products/1769535390022-b29db968-reborm.jpg
-    private String imageUrl;              //  Nombre original: reborm.jpg
+    private String imageUrl;              // URL completa o nombre original
     private Integer idUser;               // Cliente dueño (si is_custom = true)
     private Integer timesOrdered;
 
@@ -78,8 +79,8 @@ public class Burger {
             boolean isFavorite,
             boolean isCustom,
             boolean availability,
-            String imageKey,              // ✅ Ruta S3
-            String imageUrl,              // ✅ Nombre original
+            String imageKey,
+            String imageUrl,
             Integer idUser,
             Integer timesOrdered,
             LocalDateTime createdAt,
@@ -181,18 +182,12 @@ public class Burger {
         }
 
         // basePrice = suma de ingredientes
-        burger.basePrice = burger.calculateTotalPriceInternal(
-                burger.ingredients,
-                BigDecimal.ZERO
-        );
+        burger.basePrice = burger.calculateTotalPriceFromIngredients();
 
         // finalPrice = igual al basePrice al crear
         burger.finalPrice = burger.basePrice;
 
         return burger;
-    }
-
-    public void updateImage(String s) {
     }
 
     // ============================================
@@ -220,8 +215,6 @@ public class Burger {
             burger.createdAt = LocalDateTime.now();
             burger.basePrice = BigDecimal.ZERO;
             burger.finalPrice = BigDecimal.ZERO;
-
-            //  AUDITORÍA
             burger.createdBy = userId;
         }
 
@@ -232,7 +225,6 @@ public class Burger {
 
             BurgerIngredient ingredient = BurgerIngredient.fromSnapshot(snapshot);
             burger.ingredients.add(ingredient);
-            burger.finalPrice = burger.finalPrice.add(ingredient.calculateSubtotal());
 
             return this;
         }
@@ -253,6 +245,11 @@ public class Burger {
                         "La hamburguesa debe tener al menos un ingrediente"
                 );
             }
+
+            // Calcular precio final basado en ingredientes
+            burger.basePrice = burger.calculateTotalPriceFromIngredients();
+            burger.finalPrice = burger.basePrice;
+
             return burger;
         }
     }
@@ -261,24 +258,27 @@ public class Burger {
     // COMPORTAMIENTO: Menu Burger
     // ============================================
 
-    // Burger.java (Domain)
     public void updateMenuBurger(
             String name,
             String description,
             List<BurgerIngredient> newIngredients,
             Boolean availability,
-            Boolean onMenu,
+            Boolean isOnMenu,
             Boolean favorite,
             Integer updatedBy
     ) {
-        // Validar que sea burger de menú
         if (!this.isOnMenu) {
             throw new InvalidBurgerException(
                     "Solo hamburguesas del menú pueden actualizarse con este método. Burger ID: " + this.idBurger
             );
         }
 
-        // Validaciones
+        if (this.isDeleted()) {
+            throw new InvalidBurgerException(
+                    "No se puede actualizar una hamburguesa eliminada. Burger ID: " + this.idBurger
+            );
+        }
+
         if (name == null || name.isBlank()) {
             throw new InvalidBurgerException("El nombre no puede estar vacío");
         }
@@ -291,38 +291,37 @@ public class Burger {
             throw new InvalidBurgerException("La hamburguesa debe tener al menos un ingrediente");
         }
 
-        // Actualizar campos
         this.name = name;
         this.description = description;
 
-        // Reemplazar ingredientes
         setIngredients(newIngredients);
 
-        // Recalcular precio base
-        this.basePrice = calculateTotalPriceInternal(this.ingredients, BigDecimal.ZERO);
+        // Recalcular basePrice según nuevos ingredientes
+        BigDecimal newBasePrice = calculateTotalPriceFromIngredients();
 
-        // Si no hay precio final personalizado, actualizar también el final
+        // Si el finalPrice era igual al basePrice anterior, actualizar ambos
         if (this.finalPrice.compareTo(this.basePrice) == 0) {
-            this.finalPrice = this.basePrice;
+            this.basePrice = newBasePrice;
+            this.finalPrice = newBasePrice;
+        } else {
+            // Si había un precio custom, solo actualizar el basePrice
+            this.basePrice = newBasePrice;
+            // finalPrice se mantiene (precio promocional o premium)
         }
 
-        // Flags de estado
         if (availability != null) {
             this.availability = availability;
         }
-        if (onMenu != null) {
-            this.isOnMenu = onMenu;
+        if (isOnMenu != null) {
+            this.isOnMenu = isOnMenu;
         }
         if (favorite != null) {
             this.isFavorite = favorite;
         }
 
-        // Auditoría
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
-
     }
-
 
     public void addIngredient(BurgerIngredient ingredient) {
         if (!this.isOnMenu) {
@@ -340,21 +339,31 @@ public class Burger {
         this.finalPrice = this.basePrice;
     }
 
-    public void updatePrice(BigDecimal newPrice, Integer updatedBy) {
+    /**
+     * Actualiza SOLO el precio de venta (finalPrice).
+     * El precio base (costo de ingredientes) NO cambia.
+     *
+     * @param newFinalPrice Nuevo precio de venta
+     * @param updatedBy ID del usuario que actualiza
+     */
+    public void updateFinalPrice(BigDecimal newFinalPrice, Integer updatedBy) {
         if (!this.isOnMenu) {
-            throw new IllegalStateException(
+            throw new InvalidBurgerException(
                     "Solo hamburguesas del menú pueden cambiar de precio"
             );
         }
 
-        if (newPrice == null || newPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException(
+        if (newFinalPrice == null || newFinalPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidBurgerException(
                     "El precio debe ser mayor a 0"
             );
         }
 
-        this.basePrice = newPrice;
-        this.finalPrice = newPrice;
+        if (updatedBy == null) {
+            throw new InvalidBurgerException("updatedBy no puede ser null");
+        }
+
+        this.finalPrice = newFinalPrice;
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
     }
@@ -381,7 +390,7 @@ public class Burger {
             throw new InvalidBurgerException("El ID del usuario que elimina no puede ser null");
         }
 
-        if (this.deletedAt != null) {
+        if (this.isDeleted()) {
             throw new InvalidBurgerException(
                     "La burger con ID " + this.idBurger + " ya está eliminada"
             );
@@ -392,18 +401,22 @@ public class Burger {
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = deletedBy;
         this.availability = false;
-
     }
-
-    public boolean isDeleted() {
-        return this.deletedAt != null;
-    }
-
 
     public void setAvailability(boolean available, Integer updatedBy) {
         if (!this.isOnMenu) {
-            throw new IllegalStateException(
-                    "Solo hamburguesas del menú pueden cambiar disponibilidad"
+            throw new InvalidBurgerException(
+                    "Solo hamburguesas del menú pueden cambiar disponibilidad. Burger ID: " + this.idBurger
+            );
+        }
+
+        if (updatedBy == null) {
+            throw new InvalidBurgerException("updatedBy no puede ser null");
+        }
+
+        if (this.isDeleted()) {
+            throw new InvalidBurgerException(
+                    "No se puede cambiar disponibilidad de una hamburguesa eliminada. Burger ID: " + this.idBurger
             );
         }
 
@@ -423,31 +436,58 @@ public class Burger {
             List<BurgerIngredient> newIngredients
     ) {
         if (!this.isCustom) {
-            throw new IllegalStateException("Solo hamburguesas personalizadas pueden actualizarse");
+            throw new InvalidBurgerException(
+                    "Solo hamburguesas personalizadas pueden actualizarse. Burger ID: " + this.idBurger
+            );
         }
+
+        if (this.isDeleted()) {
+            throw new InvalidBurgerException(
+                    "No se puede actualizar una hamburguesa eliminada. Burger ID: " + this.idBurger
+            );
+        }
+
         if (!belongsToUser(idUser)) {
-            throw new IllegalArgumentException("La hamburguesa no pertenece a este usuario");
+            throw new InvalidBurgerException(
+                    "La hamburguesa no pertenece a este usuario"
+            );
         }
+
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
+            throw new InvalidBurgerException("El nombre no puede estar vacío");
+        }
+
+        if (newIngredients == null || newIngredients.isEmpty()) {
+            throw new InvalidBurgerException("La hamburguesa debe tener al menos un ingrediente");
         }
 
         this.name = name;
         this.description = description;
         setIngredients(newIngredients);
-        this.finalPrice = calculateTotalPriceInternal(this.ingredients, this.basePrice);
+
+        // Recalcular precios basado en nuevos ingredientes
+        this.basePrice = calculateTotalPriceFromIngredients();
+        this.finalPrice = this.basePrice;  // Custom burgers siempre usan precio calculado
+
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = idUser;
     }
 
     public void markCustomAsDeleted(Integer idUser) {
         if (!this.isCustom) {
-            throw new IllegalStateException(
-                    "Solo hamburguesas personalizadas pueden eliminarse"
+            throw new InvalidBurgerException(
+                    "Solo hamburguesas personalizadas pueden eliminarse. Burger ID: " + this.idBurger
             );
         }
+
+        if (this.isDeleted()) {
+            throw new InvalidBurgerException(
+                    "La hamburguesa ya está eliminada. Burger ID: " + this.idBurger
+            );
+        }
+
         if (!belongsToUser(idUser)) {
-            throw new IllegalArgumentException(
+            throw new InvalidBurgerException(
                     "La hamburguesa no pertenece a este usuario"
             );
         }
@@ -455,80 +495,20 @@ public class Burger {
         this.deletedAt = LocalDateTime.now();
         this.availability = false;
         this.deletedBy = idUser;
-    }
-
-    public void markAsFavorite(Integer userId) {
-        if (!this.isCustom) {
-            throw new IllegalStateException(
-                    "Solo las hamburguesas personalizadas pueden marcarse como favoritas"
-            );
-        }
-
-        if (!this.idUser.equals(userId)) {
-            throw new IllegalArgumentException(
-                    "Solo el creador puede marcar su hamburguesa como favorita"
-            );
-        }
-
-        this.isFavorite = true;
         this.updatedAt = LocalDateTime.now();
-        this.updatedBy = userId;
-    }
-
-    public void unmarkAsFavorite(Integer userId) {
-        if (!this.idUser.equals(userId)) {
-            throw new IllegalArgumentException(
-                    "Solo el creador puede desmarcar su favorita"
-            );
-        }
-
-        this.isFavorite = false;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = userId;
+        this.updatedBy = idUser;
     }
 
     // ============================================
-    // COMPORTAMIENTO: Imagen
+    // COMPORTAMIENTO: FAVORITOS - MENU BURGERS
     // ============================================
 
-
-    public void updateImageComplete(String imageKey, String imageUrl, Integer updatedBy) {
-        if (imageKey == null || imageKey.isBlank()) {
-            throw new IllegalArgumentException("El imageKey no puede estar vacío");
-        }
-
-        this.imageKey = imageKey;      //  Ruta S3
-        this.imageUrl = imageUrl;      // Nombre original
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
-
-    // ============================================
-    // COMPORTAMIENTO GENERAL
-    // ============================================
-
-    public void incrementOrders() {
-        this.timesOrdered++;
-    }
-
-    public boolean belongsToUser(Integer userId) {
-        return this.idUser != null && this.idUser.equals(userId);
-    }
-
-    public BigDecimal calculateTotalPrice() {
-        return calculateTotalPriceInternal(this.ingredients, this.basePrice);
-    }
-
-    private BigDecimal calculateTotalPriceInternal(List<BurgerIngredient> ingredients, BigDecimal base) {
-        BigDecimal ingTotal = ingredients == null
-                ? BigDecimal.ZERO
-                : ingredients.stream()
-                .map(BurgerIngredient::calculateSubtotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        return base.add(ingTotal);
-    }
-
-    public void setFavorite(Boolean isFavorite, Integer updatedBy) {
+    /**
+     * Establece el estado de favorito para hamburguesa de menú (ADMIN)
+     * @param isFavorite true para marcar como destacada, false para desmarcar
+     * @param updatedBy ID del admin que realiza el cambio
+     */
+    public void setMenuFavorite(Boolean isFavorite, Integer updatedBy) {
         if (!this.isOnMenu) {
             throw new InvalidBurgerException(
                     "Solo burgers de menú pueden marcarse como destacadas. Burger ID: " + this.idBurger
@@ -548,15 +528,206 @@ public class Burger {
         this.updatedBy = updatedBy;
     }
 
+    /**
+     * Alterna el estado de favorito para hamburguesa de menú (ADMIN)
+     * @param updatedBy ID del admin que realiza el cambio
+     */
+    public void toggleMenuFavorite(Integer updatedBy) {
+        if (!this.isOnMenu) {
+            throw new InvalidBurgerException(
+                    "Solo burgers de menú pueden marcarse como destacadas. Burger ID: " + this.idBurger
+            );
+        }
+
+        if (updatedBy == null) {
+            throw new InvalidBurgerException("updatedBy no puede ser null");
+        }
+
+        this.isFavorite = !this.isFavorite;
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
+    }
+
+    // ============================================
+    // COMPORTAMIENTO: FAVORITOS - CUSTOM BURGERS
+    // ============================================
+
+    /**
+     * Marca una hamburguesa personalizada como favorita (USUARIO)
+     * @param idUser ID del usuario dueño
+     */
+    public void markAsFavorite(Integer idUser) {
+        if (!this.isCustom) {
+            throw new InvalidBurgerException(
+                    "Solo hamburguesas personalizadas pueden marcarse como favoritas. Burger ID: " + this.idBurger
+            );
+        }
+
+        if (this.isDeleted()) {
+            throw new InvalidBurgerException(
+                    "No se puede marcar como favorita una hamburguesa eliminada. Burger ID: " + this.idBurger
+            );
+        }
+
+        if (!belongsToUser(idUser)) {
+            throw new InvalidBurgerException(
+                    "Solo el creador puede marcar su hamburguesa como favorita"
+            );
+        }
+
+        this.isFavorite = true;
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = idUser;
+    }
+
+    /**
+     * Desmarca una hamburguesa personalizada como favorita (USUARIO)
+     * @param idUser ID del usuario dueño
+     */
+    public void unmarkAsFavorite(Integer idUser) {
+        if (!this.isCustom) {
+            throw new InvalidBurgerException(
+                    "Solo hamburguesas personalizadas pueden desmarcarse como favoritas. Burger ID: " + this.idBurger
+            );
+        }
+
+        if (!belongsToUser(idUser)) {
+            throw new InvalidBurgerException(
+                    "Solo el creador puede desmarcar su hamburguesa como favorita"
+            );
+        }
+
+        this.isFavorite = false;
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = idUser;
+    }
+
+    /**
+     * Alterna el estado de favorito para hamburguesa personalizada (USUARIO)
+     * @param userId ID del usuario dueño
+     */
+    public void toggleCustomFavorite(Integer userId) {
+        if (!this.isCustom) {
+            throw new InvalidBurgerException(
+                    "Solo hamburguesas personalizadas pueden cambiar estado de favorita. Burger ID: " + this.idBurger
+            );
+        }
+
+        if (this.isDeleted()) {
+            throw new InvalidBurgerException(
+                    "No se puede cambiar estado de favorita en una hamburguesa eliminada. Burger ID: " + this.idBurger
+            );
+        }
+
+        if (!belongsToUser(userId)) {
+            throw new InvalidBurgerException(
+                    "Solo el creador puede cambiar el estado de favorita"
+            );
+        }
+
+        this.isFavorite = !this.isFavorite;
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = userId;
+    }
+
+    // ============================================
+    // COMPORTAMIENTO: Imagen
+    // ============================================
+
+    /**
+     * Actualiza la imagen de la hamburguesa con ruta S3 y URL
+     * @param imageKey Ruta en S3 (ej: products/1769535390022-b29db968-reborm.jpg)
+     * @param imageUrl URL completa o nombre original
+     * @param updatedBy ID del usuario que actualiza
+     */
+    public void updateImageComplete(String imageKey, String imageUrl, Integer updatedBy) {
+        if (imageKey == null || imageKey.isBlank()) {
+            throw new InvalidBurgerException("El imageKey no puede estar vacío");
+        }
+
+        if (updatedBy == null) {
+            throw new InvalidBurgerException("updatedBy no puede ser null");
+        }
+
+        if (this.isDeleted()) {
+            throw new InvalidBurgerException(
+                    "No se puede actualizar imagen de una hamburguesa eliminada. Burger ID: " + this.idBurger
+            );
+        }
+
+        this.imageKey = imageKey;
+        this.imageUrl = imageUrl;
+        this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
+    }
+
+    // ============================================
+    // COMPORTAMIENTO GENERAL Y CÁLCULOS
+    // ============================================
+
+    public void incrementOrders() {
+        this.timesOrdered++;
+    }
+
+    public boolean belongsToUser(Integer idUser) {
+        return this.idUser != null && this.idUser.equals(idUser);
+    }
+
+    /**
+     * Calcula el precio total basado en los ingredientes actuales
+     */
+    private BigDecimal calculateTotalPriceFromIngredients() {
+        if (ingredients == null || ingredients.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        return ingredients.stream()
+                .map(BurgerIngredient::calculateSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Calcula el margen de ganancia actual (finalPrice - basePrice)
+     */
+    public BigDecimal calculateMargin() {
+        if (basePrice == null || finalPrice == null) {
+            return BigDecimal.ZERO;
+        }
+        return finalPrice.subtract(basePrice);
+    }
+
+    /**
+     * Calcula el porcentaje de margen ((finalPrice - basePrice) / basePrice * 100)
+     */
+    public BigDecimal calculateMarginPercentage() {
+        if (basePrice == null || basePrice.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return finalPrice.subtract(basePrice)
+                .divide(basePrice, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
+    }
+
+    /**
+     * Verifica si se está vendiendo con pérdida (finalPrice < basePrice)
+     */
+    public boolean isSellingAtLoss() {
+        if (basePrice == null || finalPrice == null) {
+            return false;
+        }
+        return finalPrice.compareTo(basePrice) < 0;
+    }
+
+    /**
+     * Retorna el estado de la imagen: NONE, READY
+     */
     public String getImageStatus() {
         if (this.imageKey == null || this.imageKey.isBlank()) {
             return "NONE";
         }
         return "READY";
     }
-    
-
-
 
     // ============================================
     // QUERIES DE TIPO
@@ -576,6 +747,24 @@ public class Burger {
 
     public boolean isAvailable() {
         return this.availability && this.deletedAt == null;
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
+
+    /**
+     * Verifica si la hamburguesa puede ser modificada
+     */
+    public boolean canBeModified() {
+        return !this.isDeleted();
+    }
+
+    /**
+     * Verifica si la hamburguesa puede ser pedida
+     */
+    public boolean canBeOrdered() {
+        return this.availability && !this.isDeleted();
     }
 
     // ============================================
@@ -619,11 +808,11 @@ public class Burger {
     }
 
     public String getImageKey() {
-        return imageKey;              //  Ruta S3
+        return imageKey;
     }
 
     public String getImageUrl() {
-        return imageUrl;              //  Nombre original
+        return imageUrl;
     }
 
     public Integer getIdUser() {
@@ -668,6 +857,10 @@ public class Burger {
 
     public void setIdBurger(Integer idBurger) {
         this.idBurger = idBurger;
+    }
+
+    public void setFinalPrice(BigDecimal finalPrice) {
+        this.finalPrice = finalPrice;
     }
 
     void setIngredients(List<BurgerIngredient> ingredients) {

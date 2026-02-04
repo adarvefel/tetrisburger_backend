@@ -3,24 +3,22 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.mapper;
 import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Product;
+import com.tetris.tetrisburger_backend.domain.model.ProductType;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.CreateProductCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.UpdateProductCommand;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.*;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.productcategory.ProductCategoryResponseDTO;
 import org.mapstruct.Mapper;
-import java.time.Instant;
-import org.mapstruct.Mapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface ProductRestDtoMapper {
 
     // ==================== CREATE ====================
 
-    /**
-     * Convierte DTO + MultipartFile → CreateProductCommand con FileData
-     */
     default CreateProductCommand toCreateProductCommand(
             CreateProductRequestDTO dto,
             MultipartFile productImage,
@@ -36,9 +34,8 @@ public interface ProductRestDtoMapper {
                 dto.getQuantity(),
                 dto.getPrice(),
                 dto.getAvailability(),
-                dto.getProductType(),
-                dto.getIngredientType(),
-                dto.getBurgerIngredient(),
+                ProductType.valueOf(dto.getProductType()),
+                dto.getIsBurgerIngredient(),
                 imageData,
                 dto.getProductCategoryId(),
                 dto.getSupplierId(),
@@ -48,9 +45,6 @@ public interface ProductRestDtoMapper {
 
     // ==================== UPDATE ====================
 
-    /**
-     * Convierte DTO → UpdateProductCommand (SIN imagen)
-     */
     default UpdateProductCommand toUpdateProductCommand(
             Integer idProduct,
             UpdateProductRequestDTO dto,
@@ -65,9 +59,8 @@ public interface ProductRestDtoMapper {
                 dto.getQuantity(),
                 dto.getPrice(),
                 dto.getAvailability(),
-                dto.getProductType(),
-                dto.getIngredientType(),
-                dto.getBurgerIngredient(),
+                ProductType.valueOf(dto.getProductType()),
+                dto.getIsBurgerIngredient(),
                 dto.getProductCategoryId(),
                 dto.getSupplierId(),
                 updatedBy
@@ -76,26 +69,45 @@ public interface ProductRestDtoMapper {
 
     // ==================== RESPONSE (Productos Activos) ====================
 
-    /**
-     * Convierte Product → ProductResponseDTO (productos activos)
-     * Incluye campos de auditoría básicos (sin deletedAt/deletedBy)
-     */
-    @Mapping(target = "imageUrl", ignore = true)
-    @Mapping(target = "imageStatus", ignore = true)
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
-    @Mapping(source = "createdBy", target = "createdBy")
-    @Mapping(source = "updatedBy", target = "updatedBy")
-    ProductResponseDTO toProductResponseDTO(Product product);
+    default ProductResponseDTO toProductResponseDTO(Product product) {
+        if (product == null) return null;
 
-    /**
-     * Convierte lista de Product → lista de ProductResponseDTO
-     */
-    List<ProductResponseDTO> toProductResponseDTOList(List<Product> products);
+        ProductCategoryResponseDTO categoryDTO = null;
+        if (product.getProductCategory() != null) {
+            categoryDTO = ProductCategoryResponseDTO.builder()
+                    .id(product.getProductCategory().getId())
+                    .name(product.getProductCategory().getName())
+                    .description(product.getProductCategory().getDescription())
+                    .available(product.getProductCategory().getAvailable())
+                    .build();
+        }
 
-    /**
-     * Convierte PageResponse de Product → ListProductResponseDTO
-     */
+        return ProductResponseDTO.builder()
+                .idProduct(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .quantity(product.getQuantity())
+                .price(product.getPrice())
+                .availability(product.getAvailability())
+                .productType(product.getProductType())  // ✅ ProductType (ENUM)
+                .productCategory(categoryDTO)  // ✅ Objeto completo
+                .supplierId(product.getSupplierId())
+                .imageUrl(product.getImageUrl())
+                .imageStatus(null)  // Se setea en controller
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
+                .createdBy(product.getCreatedBy())
+                .updatedBy(product.getUpdatedBy())
+                .build();
+    }
+
+    default List<ProductResponseDTO> toProductResponseDTOList(List<Product> products) {
+        if (products == null) return List.of();
+        return products.stream()
+                .map(this::toProductResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     default ListProductResponseDTO toListProductResponseDTO(PageResponse<Product> page) {
         if (page == null) return null;
 
@@ -110,22 +122,44 @@ public interface ProductRestDtoMapper {
 
     // ==================== RESPONSE (Productos Eliminados) ====================
 
-    /**
-     * Convierte Product → DeletedProductResponseDTO (productos eliminados)
-     * Incluye auditoría completa con deletedAt y deletedBy
-     */
-    @Mapping(target = "imageUrl", ignore = true)
-    @Mapping(target = "imageStatus", ignore = true)
-    @Mapping(source = "createdAt", target = "createdAt")
-    @Mapping(source = "updatedAt", target = "updatedAt")
-    @Mapping(source = "deletedAt", target = "deletedAt")
-    @Mapping(source = "createdBy", target = "createdBy")
-    @Mapping(source = "updatedBy", target = "updatedBy")
-    @Mapping(source = "deletedBy", target = "deletedBy")
-    DeleteProductResponseDTO toDeletedProductResponseDTO(Product product);
+    default DeleteProductResponseDTO toDeletedProductResponseDTO(Product product) {
+        if (product == null) return null;
 
-    /**
-     * Convierte lista de Product → lista de DeletedProductResponseDTO
-     */
-    List<DeleteProductResponseDTO> toDeletedProductResponseDTOList(List<Product> products);
+        ProductCategoryResponseDTO categoryDTO = null;
+        if (product.getProductCategory() != null) {
+            categoryDTO = ProductCategoryResponseDTO.builder()
+                    .id(product.getProductCategory().getId())
+                    .name(product.getProductCategory().getName())
+                    .description(product.getProductCategory().getDescription())
+                    .available(product.getProductCategory().getAvailable())
+                    .build();
+        }
+
+        return DeleteProductResponseDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .quantity(product.getQuantity())
+                .price(product.getPrice())
+                .availability(product.getAvailability())
+                .productType(product.getProductType().name())
+                .productCategory(categoryDTO)
+                .supplierId(product.getSupplierId())
+                .imageUrl(product.getImageUrl())
+                .imageStatus(null)
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
+                .deletedAt(product.getDeletedAt())
+                .createdBy(product.getCreatedBy())
+                .updatedBy(product.getUpdatedBy())
+                .deletedBy(product.getDeletedBy())
+                .build();
+    }
+
+    default List<DeleteProductResponseDTO> toDeletedProductResponseDTOList(List<Product> products) {
+        if (products == null) return List.of();
+        return products.stream()
+                .map(this::toDeletedProductResponseDTO)
+                .collect(Collectors.toList());
+    }
 }

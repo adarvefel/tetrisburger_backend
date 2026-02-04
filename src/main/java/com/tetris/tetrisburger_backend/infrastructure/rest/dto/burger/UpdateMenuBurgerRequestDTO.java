@@ -1,16 +1,29 @@
-// src/main/java/com/tetris/tetrisburger_backend/infrastructure/rest/dto/burger/UpdateMenuBurgerRequestDTO.java
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger;
 
-import com.tetris.tetrisburger_backend.domain.common.FileData;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+
 import java.util.List;
 
 public record UpdateMenuBurgerRequestDTO(
+
+        @NotBlank(message = "El nombre es obligatorio")
+        @Size(min = 3, max = 100, message = "El nombre debe tener entre 3 y 100 caracteres")
         String name,
+
+        @Size(max = 500, message = "La descripción no puede exceder 500 caracteres")
         String description,
+
+        @NotEmpty(message = "Debe incluir al menos un ingrediente")
+        @Size(min = 1, max = 15, message = "Una hamburguesa debe tener entre 1 y 15 ingredientes")
+        @Valid
         List<IngredientRequestDTO> ingredients,
+
+        @NotNull(message = "Debe especificar la disponibilidad")
         Boolean availability,
-        Boolean isFavorite,
-        Boolean isOnMenu
-) {
-}
+
+        @NotNull(message = "Debe especificar si es destacada")
+        Boolean isFavorite
+
+
+) {}

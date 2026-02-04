@@ -14,13 +14,15 @@ import jakarta.persistence.UniqueConstraint;
         uniqueConstraints = {@UniqueConstraint(name = "uc_product_category_name", columnNames = "product_category_name")},
         indexes = {@Index(name = "idx_product_category_name", columnList = "product_category_name")})
 public class ProductCategoryEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_product_category")
     private Integer id;
 
+    // ✅ La propiedad Java se llama "name", pero la columna BD es "product_category_name"
     @Column(name = "product_category_name", nullable = false, length = 255)
-    private String name;
+    private String name;  // ✅ Getter: getName() → mapea a columna "product_category_name"
 
     @Column(name = "description", length = 255)
     private String description;
@@ -28,6 +30,7 @@ public class ProductCategoryEntity {
     @Column(name = "available", nullable = false)
     private Boolean available;
 
+    // Getters y Setters
     public Integer getId() {
         return id;
     }

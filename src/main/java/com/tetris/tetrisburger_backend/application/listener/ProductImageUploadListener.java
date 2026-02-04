@@ -39,18 +39,18 @@ public class ProductImageUploadListener {
         try {
             // Crear FileData
             FileData fileData = new FileData(
-                    event.originalFilename(),  // ← 1. originalFilename
-                    event.contentType(),       // ← 2. contentType
-                    event.imageBytes()         // ← 3. bytes
+                    event.originalFilename(),
+                    event.contentType(),
+                    event.imageBytes()
             );
 
-            // Subir imagen a S3 y obtener ImageUploadResult (no solo String)
+            // Subir imagen a S3
             ImageUploadResult result = imageStoragePort.uploadProductImage(fileData);
 
-            String imageKey = result.imageKey();           // "products/123-uuid-hamburguesa.jpg"
-            String imageUrl = result.originalFileName();   // "hamburguesa_clasica.jpg"
+            String imageKey = result.imageKey();  // "products/123-uuid-hamburguesa.jpg"
+            String imageUrl = imageStoragePort.getImageUrl(imageKey);
 
-            logger.info("Imagen subida exitosamente. Key: {}", imageKey);
+            logger.info("Imagen subida exitosamente. Key: {}, URL: {}", imageKey, imageUrl);
 
             // Buscar el producto
             Product product = productRepository.findById(event.productId())
@@ -58,10 +58,9 @@ public class ProductImageUploadListener {
                             "Producto no encontrado con ID: " + event.productId()
                     ));
 
-            // Actualizar con 3 parámetros: imageKey, imageUrl, updatedBy
+            // Actualizar con imageKey + imageUrl completa
             product.updateImage(imageKey, imageUrl, event.updatedBy());
 
-            // Guardar cambios
             productRepository.save(product);
             logger.info("Producto ID {} actualizado con imagen exitosamente", event.productId());
 
@@ -71,4 +70,5 @@ public class ProductImageUploadListener {
             throw new ImageUploadException("Error al subir imagen del producto", e);
         }
     }
+
 }
