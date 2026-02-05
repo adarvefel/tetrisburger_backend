@@ -26,7 +26,7 @@ public class UpdateMenuBurgerPriceUseCase implements UpdateMenuBurgerPrice {
 
     @Override
     public Burger handle(Integer idBurger, BigDecimal newPrice) {
-        logger.info("🔵 Actualizando precio de hamburguesa de menú: idBurger={}, newPrice={}",
+        logger.info("Actualizando precio de hamburguesa de menú: idBurger={}, newPrice={}",
                 idBurger, newPrice);
 
         // 1. Validaciones
@@ -57,7 +57,7 @@ public class UpdateMenuBurgerPriceUseCase implements UpdateMenuBurgerPrice {
         BigDecimal priceDifference = newPrice.subtract(basePrice);
         BigDecimal margin = calculateMarginPercentage(basePrice, newPrice);
 
-        logger.info("📊 Detalles del cambio de precio:");
+        logger.info(" Detalles del cambio de precio:");
         logger.info("  • Precio anterior: ${}", oldPrice);
         logger.info("  • Precio nuevo: ${}", newPrice);
         logger.info("  • Costo base (ingredientes): ${}", basePrice);
@@ -69,7 +69,7 @@ public class UpdateMenuBurgerPriceUseCase implements UpdateMenuBurgerPrice {
         // 8. Guardar (JPA Auditing llenará updatedBy y updatedAt)
         Burger updated = burgerRepository.save(burger);
 
-        logger.info("✅ Precio de hamburguesa actualizado exitosamente: idBurger={}", idBurger);
+        logger.info(" Precio de hamburguesa actualizado exitosamente: idBurger={}", idBurger);
 
         return updated;
     }
@@ -106,7 +106,7 @@ public class UpdateMenuBurgerPriceUseCase implements UpdateMenuBurgerPrice {
 
         // Permitir desde -50% (promoción agresiva) hasta +300% (premium extremo)
         if (margin.compareTo(BigDecimal.valueOf(-50)) < 0) {
-            logger.warn("⚠️ ADVERTENCIA: Precio con descuento mayor al 50%: {}%", margin);
+            logger.warn(" ADVERTENCIA: Precio con descuento mayor al 50%: {}%", margin);
             throw new InvalidBurgerException(
                     String.format("El precio no puede ser menor al 50%% del costo base. " +
                                     "Costo: $%s, Precio propuesto: $%s (descuento: %.1f%%)",
@@ -115,7 +115,7 @@ public class UpdateMenuBurgerPriceUseCase implements UpdateMenuBurgerPrice {
         }
 
         if (margin.compareTo(BigDecimal.valueOf(300)) > 0) {
-            logger.warn("⚠️ ADVERTENCIA: Precio con margen mayor al 300%: {}%", margin);
+            logger.warn("⚠ ADVERTENCIA: Precio con margen mayor al 300%: {}%", margin);
             throw new InvalidBurgerException(
                     String.format("El precio no puede ser mayor al 300%% del costo base. " +
                                     "Costo: $%s, Precio propuesto: $%s (margen: %.1f%%)",
@@ -125,7 +125,7 @@ public class UpdateMenuBurgerPriceUseCase implements UpdateMenuBurgerPrice {
 
         // Advertencia si el precio es menor al costo (pérdida)
         if (finalPrice.compareTo(basePrice) < 0) {
-            logger.warn("⚠️ ADVERTENCIA: Precio de venta menor al costo base. " +
+            logger.warn("⚠ ADVERTENCIA: Precio de venta menor al costo base. " +
                     "Se está vendiendo con pérdida: ${} < ${}", finalPrice, basePrice);
         }
     }

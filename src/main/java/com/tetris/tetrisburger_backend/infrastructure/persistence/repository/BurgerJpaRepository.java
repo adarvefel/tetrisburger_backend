@@ -1,9 +1,11 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.repository;
 
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.BurgerEntity;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -29,12 +31,12 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     Page<BurgerEntity> findByIsOnMenuTrueAndDeletedAtIsNull(Pageable pageable);
 
     /**
-     * ✅ Lista todas las burgers de menú destacadas (favoritas)
+     *  Lista todas las burgers de menú destacadas (favoritas)
      */
     Page<BurgerEntity> findAllByIsOnMenuTrueAndIsFavoriteTrueAndDeletedAtIsNull(Pageable pageable);
 
     /**
-     * ✅ Lista todas las burgers de menú destacadas y disponibles
+     * Lista todas las burgers de menú destacadas y disponibles
      */
     Page<BurgerEntity> findAllByIsOnMenuTrueAndIsFavoriteTrueAndAvailabilityTrueAndDeletedAtIsNull(Pageable pageable);
 
@@ -47,9 +49,6 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
      */
     Page<BurgerEntity> findAllByIdUserAndIsCustomTrueAndDeletedAtIsNull(Integer idUser, Pageable pageable);
 
-    /**
-     * ✅ Lista burgers custom favoritas de un usuario
-     */
     Page<BurgerEntity> findAllByIdUserAndIsCustomTrueAndIsFavoriteTrueAndDeletedAtIsNull(
             Integer idUser,
             Pageable pageable
@@ -58,9 +57,6 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     Optional<BurgerEntity> findByIdBurgerAndDeletedAtIsNull(Integer idBurger);
 
 
-    /**
-     * ✅ Lista todas las burgers custom de un usuario (sin paginación)
-     */
     List<BurgerEntity> findAllByIdUserAndIsCustomTrueAndDeletedAtIsNull(Integer idUser);
 
     // ========================================
@@ -131,7 +127,7 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     List<BurgerEntity> findByNameContainingIgnoreCaseAndIsOnMenuTrueAndDeletedAtIsNull(String name);
 
     /**
-     * ✅ Lista todas las burgers de menú sin paginación (para admin/reportes)
+     *  Lista todas las burgers de menú sin paginación (para admin/reportes)
      */
     List<BurgerEntity> findAllByIsOnMenuTrueAndDeletedAtIsNull();
 
@@ -169,7 +165,7 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     );
 
     // ========================================
-    // ✅ ESTADÍSTICAS Y CONTADORES
+    //  ESTADÍSTICAS Y CONTADORES
     // ========================================
 
     /**
@@ -198,8 +194,8 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
             "AND b.deletedAt IS NULL")
     long countFavoriteMenuBurgers();
 
-    // ========================================
-    // ✅ BURGERS MÁS POPULARES (por timesOrdered)
+    // =======================================
+    //  BURGERS MÁS POPULARES (por timesOrdered)
     // ========================================
 
     /**
@@ -226,7 +222,7 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     );
 
     // ========================================
-    // ✅ BÚSQUEDA AVANZADA
+    //  BÚSQUEDA AVANZADA
     // ========================================
 
     /**
@@ -264,7 +260,7 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     );
 
     // ========================================
-    // ✅ ORDENAMIENTO POR PRECIO
+    //  ORDENAMIENTO POR PRECIO
     // ========================================
 
     /**
@@ -286,4 +282,25 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
             "AND b.availability = true " +
             "ORDER BY b.finalPrice DESC")
     Page<BurgerEntity> findMenuBurgersOrderByPriceDesc(Pageable pageable);
+
+    @Modifying
+    @Transactional
+    @Query("""
+        UPDATE BurgerEntity b 
+        SET b.imageUrl = :imageUrl,
+            b.imageKey = :imageKey,
+            b.updatedBy = :updatedBy,
+            b.updatedAt = CURRENT_TIMESTAMP
+        WHERE b.idBurger = :idBurger
+        """)
+    int updateImageFields(
+            @Param("idBurger") Integer idBurger,
+            @Param("imageUrl") String imageUrl,
+            @Param("imageKey") String imageKey,
+            @Param("updatedBy") Integer updatedBy
+    );
+
+
+    boolean existsByIdBurger(Integer idBurger);
+
 }

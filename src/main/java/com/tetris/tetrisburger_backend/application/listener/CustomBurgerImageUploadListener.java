@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 public class CustomBurgerImageUploadListener {
@@ -33,8 +35,7 @@ public class CustomBurgerImageUploadListener {
     }
 
     @Async
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleCustomBurgerImageUpload(CustomBurgerImageUploadRequestedEvent event) {
         logger.info("Procesando subida de imagen de custom burger para idBurger: {}, idUser: {}",
                 event.idBurger(), event.idUser());
@@ -90,14 +91,14 @@ public class CustomBurgerImageUploadListener {
                 throw new ImageUploadException("La subida de imagen falló para burger: " + event.idBurger());
             }
 
-            // ✅ 6. Generar URL completa desde imageKey
+            //  6. Generar URL completa desde imageKey
             String imageKey = uploadResult.imageKey();
             String imageUrl = imageStoragePort.getImageUrl(imageKey);
 
             logger.info("Imagen de custom burger subida exitosamente: imageKey={}, imageUrl={}, idBurger={}",
                     imageKey, imageUrl, event.idBurger());
 
-            // ✅ 7. Actualizar con imageUrl completa
+            //  7. Actualizar con imageUrl completa
             burger.updateImageComplete(
                     imageKey,          // "custom-burgers/123-uuid-miburguer.jpg"
                     imageUrl,          // "https://tetrisburger-images.s3.us-east-1.amazonaws.com/custom-burgers/123-uuid-miburguer.jpg"

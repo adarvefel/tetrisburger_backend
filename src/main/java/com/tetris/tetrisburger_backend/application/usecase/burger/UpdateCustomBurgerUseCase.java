@@ -47,7 +47,7 @@ public class UpdateCustomBurgerUseCase implements UpdateCustomBurger {
 
     @Override
     public Burger handle(UpdateCustomBurgerCommand command) {
-        logger.info("🔵 Actualizando hamburguesa personalizada: burgerId={}, userId={}",
+        logger.info("Actualizando hamburguesa personalizada: burgerId={}, userId={}",
                 command.idBurger(), command.idUser());
 
         try {

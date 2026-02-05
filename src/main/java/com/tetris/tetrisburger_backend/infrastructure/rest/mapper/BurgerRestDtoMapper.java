@@ -158,8 +158,9 @@ public interface BurgerRestDtoMapper {
                 burger.isFavorite(),
                 burger.isCustom(),
                 burger.isAvailability(),
-                burger.getImageUrl(),          // ✅ URL completa
-                burger.getImageKey(),          // ✅ Key S3
+                burger.getImageUrl(),
+                burger.getImageKey(),
+                burger.getImageStatus(),
                 burger.getTimesOrdered(),
                 toMenuBurgerIngredientResponseDTOList(burger.getIngredients()),
                 burger.getCreatedAt(),
@@ -207,9 +208,9 @@ public interface BurgerRestDtoMapper {
                 burger.isFavorite(),
                 burger.isCustom(),
                 burger.isAvailability(),
-                burger.getImageUrl(),          // ✅ URL completa
-                burger.getImageKey(),          // ✅ Key S3
-                burger.getImageStatus(),       // ✅ "READY" o "NONE"
+                burger.getImageUrl(),
+                burger.getImageKey(),
+                burger.getImageStatus(),
                 burger.getIdUser(),
                 burger.getTimesOrdered(),
                 toBurgerIngredientResponseDTOList(burger.getIngredients()),

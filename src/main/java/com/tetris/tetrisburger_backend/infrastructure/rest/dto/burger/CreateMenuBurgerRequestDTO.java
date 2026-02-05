@@ -23,11 +23,11 @@ public record CreateMenuBurgerRequestDTO(
         @Positive(message = "El precio debe ser mayor a cero")
         @DecimalMin(value = "0.01", message = "El precio debe ser mayor a cero")
         @DecimalMax(value = "999999.99", message = "El precio no puede exceder 999,999.99")
-        BigDecimal finalPrice,  // ✅ OPCIONAL - Solo si quiere sobrescribir el precio calculado
+        BigDecimal finalPrice,
 
         @NotNull(message = "Debe especificar si es destacada")
         Boolean isFavorite,
 
         @NotNull(message = "Debe especificar la disponibilidad")
-        Boolean availability  // ✅ AGREGADO - Si está disponible para venta
-) {}
+        Boolean availability  )
+{}

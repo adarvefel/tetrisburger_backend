@@ -99,12 +99,6 @@ public class BurgerEntity {
     )
     private List<BurgerIngredientEntity> ingredients = new ArrayList<>();
 
-    // Helpers para la relación bidireccional
-    @OneToMany(
-            mappedBy = "burger",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
 
     // ========= HELPERS =========
 

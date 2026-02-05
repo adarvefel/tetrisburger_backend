@@ -27,7 +27,7 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
 
     private static final Logger logger = LoggerFactory.getLogger(CreateCustomBurgerUseCase.class);
 
-    // ✅ Tipos de productos permitidos para ingredientes de hamburguesa
+    //  Tipos de productos permitidos para ingredientes de hamburguesa
     private static final Set<ProductType> ALLOWED_INGREDIENT_TYPES = Set.of(
             ProductType.INGREDIENT
     );
@@ -46,14 +46,14 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
 
     @Override
     public Burger handle(CreateCustomBurgerCommand command) {
-        logger.info("🔵 Creando hamburguesa personalizada: name={}, userId={}",
+        logger.info("Creando hamburguesa personalizada: name={}, userId={}",
                 command.name(), command.createdBy());
 
         try {
             // 1. Validar command
             validateCommand(command);
 
-            // 2. ✅ Validar ingredientes duplicados
+            // 2. Validar ingredientes duplicados
             validateNoDuplicateIngredients(command.ingredients());
 
             // 3. Iniciar el builder
@@ -73,7 +73,7 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
                 Product product = productRepository.findById(ing.idProduct())
                         .orElseThrow(() -> new ProductNotFoundException(ing.idProduct()));
 
-                // ✅ Validación completa del producto
+                //  Validación completa del producto
                 validateProductForBurger(product, ing.quantity());
 
                 // Crear snapshot del producto
@@ -90,7 +90,7 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
             // 6. Construir la burger
             Burger burger = builder.build();
 
-            logger.info("📦 Guardando hamburguesa personalizada: name={}, userId={}, price={}, ingredients={}",
+            logger.info(" Guardando hamburguesa personalizada: name={}, userId={}, price={}, ingredients={}",
                     burger.getName(), burger.getIdUser(), burger.getFinalPrice(),
                     burger.getIngredients().size());
 
@@ -145,7 +145,7 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
     }
 
     /**
-     * ✅ Valida que no haya ingredientes duplicados
+     *  Valida que no haya ingredientes duplicados
      */
     private void validateNoDuplicateIngredients(
             java.util.List<CreateCustomBurgerCommand.IngredientRequest> ingredients) {
@@ -215,7 +215,7 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
     // ==================== EVENTO DE IMAGEN ====================
 
     private void publishImageUploadEvent(Burger burger, CreateCustomBurgerCommand command) {
-        logger.info("📤 Publicando evento de imagen para custom burger ID: {}", burger.getIdBurger());
+        logger.info(" Publicando evento de imagen para custom burger ID: {}", burger.getIdBurger());
 
         eventPublisher.publishEvent(
                 new CustomBurgerImageUploadRequestedEvent(

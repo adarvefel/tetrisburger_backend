@@ -18,6 +18,7 @@ public record MenuBurgerResponseDTO(
         boolean isCustom,
         boolean availability,
         String imageUrl,
+        String imageKey,
         String imageStatus,
         Integer timesOrdered,
         List<MenuBurgerIngredientResponseDTO> ingredients,

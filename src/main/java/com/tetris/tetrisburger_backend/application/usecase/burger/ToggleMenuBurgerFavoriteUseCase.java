@@ -39,7 +39,7 @@ public class ToggleMenuBurgerFavoriteUseCase implements ToggleMenuBurgerFavorite
      */
     @Override
     public Burger handle(Integer idBurger, Boolean isFavorite, Integer adminUserId) {
-        logger.info("🔵 Toggle favorita menu burger: burgerId={}, isFavorite={}, adminId={}",
+        logger.info(" Toggle favorita menu burger: burgerId={}, isFavorite={}, adminId={}",
                 idBurger, isFavorite, adminUserId);
 
         try {
@@ -53,7 +53,7 @@ public class ToggleMenuBurgerFavoriteUseCase implements ToggleMenuBurgerFavorite
                             "Hamburguesa de menú no encontrada o eliminada. ID: " + idBurger
                     ));
 
-            logger.debug("📊 Estado actual: name={}, isOnMenu={}, isFavorite={}",
+            logger.debug(" Estado actual: name={}, isOnMenu={}, isFavorite={}",
                     burger.getName(), burger.isOnMenu(), burger.isFavorite());
 
             // 3. Validar que sea burger de menú
@@ -61,12 +61,12 @@ public class ToggleMenuBurgerFavoriteUseCase implements ToggleMenuBurgerFavorite
 
             // 4. Verificar si ya tiene ese estado
             if (burger.isFavorite() == isFavorite) {
-                logger.info("⚪ Sin cambios: la hamburguesa ya tiene isFavorite={}", isFavorite);
+                logger.info(" Sin cambios: la hamburguesa ya tiene isFavorite={}", isFavorite);
                 return burger;
             }
 
             // 5. Actualizar estado de favorita
-            logger.info("🔄 Cambiando estado: from={} to={}", burger.isFavorite(), isFavorite);
+            logger.info("Cambiando estado: from={} to={}", burger.isFavorite(), isFavorite);
             burger.setMenuFavorite(isFavorite, adminUserId);
 
             // 6. Guardar

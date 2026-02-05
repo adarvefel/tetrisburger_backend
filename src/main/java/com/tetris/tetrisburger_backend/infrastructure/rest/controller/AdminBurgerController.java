@@ -159,9 +159,10 @@ public class AdminBurgerController {
     }
 
     // ==================== ACTUALIZAR IMAGEN ====================
+// ==================== ACTUALIZAR IMAGEN ====================
 
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
-    @PutMapping(value = "/menu/{idBurger}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(value = "/menu/{idBurger}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Actualizar imagen de hamburguesa",
             description = "Actualiza únicamente la imagen de la hamburguesa. " +
@@ -185,7 +186,7 @@ public class AdminBurgerController {
             @RequestPart("burgerImage") MultipartFile burgerImage
     ) {
         Integer adminUserId = userDetails.getId();
-        logger.info(" PUT /api/admin/burgers/menu/{}/image - Admin ID: {}", idBurger, adminUserId);
+        logger.info(" PATCH /api/admin/burgers/menu/{}/image - Admin ID: {}", idBurger, adminUserId);
 
         FileData imageData = FileData.from(burgerImage);
         UpdateMenuBurgerImageCommand command = new UpdateMenuBurgerImageCommand(
@@ -196,11 +197,12 @@ public class AdminBurgerController {
 
         Burger updated = updateMenuBurgerImage.handle(command);
 
-        logger.info(" Solicitud de actualización de imagen procesada: ID={}", idBurger);
+        logger.info("Solicitud de actualización de imagen procesada: ID={}", idBurger);
 
         MenuBurgerResponseDTO response = mapper.toMenuBurgerResponseDTO(updated);
         return ResponseEntity.ok(response);
     }
+
 
     // ==================== TOGGLE FAVORITA ====================
 

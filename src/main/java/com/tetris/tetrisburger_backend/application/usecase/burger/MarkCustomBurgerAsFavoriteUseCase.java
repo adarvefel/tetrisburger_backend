@@ -31,7 +31,7 @@ public class MarkCustomBurgerAsFavoriteUseCase implements MarkCustomBurgerAsFavo
 
     @Override
     public void handle(Integer idBurger, Integer idUser) {
-        logger.info("🔵 Marcando hamburguesa personalizada como favorita: burgerId={}, userId={}",
+        logger.info(" Marcando hamburguesa personalizada como favorita: burgerId={}, userId={}",
                 idBurger, idUser);
 
         try {
@@ -64,7 +64,7 @@ public class MarkCustomBurgerAsFavoriteUseCase implements MarkCustomBurgerAsFavo
                 throw new InvalidBurgerException("Error al guardar hamburguesa como favorita");
             }
 
-            logger.info("✅ Hamburguesa personalizada marcada como favorita: burgerId={}, userId={}",
+            logger.info(" Hamburguesa personalizada marcada como favorita: burgerId={}, userId={}",
                     idBurger, idUser);
 
         } catch (BurgerNotFoundException | UserNotFoundException | InvalidBurgerException e) {
@@ -72,7 +72,7 @@ public class MarkCustomBurgerAsFavoriteUseCase implements MarkCustomBurgerAsFavo
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new InvalidBurgerException(e.getMessage());
         } catch (Exception e) {
-            logger.error("❌ Error inesperado marcando hamburguesa como favorita: burgerId={}, userId={}",
+            logger.error(" Error inesperado marcando hamburguesa como favorita: burgerId={}, userId={}",
                     idBurger, idUser, e);
             throw new InvalidBurgerException("Error marcando hamburguesa como favorita", e);
         }
