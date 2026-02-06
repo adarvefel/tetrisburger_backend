@@ -1,7 +1,6 @@
 package com.tetris.tetrisburger_backend.domain.port.in.burger.command;
 
 import com.tetris.tetrisburger_backend.domain.common.FileData;
-import com.tetris.tetrisburger_backend.domain.model.ImageStatus;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -10,14 +9,12 @@ public record CreateBurgerCommand(
         String name,
         String description,
         FileData imageData,
-        ImageStatus imageStatus,
         List<IngredientRequest> ingredients,
         Boolean isFavorite,
         BigDecimal finalPrice,
         Integer createdBy
 ) {
     public CreateBurgerCommand {
-        // Validaciones básicas (las detalladas se hacen en el UseCase)
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("El nombre no puede estar vacío");
         }
@@ -36,10 +33,6 @@ public record CreateBurgerCommand(
 
         if (isFavorite == null) {
             isFavorite = false;
-        }
-
-        if (imageStatus == null) {
-            imageStatus = ImageStatus.NONE;
         }
     }
 

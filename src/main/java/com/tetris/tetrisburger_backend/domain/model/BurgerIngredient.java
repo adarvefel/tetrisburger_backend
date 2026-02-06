@@ -20,7 +20,7 @@ public class BurgerIngredient {
     // ==================== Factory Method: Reconstitución ====================
 
     /**
-     * ✅ Reconstitución completa desde persistencia
+     *  Reconstitución completa desde persistencia
      */
     public static BurgerIngredient reconstitute(
             Integer idBurgerIngredient,

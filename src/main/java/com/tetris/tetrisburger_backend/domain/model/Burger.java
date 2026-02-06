@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.domain.model;
 
+import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
 import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;
 
@@ -29,7 +30,6 @@ public class Burger {
     private BigDecimal basePrice;   // Costo real de ingredientes (NO cambia con updatePrice)
     private BigDecimal finalPrice;  // Precio de venta (puede ser modificado por admin)
 
-    // 4. Discriminadores de tipo
     private boolean isOnMenu;
     private boolean isFavorite;
     private boolean isCustom;
@@ -426,7 +426,7 @@ public class Burger {
     }
 
     // ============================================
-    // COMPORTAMIENTO: Custom Burger
+    // : Custom Burger
     // ============================================
 
     public void updateCustomBurger(
@@ -722,11 +722,11 @@ public class Burger {
     /**
      * Retorna el estado de la imagen: NONE, READY
      */
-    public String getImageStatus() {
-        if (this.imageKey == null || this.imageKey.isBlank()) {
-            return "NONE";
+    public ImageStatus getImageStatus() {
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            return ImageStatus.UPLOADED;
         }
-        return "READY";
+        return ImageStatus.NONE;
     }
 
     // ============================================

@@ -6,7 +6,6 @@ import com.tetris.tetrisburger_backend.domain.exception.InsufficientStockExcepti
 import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
 import com.tetris.tetrisburger_backend.domain.exception.ProductNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
-import com.tetris.tetrisburger_backend.domain.model.ImageStatus;
 import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.model.ProductType;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.CreateMenuBurger;
@@ -110,12 +109,6 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                         burger.getFinalPrice());
             }
 
-            if (command.imageData() != null && command.imageData().bytes() != null) {
-                burger.setImageStatus(ImageStatus.PENDING);
-            } else {
-                burger.setImageStatus(ImageStatus.NONE);
-            }
-
             logger.info("Guardando hamburguesa: name={}, basePrice={}, finalPrice={}, ingredients={}",
                     command.name(), burger.getBasePrice(), burger.getFinalPrice(),
                     burger.getIngredients().size());
@@ -145,6 +138,8 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
             throw new BurgerCreationException("Error creando hamburguesa de menú", e);
         }
     }
+
+    // ==================== MÉTODOS PRIVADOS ====================
 
     private void validateCommand(CreateBurgerCommand command) {
         if (command == null) {
@@ -190,7 +185,6 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
     }
 
     private void validateProductForBurger(Product product) {
-
         if (!product.getAvailability()) {
             throw new InvalidBurgerException(
                     "El producto '" + product.getName() + "' no está disponible"
@@ -254,6 +248,8 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
 
     private void publishImageUploadEvent(Burger burger, CreateBurgerCommand command) {
         if (command.imageData() != null && command.imageData().bytes() != null) {
+            logger.info("Publicando evento de imagen para burger ID: {}", burger.getIdBurger());
+
             eventPublisher.publishEvent(
                     new MenuBurgerImageUploadRequestedEvent(
                             burger.getIdBurger(),
@@ -263,6 +259,8 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                             command.createdBy()
                     )
             );
+        } else {
+            logger.debug("Sin imagen para subir en burger ID: {}", burger.getIdBurger());
         }
     }
 }

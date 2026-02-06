@@ -25,9 +25,7 @@ public record FileData(
         }
     }
 
-    /**
-     * Validación: verifica que el archivo sea válido
-     */
+
     public boolean isValid() {
         return bytes != null && bytes.length > 0 && originalFilename != null;
     }

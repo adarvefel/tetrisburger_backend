@@ -29,7 +29,9 @@ public interface BurgerRestDtoMapper {
 
         if (dto == null) return null;
 
-        FileData imageData = FileData.from(burgerImage);
+        FileData imageData = (burgerImage != null && !burgerImage.isEmpty())
+                ? FileData.from(burgerImage)
+                : null;
 
         List<CreateBurgerCommand.IngredientRequest> ingredients = dto.ingredients() == null
                 ? List.of()
@@ -39,7 +41,7 @@ public interface BurgerRestDtoMapper {
                         ing.quantity(),
                         ing.isOptional()
                 ))
-                .collect(Collectors.toList());
+                .toList();
 
         return new CreateBurgerCommand(
                 dto.name(),
@@ -51,6 +53,7 @@ public interface BurgerRestDtoMapper {
                 createdBy
         );
     }
+
 
     // ==================== CREATE CUSTOM BURGER ====================
 
@@ -160,7 +163,7 @@ public interface BurgerRestDtoMapper {
                 burger.isAvailability(),
                 burger.getImageUrl(),
                 burger.getImageKey(),
-                burger.getImageStatus(),
+                burger.getImageStatus().name(),
                 burger.getTimesOrdered(),
                 toMenuBurgerIngredientResponseDTOList(burger.getIngredients()),
                 burger.getCreatedAt(),
@@ -210,7 +213,7 @@ public interface BurgerRestDtoMapper {
                 burger.isAvailability(),
                 burger.getImageUrl(),
                 burger.getImageKey(),
-                burger.getImageStatus(),
+                burger.getImageStatus().name(),
                 burger.getIdUser(),
                 burger.getTimesOrdered(),
                 toBurgerIngredientResponseDTOList(burger.getIngredients()),

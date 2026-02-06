@@ -1,5 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger;
 
+import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
