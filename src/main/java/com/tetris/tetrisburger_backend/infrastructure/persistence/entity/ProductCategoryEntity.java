@@ -20,9 +20,9 @@ public class ProductCategoryEntity {
     @Column(name = "id_product_category")
     private Integer id;
 
-    // ✅ La propiedad Java se llama "name", pero la columna BD es "product_category_name"
+
     @Column(name = "product_category_name", nullable = false, length = 255)
-    private String name;  // ✅ Getter: getName() → mapea a columna "product_category_name"
+    private String name;
 
     @Column(name = "description", length = 255)
     private String description;

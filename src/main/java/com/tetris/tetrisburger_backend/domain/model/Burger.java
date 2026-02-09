@@ -15,9 +15,6 @@ import java.util.List;
  */
 public class Burger {
 
-    // ============================================
-    // CAMPOS (alineados con la tabla burger)
-    // ============================================
 
     // 1. Identificación
     private Integer idBurger;
@@ -37,7 +34,7 @@ public class Burger {
     // 5. Estado
     private boolean availability;
     private String imageKey;              // Ruta S3: products/1769535390022-b29db968-reborm.jpg
-    private String imageUrl;              // URL completa o nombre original
+    private String imageUrl;              // URL completa y nombre original
     private Integer idUser;               // Cliente dueño (si is_custom = true)
     private Integer timesOrdered;
 
@@ -206,16 +203,40 @@ public class Burger {
             }
 
             this.burger = new Burger();
+
+            // Información básica
             burger.name = name;
+            burger.description = null;
+
+            // Flags de tipo
             burger.isOnMenu = false;
             burger.isCustom = true;
             burger.isFavorite = false;
             burger.availability = true;
+
+            // Ownership (solo esto identifica al dueño)
             burger.idUser = userId;
-            burger.createdAt = LocalDateTime.now();
+
+            // Auditoría: NULL para custom burgers (no necesaria, idUser lo identifica)
+            burger.createdBy = null;
+            burger.updatedBy = null;
+            burger.deletedBy = null;
+
+            // Timestamps automáticos
+            LocalDateTime now = LocalDateTime.now();
+            burger.createdAt = now;
+            burger.updatedAt = now;
+
+            // Precios iniciales
             burger.basePrice = BigDecimal.ZERO;
             burger.finalPrice = BigDecimal.ZERO;
-            burger.createdBy = userId;
+
+            // Imagen
+            burger.imageUrl = null;
+            burger.imageKey = null;
+
+            // Métricas
+            burger.timesOrdered = 0;
         }
 
         public CustomBuilder addIngredient(ProductSnapshot snapshot) {
@@ -246,7 +267,7 @@ public class Burger {
                 );
             }
 
-            // Calcular precio final basado en ingredientes
+            // Calcular precios basados en ingredientes
             burger.basePrice = burger.calculateTotalPriceFromIngredients();
             burger.finalPrice = burger.basePrice;
 
@@ -254,7 +275,7 @@ public class Burger {
         }
     }
 
-    // ============================================
+        // ============================================
     // COMPORTAMIENTO: Menu Burger
     // ============================================
 

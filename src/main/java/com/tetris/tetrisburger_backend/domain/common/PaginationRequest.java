@@ -19,7 +19,6 @@ public class PaginationRequest {
         setDirection(direction);
     }
 
-    // getters/setters con normalización
     public int getPage() { return page; }
     public void setPage(int page) { this.page = Math.max(0, page); }
     public int getSize() { return size; }

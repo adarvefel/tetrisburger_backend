@@ -4,6 +4,7 @@ import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record BurgerResponseDTO(
@@ -22,11 +23,7 @@ public record BurgerResponseDTO(
         Integer idUser,
         Integer timesOrdered,
         List<BurgerIngredientResponseDTO> ingredients,
-        Instant createdAt,
-        Instant updatedAt,
-        Instant deletedAt,
-        Integer createdBy,
-        Integer updatedBy,
-        Integer deletedBy
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }

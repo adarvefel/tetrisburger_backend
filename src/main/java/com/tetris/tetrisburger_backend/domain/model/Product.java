@@ -7,7 +7,7 @@ public class Product {
     private Integer id;
     private String name;
     private String description;
-    private Integer quantity;
+    private int quantity;
     private BigDecimal price;
     private Boolean availability;
     private ProductType productType;
@@ -41,7 +41,7 @@ public class Product {
         this.price = price;
         this.availability = availability;
         this.productType = productType;
-        this.isBurgerIngredient = isBurgerIngredient;  // ✅ AGREGADO
+        this.isBurgerIngredient = isBurgerIngredient;
         this.productCategory = productCategory;
         this.imageUrl = imageUrl;
         this.imageKey = imageKey;
@@ -82,7 +82,7 @@ public class Product {
             BigDecimal price,
             Boolean availability,
             ProductType productType,
-            Boolean isIngredientBurger,  // ✅ AGREGADO
+            Boolean isIngredientBurger,
             ProductCategory productCategory,
             String imageUrl,
             String imageKey,
@@ -103,7 +103,7 @@ public class Product {
         product.price = price;
         product.availability = availability != null ? availability : true;
         product.productType = productType;
-        product.isBurgerIngredient = isIngredientBurger != null ? isIngredientBurger : false;  // ✅ AGREGADO
+        product.isBurgerIngredient = isIngredientBurger != null ? isIngredientBurger : false;
         product.productCategory = productCategory;
         product.imageUrl = imageUrl;
         product.imageKey = imageKey;
@@ -301,7 +301,7 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    public void updateIsIngredientBurger(Boolean isIngredientBurger, Integer updatedBy) {  // ✅ NUEVO MÉTODO
+    public void updateIsIngredientBurger(Boolean isIngredientBurger, Integer updatedBy) {
         this.isBurgerIngredient = isIngredientBurger;
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
@@ -326,7 +326,7 @@ public class Product {
     }
 
     public boolean hasStock() {
-        return this.quantity != null && this.quantity > 0;
+        return quantity > 0;
     }
 
     public boolean canBeSold() {
@@ -376,7 +376,7 @@ public class Product {
     public Integer getId() { return id; }
     public String getName() { return name; }
     public String getDescription() { return description; }
-    public Integer getQuantity() { return quantity; }
+    public int getQuantity() { return quantity; }
     public BigDecimal getPrice() { return price; }
     public Boolean getAvailability() { return availability; }
     public ProductType getProductType() { return productType; }
@@ -397,7 +397,7 @@ public class Product {
     public void setId(Integer id) { this.id = id; }
     public void setName(String name) { this.name = name; }
     public void setDescription(String description) { this.description = description; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
     public void setPrice(BigDecimal price) { this.price = price; }
     public void setAvailability(Boolean availability) { this.availability = availability; }
     public void setProductType(ProductType productType) { this.productType = productType; }

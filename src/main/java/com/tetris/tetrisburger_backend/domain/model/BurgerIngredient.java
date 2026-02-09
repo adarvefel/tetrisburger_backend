@@ -10,7 +10,7 @@ public class BurgerIngredient {
     private Integer idProduct;
     private String productName;
     private BigDecimal priceAtTime;
-    private Integer quantity;
+    private int quantity;
     private BigDecimal subtotal;
     private boolean isOptional;
 
@@ -68,11 +68,12 @@ public class BurgerIngredient {
      * Calcula el subtotal (precio × cantidad)
      */
     public BigDecimal calculateSubtotal() {
-        if (priceAtTime == null || quantity == null) {
+        if (priceAtTime == null) {
             return BigDecimal.ZERO;
         }
-        return priceAtTime.multiply(new BigDecimal(quantity));
+        return priceAtTime.multiply(BigDecimal.valueOf(quantity));
     }
+
 
     // ==================== Getters ====================
 
@@ -92,7 +93,7 @@ public class BurgerIngredient {
         return priceAtTime;
     }
 
-    public Integer getQuantity() {
+    public int getQuantity() {
         return quantity;
     }
 
@@ -125,7 +126,7 @@ public class BurgerIngredient {
         this.priceAtTime = priceAtTime;
     }
 
-    public void setQuantity(Integer quantity) {
+    public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
 

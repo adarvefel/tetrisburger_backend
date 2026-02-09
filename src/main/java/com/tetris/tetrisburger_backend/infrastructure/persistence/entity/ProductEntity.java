@@ -12,13 +12,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "product",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uc_product_name", columnNames = "name")
-        },
-        indexes = {
-                @Index(name = "idx_product_name", columnList = "name"),
-                @Index(name = "idx_product_type", columnList = "product_type")
-        })
+        uniqueConstraints = {@UniqueConstraint(name = "uc_product_name", columnNames = "name")},
+        indexes = {@Index(name = "idx_product_type", columnList = "product_type")})
 @SQLRestriction("deleted_at IS NULL")
 public class ProductEntity {
 
@@ -34,7 +29,7 @@ public class ProductEntity {
     private String description;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private int quantity;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
@@ -110,12 +105,20 @@ public class ProductEntity {
         this.description = description;
     }
 
-    public Integer getQuantity() {
+    public int getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(Integer quantity) {
+    public void setQuantity(int quantity) {
         this.quantity = quantity;
+    }
+
+    public Boolean getBurgerIngredient() {
+        return isBurgerIngredient;
+    }
+
+    public void setBurgerIngredient(Boolean burgerIngredient) {
+        isBurgerIngredient = burgerIngredient;
     }
 
     public BigDecimal getPrice() {

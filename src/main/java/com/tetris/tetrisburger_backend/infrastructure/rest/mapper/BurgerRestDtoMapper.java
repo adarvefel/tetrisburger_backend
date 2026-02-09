@@ -10,10 +10,8 @@ import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateCusto
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuBurgerCommand;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.*;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,7 +23,7 @@ public interface BurgerRestDtoMapper {
     default CreateBurgerCommand toCreateBurgerCommand(
             CreateMenuBurgerRequestDTO dto,
             MultipartFile burgerImage,
-            Integer createdBy) {
+            Integer userId) {
 
         if (dto == null) return null;
 
@@ -50,7 +48,7 @@ public interface BurgerRestDtoMapper {
                 ingredients,
                 dto.isFavorite() != null ? dto.isFavorite() : false,
                 dto.finalPrice(),
-                createdBy
+                userId
         );
     }
 
@@ -190,9 +188,7 @@ public interface BurgerRestDtoMapper {
                 page.page(),
                 page.size(),
                 page.totalElements(),
-                page.totalPages(),
-                page.page() == 0,
-                page.page() >= page.totalPages() - 1
+                page.totalPages()
         );
     }
 
@@ -217,12 +213,8 @@ public interface BurgerRestDtoMapper {
                 burger.getIdUser(),
                 burger.getTimesOrdered(),
                 toBurgerIngredientResponseDTOList(burger.getIngredients()),
-                toInstant(burger.getCreatedAt()),
-                toInstant(burger.getUpdatedAt()),
-                toInstant(burger.getDeletedAt()),
-                burger.getCreatedBy(),
-                burger.getUpdatedBy(),
-                burger.getDeletedBy()
+                burger.getCreatedAt(),
+                burger.getUpdatedAt()
         );
     }
 
@@ -241,9 +233,7 @@ public interface BurgerRestDtoMapper {
                 page.page(),
                 page.size(),
                 page.totalElements(),
-                page.totalPages(),
-                page.page() == 0,
-                page.page() >= page.totalPages() - 1
+                page.totalPages()
         );
     }
 
@@ -303,12 +293,6 @@ public interface BurgerRestDtoMapper {
                 .collect(Collectors.toList());
     }
 
-    // ==================== HELPER: LocalDateTime → Instant ====================
 
-    /**
-     * Convierte LocalDateTime a Instant (UTC) para respuestas JSON
-     */
-    default java.time.Instant toInstant(java.time.LocalDateTime localDateTime) {
-        return localDateTime != null ? localDateTime.toInstant(ZoneOffset.UTC) : null;
-    }
+
 }

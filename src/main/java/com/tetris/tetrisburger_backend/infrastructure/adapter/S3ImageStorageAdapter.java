@@ -13,11 +13,16 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.util.UUID;
-
 @Component
 public class S3ImageStorageAdapter implements ImageStoragePort {
 
     private static final Logger logger = LoggerFactory.getLogger(S3ImageStorageAdapter.class);
+
+    // ====== CONSTANTES DE CARPETAS ======
+    private static final String USERS_FOLDER = "users";
+    private static final String PRODUCTS_FOLDER = "products";
+    private static final String CUSTOM_BURGERS_FOLDER = "burgers";
+    private static final String MENU_BURGERS_FOLDER = "burgers-menu";
 
     private final S3Client s3Client;
     private final String bucketName;
@@ -31,21 +36,35 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
         this.region = region;
-
-        logger.info("S3ImageStorageAdapter initialized - Bucket: {}, Region: {}",
-                bucketName, region);
+        logger.info("S3ImageStorageAdapter initialized - Bucket: {}, Region: {}", bucketName, region);
     }
 
-    // ====== MÉTODO GENÉRICO NUEVO (PARA BURGERS) ======
+    // ====== USUARIOS ======
     @Override
-    public ImageUploadResult uploadImage(FileData fileData, String folder) {
-        if (fileData == null || fileData.bytes() == null || fileData.bytes().length == 0) {
-            logger.warn("FileData is null or empty, skipping upload");
-            return null;
-        }
+    public ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName) throws Exception {
+        logger.info("Uploading user image: {}", originalFileName);
+        return uploadImageInternal(bytes, contentType, originalFileName, USERS_FOLDER);
+    }
 
-        logger.info("Uploading image to folder: {}, originalFileName: {}",
-                folder, fileData.originalFilename());
+    // ====== PRODUCTOS ======
+    @Override
+    public ImageUploadResult uploadProductImage(FileData fileData) {
+        logger.info("Uploading product image: {}", fileData.originalFilename());
+        return uploadImageInternal(
+                fileData.bytes(),
+                fileData.contentType(),
+                fileData.originalFilename(),
+                PRODUCTS_FOLDER
+        );
+    }
+
+    // ====== BURGERS CUSTOM ======
+    @Override
+    public ImageUploadResult uploadCustomBurgerImage(FileData fileData, Integer burgerId, Integer userId) {
+        logger.info("Uploading custom burger image: burgerId={}, userId={}", burgerId, userId);
+
+        // Estructura: custom-burgers/user-123/
+        String folder = String.format("%s/user-%d", CUSTOM_BURGERS_FOLDER, userId);
 
         return uploadImageInternal(
                 fileData.bytes(),
@@ -55,22 +74,35 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         );
     }
 
-    // ====== MÉTODO PARA USUARIOS ======
+    // ====== BURGERS MENÚ ======
     @Override
-    public ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName) throws Exception {
-        logger.info("Uploading user image: {}", originalFileName);
-        return uploadImageInternal(bytes, contentType, originalFileName, "users");
-    }
+    public ImageUploadResult uploadMenuBurgerImage(FileData fileData, Integer burgerId, Integer adminId) {
+        logger.info("Uploading menu burger image: burgerId={}, adminId={}", burgerId, adminId);
 
-    // ====== MÉTODO PARA PRODUCTOS ======
-    @Override
-    public ImageUploadResult uploadProductImage(FileData fileData) {
-        logger.info("Uploading product image: {}", fileData.originalFilename());
         return uploadImageInternal(
                 fileData.bytes(),
                 fileData.contentType(),
                 fileData.originalFilename(),
-                "products"
+                MENU_BURGERS_FOLDER
+        );
+    }
+
+    // ====== GENÉRICO (deprecado) ======
+    @Override
+    @Deprecated
+    public ImageUploadResult uploadImage(FileData fileData, String folder) {
+        if (fileData == null || fileData.bytes() == null || fileData.bytes().length == 0) {
+            logger.warn("FileData is null or empty, skipping upload");
+            return null;
+        }
+
+        logger.warn("Using deprecated uploadImage() method with folder: {}", folder);
+
+        return uploadImageInternal(
+                fileData.bytes(),
+                fileData.contentType(),
+                fileData.originalFilename(),
+                folder
         );
     }
 
@@ -137,7 +169,6 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
 
             logger.info("Image uploaded successfully. Bucket: {}, Key: {}", bucketName, key);
 
-            // Retorna key y nombre original
             return new ImageUploadResult(key, originalFileName);
 
         } catch (Exception e) {
@@ -167,7 +198,6 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
 
         } catch (Exception e) {
             logger.error("Error deleting image: {}", imageKey, e);
-            // No lanzar excepción para no fallar el flujo principal
         }
     }
 
@@ -187,17 +217,15 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         return url;
     }
 
-    // ====== HELPER: NORMALIZE FOLDER ======
+    // ====== HELPERS ======
     private String normalizeFolder(String folder) {
         String f = (folder == null) ? "" : folder.trim();
         if (f.isEmpty()) return "";
 
-        // Validaciones de seguridad
         if (f.contains("..") || f.startsWith("/") || f.contains("\\")) {
             throw new IllegalArgumentException("Folder inválido: " + folder);
         }
 
-        // Agregar "/" al final si no lo tiene
         if (!f.endsWith("/")) {
             f += "/";
         }
@@ -205,15 +233,14 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         return f;
     }
 
-    // ====== HELPER: SANITIZE FILENAME ======
     private String sanitizeFileName(String fileName) {
         if (fileName == null || fileName.isEmpty()) {
             return "file";
         }
 
         return fileName
-                .replaceAll("[^a-zA-Z0-9.-]", "_")  // Reemplazar caracteres especiales
-                .replaceAll("_{2,}", "_")            // Eliminar múltiples underscores
-                .toLowerCase();                       // Convertir a minúsculas
+                .replaceAll("[^a-zA-Z0-9.-]", "_")
+                .replaceAll("_{2,}", "_")
+                .toLowerCase();
     }
 }

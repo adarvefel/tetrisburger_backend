@@ -17,11 +17,4 @@ public record PageResponse<T>(
         if (totalPages < 0) throw new IllegalArgumentException("totalPages no puede ser negativo");
     }
 
-    public boolean isFirst() {
-        return page == 0;
-    }
-
-    public boolean isLast() {
-        return page >= totalPages - 1;
-    }
 }

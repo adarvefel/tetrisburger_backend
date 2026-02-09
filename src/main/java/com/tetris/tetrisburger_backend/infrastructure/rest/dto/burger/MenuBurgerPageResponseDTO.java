@@ -7,8 +7,6 @@ public record MenuBurgerPageResponseDTO(
         int page,
         int size,
         long totalElements,
-        int totalPages,
-        boolean first,
-        boolean last
+        int totalPages
 ) {
 }

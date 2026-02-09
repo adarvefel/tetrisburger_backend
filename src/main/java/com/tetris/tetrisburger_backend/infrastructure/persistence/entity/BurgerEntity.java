@@ -95,7 +95,8 @@ public class BurgerEntity {
     @OneToMany(
             mappedBy = "burger",
             cascade = CascadeType.ALL,
-            orphanRemoval = true
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
     )
     private List<BurgerIngredientEntity> ingredients = new ArrayList<>();
 

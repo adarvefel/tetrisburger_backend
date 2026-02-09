@@ -121,10 +121,6 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     // BÚSQUEDA SIN PAGINACIÓN
     // ========================================
 
-    /**
-     * Busca burgers de menú por nombre que contenga el texto (case insensitive)
-     */
-    List<BurgerEntity> findByNameContainingIgnoreCaseAndIsOnMenuTrueAndDeletedAtIsNull(String name);
 
     /**
      *  Lista todas las burgers de menú sin paginación (para admin/reportes)

@@ -108,7 +108,7 @@ public class ProductController {
     // ==================== CREATE ====================
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @Operation(
             summary = "Crear producto",
             description = "Crea un nuevo producto con imagen opcional. imageStatus puede ser: NONE, PENDING o READY."
@@ -224,7 +224,7 @@ public class ProductController {
             @Parameter(description = "Filtrar por ID de categoría") @RequestParam(required = false) Integer productCategoryId,
             @Parameter(description = "Filtrar por disponibilidad") @RequestParam(required = false) Boolean availability
     ) {
-        logger.info("🔵 GET /api/products/search - Query: '{}' | Categoría: {}", q, productCategoryId);
+        logger.info(" GET /api/products/search - Query: '{}' | Categoría: {}", q, productCategoryId);
 
         SearchProductsQuery query = new SearchProductsQuery(q, productCategoryId, availability);
         PaginationRequest pagination = new PaginationRequest(page, size, sortBy, direction);
@@ -252,7 +252,7 @@ public class ProductController {
                 .totalPages(pageResponse.totalPages())
                 .build();
 
-        logger.info("✅ Búsqueda completada: {} resultados", pageResponse.totalElements());
+        logger.info(" Búsqueda completada: {} resultados", pageResponse.totalElements());
         return ResponseEntity.ok(response);
     }
 
@@ -288,7 +288,7 @@ public class ProductController {
     // ==================== UPDATE ====================
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @Operation(
             summary = "Actualizar producto",
             description = "Actualiza datos del producto (excepto imagen)."
@@ -306,7 +306,7 @@ public class ProductController {
     ) {
         Integer adminId = getUserIdFromDetails(userDetails);
 
-        logger.info("🔵 PUT /api/products/{} - Admin {} | Categoría: {}",
+        logger.info(" PUT /api/products/{} - Admin {} | Categoría: {}",
                 id, adminId, dto.getProductCategoryId());
 
         UpdateProductCommand command = mapper.toUpdateProductCommand(id, dto, adminId);
@@ -319,7 +319,7 @@ public class ProductController {
         response.setImageUrl(imageUrl);
         response.setImageStatus(imageStatus);
 
-        logger.info("✅ Producto actualizado: ID {} | Categoría: '{}'",
+        logger.info(" Producto actualizado: ID {} | Categoría: '{}'",
                 updated.getId(), updated.getCategoryName());
 
         return ResponseEntity.ok(response);
@@ -328,7 +328,7 @@ public class ProductController {
     // ==================== UPDATE IMAGE ====================
 
     @PutMapping(value = "/image/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @Operation(
             summary = "Actualizar imagen del producto",
             description = "Actualiza únicamente la imagen."
@@ -362,7 +362,7 @@ public class ProductController {
     // ==================== CHANGE AVAILABILITY ====================
 
     @PatchMapping("/{id}/availability")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @Operation(summary = "Cambiar disponibilidad", description = "Activa o desactiva un producto.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Disponibilidad actualizada",
@@ -392,7 +392,7 @@ public class ProductController {
     // ==================== ADJUST STOCK ====================
 
     @PatchMapping("/{id}/stock")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @Operation(summary = "Ajustar stock", description = "Aumenta o disminuye la cantidad disponible.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Stock actualizado",
@@ -423,7 +423,7 @@ public class ProductController {
     // ==================== DELETE ====================
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @Operation(
             summary = "Eliminar producto",
             description = "Elimina un producto mediante soft delete"
@@ -436,11 +436,11 @@ public class ProductController {
             @PathVariable Integer id,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        logger.info("🔴 DELETE producto ID: {} por usuario ID: {}", id, userDetails.getId());
+        logger.info(" DELETE producto ID: {} por usuario ID: {}", id, userDetails.getId());
 
         deleteProduct.delete(id, userDetails.getId());
 
-        logger.info("✅ Producto eliminado: ID {}", id);
+        logger.info(" Producto eliminado: ID {}", id);
         return ResponseEntity.ok(new MessageResponseDTO("Producto eliminado exitosamente", true));
     }
 }

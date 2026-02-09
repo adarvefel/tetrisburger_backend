@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 public record ProductSnapshot(
         Integer idProduct,
-        String name,              // ✅ Ya lo tienes
+        String name,
         BigDecimal price,
         String categoryName,
         Integer quantity,
@@ -41,7 +41,7 @@ public record ProductSnapshot(
 
         return new ProductSnapshot(
                 product.getId(),
-                product.getName(),  //  Esto se guardará en la BD
+                product.getName(),
                 product.getPrice(),
                 product.getProductCategory() != null ? product.getProductCategory().getName() : "Sin categoría",
                 quantity,

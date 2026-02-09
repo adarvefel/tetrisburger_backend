@@ -1,13 +1,17 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
 
+import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.*;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.UpdateCustomBurger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.CreateCustomBurgerCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.DeleteCustomBurgerCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateCustomBurgerCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateCustomBurgerImageCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.query.SearchCustomBurgersQuery;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.user.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.BurgerRestDtoMapper;
@@ -24,10 +28,12 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/burgers")
@@ -43,25 +49,18 @@ public class UserBurgerController {
     private final DeleteCustomBurger deleteCustomBurger;
     private final MarkCustomBurgerAsFavorite markCustomBurgerAsFavorite;
     private final UnmarkCustomBurgerAsFavorite unmarkCustomBurgerAsFavorite;
+    private final UpdateCustomBurgerImage updateCustomBurgerImage;
     private final SearchCustomBurgers searchCustomBurgers;
     private final BurgerRestDtoMapper mapper;
 
-    public UserBurgerController(
-            CreateCustomBurger createCustomBurger,
-            ListCustomBurgersByUser listCustomBurgersByUser,
-            UpdateCustomBurger updateCustomBurger,
-            DeleteCustomBurger deleteCustomBurger,
-            MarkCustomBurgerAsFavorite markCustomBurgerAsFavorite,
-            UnmarkCustomBurgerAsFavorite unmarkCustomBurgerAsFavorite,
-            SearchCustomBurgers searchCustomBurgers,
-            BurgerRestDtoMapper mapper
-    ) {
+    public UserBurgerController(CreateCustomBurger createCustomBurger, ListCustomBurgersByUser listCustomBurgersByUser, UpdateCustomBurger updateCustomBurger, DeleteCustomBurger deleteCustomBurger, MarkCustomBurgerAsFavorite markCustomBurgerAsFavorite, UnmarkCustomBurgerAsFavorite unmarkCustomBurgerAsFavorite, UpdateCustomBurgerImage updateCustomBurgerImage, SearchCustomBurgers searchCustomBurgers, BurgerRestDtoMapper mapper) {
         this.createCustomBurger = createCustomBurger;
         this.listCustomBurgersByUser = listCustomBurgersByUser;
         this.updateCustomBurger = updateCustomBurger;
         this.deleteCustomBurger = deleteCustomBurger;
         this.markCustomBurgerAsFavorite = markCustomBurgerAsFavorite;
         this.unmarkCustomBurgerAsFavorite = unmarkCustomBurgerAsFavorite;
+        this.updateCustomBurgerImage = updateCustomBurgerImage;
         this.searchCustomBurgers = searchCustomBurgers;
         this.mapper = mapper;
     }
@@ -69,10 +68,10 @@ public class UserBurgerController {
     // ==================== CREAR CUSTOM BURGER ====================
 
     @PreAuthorize("hasAuthority('ROLE_CLIENT')")
-    @PostMapping("/custom")
+    @PostMapping(value = "/custom", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Crear hamburguesa personalizada",
-            description = "Permite al cliente crear su propia hamburguesa seleccionando ingredientes. " +
+            description = "Permite al cliente crear su propia hamburguesa con imagen opcional. " +
                     "El precio se calcula automáticamente según los ingredientes elegidos."
     )
     @ApiResponses({
@@ -83,20 +82,25 @@ public class UserBurgerController {
             @ApiResponse(responseCode = "401", description = "No autenticado",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
             @ApiResponse(responseCode = "403", description = "Sin permisos de cliente",
+                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
+            @ApiResponse(responseCode = "413", description = "Imagen excede 5MB",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
     })
     public ResponseEntity<BurgerResponseDTO> createCustom(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @RequestBody CreateCustomBurgerRequestDTO request
+            @Valid @RequestPart("data") CreateCustomBurgerRequestDTO request,
+            @RequestPart(value = "burgerImage", required = false) MultipartFile burgerImage
     ) {
         Integer userId = userDetails.getId();
-        logger.info("🔵 POST /api/burgers/custom - Usuario ID: {}", userId);
+        boolean hasImage = burgerImage != null && !burgerImage.isEmpty();
 
-        CreateCustomBurgerCommand command = mapper.toCreateCustomBurgerCommand(request, null, userId);
+        logger.info("POST /api/burgers/custom - Usuario ID: {}, Imagen: {}", userId, hasImage);
+
+        CreateCustomBurgerCommand command = mapper.toCreateCustomBurgerCommand(request, burgerImage, userId);
         Burger burger = createCustomBurger.handle(command);
 
-        logger.info("✅ Hamburguesa personalizada creada: ID={}, precio=${}",
-                burger.getIdBurger(), burger.getFinalPrice());
+        logger.info("Hamburguesa personalizada creada: ID={}, precio=${}, imageStatus={}",
+                burger.getIdBurger(), burger.getFinalPrice(), burger.getImageStatus());
 
         BurgerResponseDTO response = mapper.toBurgerResponseDTO(burger);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -126,8 +130,7 @@ public class UserBurgerController {
             @RequestParam(defaultValue = "DESC") String direction
     ) {
         Integer userId = userDetails.getId();
-        logger.info("🔵 GET /api/burgers/custom/mine - Usuario ID: {}, page={}, size={}",
-                userId, page, size);
+        logger.info("GET /api/burgers/custom/mine - Usuario ID: {}, page={}, size={}", userId, page, size);
 
         PaginationRequest pagination = new PaginationRequest(page, size, sortBy, direction);
         PageResponse<Burger> burgerPage = listCustomBurgersByUser.handle(userId, pagination);
@@ -139,7 +142,7 @@ public class UserBurgerController {
     // ==================== ACTUALIZAR CUSTOM BURGER ====================
 
     @PreAuthorize("hasAuthority('ROLE_CLIENT')")
-    @PutMapping("/custom/{idBurger}")
+    @PatchMapping("/custom/{idBurger}")
     @Operation(
             summary = "Actualizar mi hamburguesa personalizada",
             description = "Permite al cliente actualizar su propia hamburguesa personalizada. " +
@@ -162,13 +165,12 @@ public class UserBurgerController {
             @Valid @RequestBody UpdateCustomBurgerRequestDTO request
     ) {
         Integer userId = userDetails.getId();
-        logger.info("🔵 PUT /api/burgers/custom/{} - Usuario ID: {}", idBurger, userId);
+        logger.info("PUT /api/burgers/custom/{} - Usuario ID: {}", idBurger, userId);
 
         UpdateCustomBurgerCommand command = mapper.toUpdateCustomBurgerCommand(idBurger, request, userId);
         Burger updated = updateCustomBurger.handle(command);
 
-        logger.info("✅ Hamburguesa personalizada actualizada: ID={}, nuevoPrecio=${}",
-                idBurger, updated.getFinalPrice());
+        logger.info("Hamburguesa personalizada actualizada: ID={}, nuevoPrecio=${}", idBurger, updated.getFinalPrice());
 
         BurgerResponseDTO response = mapper.toBurgerResponseDTO(updated);
         return ResponseEntity.ok(response);
@@ -197,23 +199,20 @@ public class UserBurgerController {
             @PathVariable Integer idBurger
     ) {
         Integer userId = userDetails.getId();
-        logger.info("🔵 DELETE /api/burgers/custom/{} - Usuario ID: {}", idBurger, userId);
+        logger.info("DELETE /api/burgers/custom/{} - Usuario ID: {}", idBurger, userId);
 
         DeleteCustomBurgerCommand command = new DeleteCustomBurgerCommand(idBurger, userId);
         deleteCustomBurger.handle(command);
 
-        logger.info("✅ Hamburguesa personalizada eliminada: ID={}", idBurger);
+        logger.info("Hamburguesa personalizada eliminada: ID={}", idBurger);
 
-        return ResponseEntity.ok(new MessageResponseDTO(
-                "Hamburguesa eliminada exitosamente",
-                true
-        ));
+        return ResponseEntity.ok(new MessageResponseDTO("Hamburguesa eliminada exitosamente", true));
     }
 
     // ==================== MARCAR COMO FAVORITA ====================
 
     @PreAuthorize("hasAuthority('ROLE_CLIENT')")
-    @PatchMapping("/custom/{idBurger}/isFavorite")
+    @PatchMapping("/custom/{idBurger}/mark")
     @Operation(
             summary = "Marcar hamburguesa como favorita",
             description = "Marca una hamburguesa personalizada como favorita personal del cliente. " +
@@ -233,22 +232,19 @@ public class UserBurgerController {
             @PathVariable Integer idBurger
     ) {
         Integer userId = userDetails.getId();
-        logger.info("🔵 PATCH /api/burgers/custom/{}/isFavorite - Usuario ID: {}", idBurger, userId);
+        logger.info("PATCH /api/burgers/custom/{}/isFavorite - Usuario ID: {}", idBurger, userId);
 
         markCustomBurgerAsFavorite.handle(idBurger, userId);
 
-        logger.info("✅ Hamburguesa marcada como favorita: ID={}", idBurger);
+        logger.info("Hamburguesa marcada como favorita: ID={}", idBurger);
 
-        return ResponseEntity.ok(new MessageResponseDTO(
-                "Hamburguesa marcada como favorita exitosamente",
-                true
-        ));
+        return ResponseEntity.ok(new MessageResponseDTO("Hamburguesa marcada como favorita exitosamente", true));
     }
 
     // ==================== DESMARCAR COMO FAVORITA ====================
 
     @PreAuthorize("hasAuthority('ROLE_CLIENT')")
-    @DeleteMapping("/custom/{idBurger}/isFavorite")
+    @PatchMapping("/custom/{idBurger}/unMark")
     @Operation(
             summary = "Desmarcar hamburguesa como favorita",
             description = "Desmarca una hamburguesa personalizada como favorita personal del cliente"
@@ -271,13 +267,55 @@ public class UserBurgerController {
 
         unmarkCustomBurgerAsFavorite.handle(idBurger, userId);
 
-        logger.info(" Hamburguesa desmarcada como favorita: ID={}", idBurger);
+        logger.info("Hamburguesa desmarcada como favorita: ID={}", idBurger);
 
-        return ResponseEntity.ok(new MessageResponseDTO(
-                "Hamburguesa desmarcada como favorita exitosamente",
-                true
-        ));
+        return ResponseEntity.ok(new MessageResponseDTO("Hamburguesa desmarcada como favorita exitosamente", true));
     }
+
+    // ==================== ACTUALIZAR IMAGEN CUSTOM BURGER ====================
+
+    @PreAuthorize("hasAuthority('ROLE_CLIENT')")
+    @PatchMapping(value = "/custom/{idBurger}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Actualizar imagen de hamburguesa personalizada",
+            description = "Permite al cliente actualizar solo la imagen de su hamburguesa personalizada. " +
+                    "La imagen anterior en S3 será reemplazada."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Imagen actualizada exitosamente",
+                    content = @Content(schema = @Schema(implementation = BurgerResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Imagen inválida o excede 5MB",
+                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
+            @ApiResponse(responseCode = "403", description = "No tienes permiso para actualizar esta hamburguesa",
+                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Hamburguesa no encontrada",
+                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
+    })
+    public ResponseEntity<BurgerResponseDTO> updateCustomBurgerImage(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Parameter(description = "ID de la hamburguesa", required = true)
+            @PathVariable Integer idBurger,
+            @Parameter(description = "Nueva imagen de la hamburguesa", required = true)
+            @RequestPart("burgerImage") MultipartFile burgerImage
+    ) {
+        Integer userId = userDetails.getId();
+        logger.info("PATCH /api/burgers/custom/{}/image - Usuario ID: {}, Imagen: {}",
+                idBurger, userId, burgerImage.getOriginalFilename());
+
+        UpdateCustomBurgerImageCommand command = new UpdateCustomBurgerImageCommand(
+                idBurger,
+                FileData.from(burgerImage),
+                userId
+        );
+
+        Burger updated = updateCustomBurgerImage.handle(command);
+
+        logger.info("Imagen actualizada: ID={}, imageStatus={}", idBurger, updated.getImageStatus());
+
+        BurgerResponseDTO response = mapper.toBurgerResponseDTO(updated);
+        return ResponseEntity.ok(response);
+    }
+
 
     // ==================== BUSCAR MIS CUSTOM BURGERS ====================
 
@@ -306,7 +344,7 @@ public class UserBurgerController {
             @RequestParam(defaultValue = "DESC") String direction
     ) {
         Integer userId = userDetails.getId();
-        logger.info(" GET /api/burgers/custom/search - Usuario ID: {}, name='{}'", userId, name);
+        logger.info("GET /api/burgers/custom/search - Usuario ID: {}, name='{}'", userId, name);
 
         SearchCustomBurgersQuery query = new SearchCustomBurgersQuery(userId, name);
         PaginationRequest pagination = new PaginationRequest(page, size, sortBy, direction);

@@ -5,6 +5,7 @@ import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.*;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.*;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuBurgerImageCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.query.SearchMenuBurgersQuery;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
@@ -29,8 +30,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/burgers")
