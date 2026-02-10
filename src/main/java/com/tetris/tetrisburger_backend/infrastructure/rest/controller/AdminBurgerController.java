@@ -11,6 +11,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.burger.query.SearchMenuBur
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.BurgerRestDtoMapper;
+import com.tetris.tetrisburger_backend.infrastructure.rest.validator.ImageValidator;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -49,19 +50,9 @@ public class AdminBurgerController {
     private final SearchMenuBurgers searchMenuBurgers;
     private final ToggleMenuBurgerFavorite toggleMenuBurgerFavorite;
     private final BurgerRestDtoMapper mapper;
+    private final ImageValidator imageValidator;
 
-    public AdminBurgerController(
-            CreateMenuBurger createMenuBurger,
-            GetBurgerById getBurgerById,
-            ListBurgers listBurgers,
-            UpdateMenuBurger updateMenuBurger,
-            UpdateMenuBurgerImage updateMenuBurgerImage,
-            DeleteMenuBurger deleteMenuBurger,
-            UpdateMenuBurgerPrice updateMenuBurgerPrice,
-            SearchMenuBurgers searchMenuBurgers,
-            ToggleMenuBurgerFavorite toggleMenuBurgerFavorite,
-            BurgerRestDtoMapper mapper
-    ) {
+    public AdminBurgerController(CreateMenuBurger createMenuBurger, GetBurgerById getBurgerById, ListBurgers listBurgers, UpdateMenuBurger updateMenuBurger, UpdateMenuBurgerImage updateMenuBurgerImage, DeleteMenuBurger deleteMenuBurger, UpdateMenuBurgerPrice updateMenuBurgerPrice, SearchMenuBurgers searchMenuBurgers, ToggleMenuBurgerFavorite toggleMenuBurgerFavorite, BurgerRestDtoMapper mapper, ImageValidator imageValidator) {
         this.createMenuBurger = createMenuBurger;
         this.getBurgerById = getBurgerById;
         this.listBurgers = listBurgers;
@@ -72,11 +63,12 @@ public class AdminBurgerController {
         this.searchMenuBurgers = searchMenuBurgers;
         this.toggleMenuBurgerFavorite = toggleMenuBurgerFavorite;
         this.mapper = mapper;
+        this.imageValidator = imageValidator;
     }
 
     // ==================== CREAR BURGER DE MENÚ ====================
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @PostMapping(value = "/menu", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Crear hamburguesa de menú",
@@ -109,6 +101,9 @@ public class AdminBurgerController {
 
         logger.info(" POST /api/admin/burgers/menu - Admin ID: {}, Imagen: {}",
                 adminUserId, hasImage ? "Sí" : "No");
+        if(hasImage){
+            imageValidator.validate(burgerImage);
+        }
 
         var command = mapper.toCreateBurgerCommand(dto, burgerImage, adminUserId);
         Burger burger = createMenuBurger.handle(command);
@@ -122,7 +117,7 @@ public class AdminBurgerController {
 
     // ==================== ACTUALIZAR BURGER DE MENÚ ====================
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @PutMapping("/menu/{idBurger}")
     @Operation(
             summary = "Actualizar hamburguesa de menú",
@@ -157,10 +152,9 @@ public class AdminBurgerController {
         return ResponseEntity.ok(response);
     }
 
-    // ==================== ACTUALIZAR IMAGEN ====================
 // ==================== ACTUALIZAR IMAGEN ====================
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @PatchMapping(value = "/menu/{idBurger}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Actualizar imagen de hamburguesa",
@@ -186,6 +180,8 @@ public class AdminBurgerController {
     ) {
         Integer adminUserId = userDetails.getId();
         logger.info(" PATCH /api/admin/burgers/menu/{}/image - Admin ID: {}", idBurger, adminUserId);
+
+        imageValidator.validate(burgerImage);
 
         FileData imageData = FileData.from(burgerImage);
         UpdateMenuBurgerImageCommand command = new UpdateMenuBurgerImageCommand(
@@ -306,7 +302,7 @@ public class AdminBurgerController {
 
     // ==================== LISTAR ====================
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @GetMapping("/menu")
     @Operation(
             summary = "Listar hamburguesas de menú",
@@ -337,7 +333,7 @@ public class AdminBurgerController {
 
     // ==================== BUSCAR ====================
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @GetMapping("/menu/search")
     @Operation(
             summary = "Buscar hamburguesas por nombre",
@@ -371,7 +367,7 @@ public class AdminBurgerController {
 
     // ==================== OBTENER POR ID ====================
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @GetMapping("/{idBurger}")
     @Operation(
             summary = "Obtener hamburguesa por ID",

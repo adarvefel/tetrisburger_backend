@@ -9,9 +9,12 @@ import com.tetris.tetrisburger_backend.domain.port.in.burger.command.CreateCusto
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateCustomBurgerCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuBurgerCommand;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.*;
+import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
 import org.mapstruct.Mapper;
+
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,24 +23,22 @@ public interface BurgerRestDtoMapper {
 
     // ==================== CREATE MENU BURGER ====================
 
+    // En tu BurgerRestDtoMapper
     default CreateBurgerCommand toCreateBurgerCommand(
             CreateMenuBurgerRequestDTO dto,
             MultipartFile burgerImage,
-            Integer userId) {
+            Integer createdBy) {
 
         if (dto == null) return null;
 
-        FileData imageData = (burgerImage != null && !burgerImage.isEmpty())
-                ? FileData.from(burgerImage)
-                : null;
+        FileData imageData = burgerImage != null ? FileData.from(burgerImage) : null;
+        ImageStatus imageStatus = imageData != null ? ImageStatus.PENDING : ImageStatus.NONE;
 
-        List<CreateBurgerCommand.IngredientRequest> ingredients = dto.ingredients() == null
-                ? List.of()
-                : dto.ingredients().stream()
+        List<CreateBurgerCommand.IngredientRequest> ingredients = dto.ingredients().stream()
                 .map(ing -> new CreateBurgerCommand.IngredientRequest(
                         ing.idProduct(),
                         ing.quantity(),
-                        ing.isOptional()
+                        ing.isOptional() != null ? ing.isOptional() : false
                 ))
                 .toList();
 
@@ -45,13 +46,13 @@ public interface BurgerRestDtoMapper {
                 dto.name(),
                 dto.description(),
                 imageData,
+                imageStatus,
                 ingredients,
-                dto.isFavorite() != null ? dto.isFavorite() : false,
+                dto.isFavorite(),
                 dto.finalPrice(),
-                userId
+                createdBy
         );
     }
-
 
     // ==================== CREATE CUSTOM BURGER ====================
 
@@ -156,11 +157,10 @@ public interface BurgerRestDtoMapper {
                 burger.isSellingAtLoss(),
                 burger.isOnMenu(),
                 burger.isFavorite(),
-                burger.isCustom(),
                 burger.isAvailability(),
                 burger.getImageUrl(),
                 burger.getImageKey(),
-                burger.getImageStatus().name(),
+                burger.getImageStatus(),
                 burger.getTimesOrdered(),
                 toMenuBurgerIngredientResponseDTOList(burger.getIngredients()),
                 burger.getCreatedAt(),
@@ -202,13 +202,11 @@ public interface BurgerRestDtoMapper {
                 burger.getDescription(),
                 burger.getFinalPrice(),
                 burger.isFavorite(),
+                burger.isAvailability(),
                 burger.getImageUrl(),
-                burger.getImageStatus().name(),
-                burger.getIdUser(),
+                burger.getImageStatus(),
                 burger.getTimesOrdered(),
-                toBurgerIngredientResponseDTOList(burger.getIngredients()),
-                burger.getCreatedAt(),
-                burger.getUpdatedAt()
+                toBurgerIngredientResponseDTOList(burger.getIngredients())
         );
     }
 
@@ -287,6 +285,12 @@ public interface BurgerRestDtoMapper {
                 .collect(Collectors.toList());
     }
 
+    // ==================== HELPER: LocalDateTime → Instant ====================
 
-
+    /**
+     * Convierte LocalDateTime a Instant (UTC) para respuestas JSON
+     */
+    default java.time.Instant toInstant(java.time.LocalDateTime localDateTime) {
+        return localDateTime != null ? localDateTime.toInstant(ZoneOffset.UTC) : null;
+    }
 }

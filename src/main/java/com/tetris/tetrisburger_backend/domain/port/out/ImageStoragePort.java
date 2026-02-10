@@ -11,9 +11,7 @@ public interface ImageStoragePort {
     // ====== PRODUCTOS ======
     ImageUploadResult uploadProductImage(FileData fileData);
 
-    // ====== BURGERS CUSTOM ======
-    ImageUploadResult uploadCustomBurgerImage(FileData fileData, Integer burgerId, Integer userId);
-
+    
     // ====== BURGERS MENÚ ======
     ImageUploadResult uploadMenuBurgerImage(FileData fileData, Integer burgerId, Integer adminId);
 

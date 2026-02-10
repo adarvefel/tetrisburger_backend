@@ -1,5 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger;
 
+import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,11 +17,10 @@ public record MenuBurgerResponseDTO(
         boolean sellingAtLoss,
         boolean isOnMenu,
         boolean isFavorite,
-        boolean isCustom,
         boolean availability,
         String imageUrl,
         String imageKey,
-        String imageStatus,
+        ImageStatus imageStatus,
         Integer timesOrdered,
         List<MenuBurgerIngredientResponseDTO> ingredients,
         LocalDateTime createdAt,

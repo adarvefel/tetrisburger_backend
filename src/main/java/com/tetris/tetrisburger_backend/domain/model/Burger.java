@@ -1,6 +1,5 @@
 package com.tetris.tetrisburger_backend.domain.model;
 
-import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
 import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;
 
@@ -15,6 +14,9 @@ import java.util.List;
  */
 public class Burger {
 
+    // ============================================
+    // CAMPOS (alineados con la tabla burger)
+    // ============================================
 
     // 1. Identificación
     private Integer idBurger;
@@ -27,6 +29,7 @@ public class Burger {
     private BigDecimal basePrice;   // Costo real de ingredientes (NO cambia con updatePrice)
     private BigDecimal finalPrice;  // Precio de venta (puede ser modificado por admin)
 
+    // 4. Discriminadores de tipo
     private boolean isOnMenu;
     private boolean isFavorite;
     private boolean isCustom;
@@ -34,9 +37,9 @@ public class Burger {
     // 5. Estado
     private boolean availability;
     private String imageKey;              // Ruta S3: products/1769535390022-b29db968-reborm.jpg
-    private String imageUrl;              // URL completa y nombre original
+    private String imageUrl;              // URL completa o nombre original
     private Integer idUser;               // Cliente dueño (si is_custom = true)
-    private int timesOrdered;
+    private Integer timesOrdered;
 
     // 6. Ingredientes (agregado)
     private List<BurgerIngredient> ingredients;
@@ -203,40 +206,16 @@ public class Burger {
             }
 
             this.burger = new Burger();
-
-            // Información básica
             burger.name = name;
-            burger.description = null;
-
-            // Flags de tipo
             burger.isOnMenu = false;
             burger.isCustom = true;
             burger.isFavorite = false;
             burger.availability = true;
-
-            // Ownership (solo esto identifica al dueño)
             burger.idUser = userId;
-
-            // Auditoría: NULL para custom burgers (no necesaria, idUser lo identifica)
-            burger.createdBy = null;
-            burger.updatedBy = null;
-            burger.deletedBy = null;
-
-            // Timestamps automáticos
-            LocalDateTime now = LocalDateTime.now();
-            burger.createdAt = now;
-            burger.updatedAt = now;
-
-            // Precios iniciales
+            burger.createdAt = LocalDateTime.now();
             burger.basePrice = BigDecimal.ZERO;
             burger.finalPrice = BigDecimal.ZERO;
-
-            // Imagen
-            burger.imageUrl = null;
-            burger.imageKey = null;
-
-            // Métricas
-            burger.timesOrdered = 0;
+            burger.createdBy = userId;
         }
 
         public CustomBuilder addIngredient(ProductSnapshot snapshot) {
@@ -267,7 +246,7 @@ public class Burger {
                 );
             }
 
-            // Calcular precios basados en ingredientes
+            // Calcular precio final basado en ingredientes
             burger.basePrice = burger.calculateTotalPriceFromIngredients();
             burger.finalPrice = burger.basePrice;
 
@@ -275,16 +254,17 @@ public class Burger {
         }
     }
 
-        // ============================================
+    // ============================================
     // COMPORTAMIENTO: Menu Burger
     // ============================================
 
     public void updateMenuBurger(
             String name,
             String description,
+            List<BurgerIngredient> newIngredients,
             Boolean availability,
             Boolean isOnMenu,
-            List<BurgerIngredient> newIngredients,
+            Boolean favorite,
             Integer updatedBy
     ) {
         if (!this.isOnMenu) {
@@ -326,6 +306,7 @@ public class Burger {
         } else {
             // Si había un precio custom, solo actualizar el basePrice
             this.basePrice = newBasePrice;
+            // finalPrice se mantiene (precio promocional o premium)
         }
 
         if (availability != null) {
@@ -334,7 +315,9 @@ public class Burger {
         if (isOnMenu != null) {
             this.isOnMenu = isOnMenu;
         }
-
+        if (favorite != null) {
+            this.isFavorite = favorite;
+        }
 
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
@@ -443,7 +426,7 @@ public class Burger {
     }
 
     // ============================================
-    // : Custom Burger
+    // COMPORTAMIENTO: Custom Burger
     // ============================================
 
     public void updateCustomBurger(
@@ -484,13 +467,11 @@ public class Burger {
 
         // Recalcular precios basado en nuevos ingredientes
         this.basePrice = calculateTotalPriceFromIngredients();
-        this.finalPrice = this.basePrice;
+        this.finalPrice = this.basePrice;  // Custom burgers siempre usan precio calculado
 
         this.updatedAt = LocalDateTime.now();
-
+        this.updatedBy = idUser;
     }
-
-
 
     public void markCustomAsDeleted(Integer idUser) {
         if (!this.isCustom) {
@@ -513,7 +494,9 @@ public class Burger {
 
         this.deletedAt = LocalDateTime.now();
         this.availability = false;
+        this.deletedBy = idUser;
         this.updatedAt = LocalDateTime.now();
+        this.updatedBy = idUser;
     }
 
     // ============================================
@@ -525,7 +508,7 @@ public class Burger {
      * @param isFavorite true para marcar como destacada, false para desmarcar
      * @param updatedBy ID del admin que realiza el cambio
      */
-    public void setMenuBurgerFavorite(Boolean isFavorite, Integer updatedBy) {
+    public void setMenuFavorite(Boolean isFavorite, Integer updatedBy) {
         if (!this.isOnMenu) {
             throw new InvalidBurgerException(
                     "Solo burgers de menú pueden marcarse como destacadas. Burger ID: " + this.idBurger
@@ -549,7 +532,7 @@ public class Burger {
      * Alterna el estado de favorito para hamburguesa de menú (ADMIN)
      * @param updatedBy ID del admin que realiza el cambio
      */
-    public void toggleMenuBurgerFavorite(Integer updatedBy) {
+    public void toggleMenuFavorite(Integer updatedBy) {
         if (!this.isOnMenu) {
             throw new InvalidBurgerException(
                     "Solo burgers de menú pueden marcarse como destacadas. Burger ID: " + this.idBurger
@@ -739,11 +722,11 @@ public class Burger {
     /**
      * Retorna el estado de la imagen: NONE, READY
      */
-    public ImageStatus getImageStatus() {
-        if (imageUrl != null && !imageUrl.isBlank()) {
-            return ImageStatus.UPLOADED;
+    public String getImageStatus() {
+        if (this.imageKey == null || this.imageKey.isBlank()) {
+            return "NONE";
         }
-        return ImageStatus.NONE;
+        return "READY";
     }
 
     // ============================================
@@ -836,7 +819,7 @@ public class Burger {
         return idUser;
     }
 
-    public int getTimesOrdered() {
+    public Integer getTimesOrdered() {
         return timesOrdered;
     }
 

@@ -1,4 +1,4 @@
-// src/main/java/com/tetris/tetrisburger_backend/infrastructure/security/CustomUserDetails.java
+// src/main/java/com/tetris//infrastructure/security/CustomUserDetails.java
 package com.tetris.tetrisburger_backend.infrastructure.security;
 
 import org.springframework.security.core.GrantedAuthority;

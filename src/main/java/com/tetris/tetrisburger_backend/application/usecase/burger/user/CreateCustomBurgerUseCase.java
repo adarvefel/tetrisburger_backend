@@ -1,6 +1,5 @@
 package com.tetris.tetrisburger_backend.application.usecase.burger.user;
 
-import com.tetris.tetrisburger_backend.application.event.CustomBurgerImageUploadRequestedEvent;
 import com.tetris.tetrisburger_backend.domain.exception.BurgerCreationException;
 import com.tetris.tetrisburger_backend.domain.exception.InsufficientStockException;
 import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
@@ -27,21 +26,18 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
 
     private static final Logger logger = LoggerFactory.getLogger(CreateCustomBurgerUseCase.class);
 
-    //  Tipos de productos permitidos para ingredientes de hamburguesa
     private static final Set<ProductType> ALLOWED_INGREDIENT_TYPES = Set.of(
             ProductType.INGREDIENT
     );
 
     private final BurgerRepository burgerRepository;
     private final ProductRepository productRepository;
-    private final ApplicationEventPublisher eventPublisher;
 
     public CreateCustomBurgerUseCase(BurgerRepository burgerRepository,
-                                     ProductRepository productRepository,
-                                     ApplicationEventPublisher eventPublisher) {
+                                     ProductRepository productRepository
+                                     ) {
         this.burgerRepository = burgerRepository;
         this.productRepository = productRepository;
-        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -104,10 +100,7 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
             logger.info(" Hamburguesa personalizada guardada exitosamente: ID={}",
                     savedBurger.getIdBurger());
 
-            // 8. Publicar evento para subir imagen si existe
-            if (command.imageData() != null && command.imageData().bytes() != null) {
-                publishImageUploadEvent(savedBurger, command);
-            }
+
 
             return savedBurger;
 
@@ -212,19 +205,5 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
                 quantity);
     }
 
-    // ==================== EVENTO DE IMAGEN ====================
 
-    private void publishImageUploadEvent(Burger burger, CreateCustomBurgerCommand command) {
-        logger.info(" Publicando evento de imagen para custom burger ID: {}", burger.getIdBurger());
-
-        eventPublisher.publishEvent(
-                new CustomBurgerImageUploadRequestedEvent(
-                        burger.getIdBurger(),
-                        command.createdBy(),
-                        command.imageData().bytes(),
-                        command.imageData().contentType(),
-                        command.imageData().originalFilename()
-                )
-        );
-    }
 }

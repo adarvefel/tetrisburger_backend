@@ -58,22 +58,6 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         );
     }
 
-    // ====== BURGERS CUSTOM ======
-    @Override
-    public ImageUploadResult uploadCustomBurgerImage(FileData fileData, Integer burgerId, Integer userId) {
-        logger.info("Uploading custom burger image: burgerId={}, userId={}", burgerId, userId);
-
-        // Estructura: custom-burgers/user-123/
-        String folder = String.format("%s/user-%d", CUSTOM_BURGERS_FOLDER, userId);
-
-        return uploadImageInternal(
-                fileData.bytes(),
-                fileData.contentType(),
-                fileData.originalFilename(),
-                folder
-        );
-    }
-
     // ====== BURGERS MENÚ ======
     @Override
     public ImageUploadResult uploadMenuBurgerImage(FileData fileData, Integer burgerId, Integer adminId) {
