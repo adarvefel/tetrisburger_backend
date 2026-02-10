@@ -13,17 +13,15 @@ public record UpdateMenuBurgerRequestDTO(
 
         @Size(max = 500, message = "La descripción no puede exceder 500 caracteres")
         String description,
+        @NotNull(message = "Debe especificar la disponibilidad")
+        Boolean availability,
 
         @NotEmpty(message = "Debe incluir al menos un ingrediente")
         @Size(min = 1, max = 15, message = "Una hamburguesa debe tener entre 1 y 15 ingredientes")
         @Valid
-        List<IngredientRequestDTO> ingredients,
+        List<IngredientRequestDTO> ingredients
 
-        @NotNull(message = "Debe especificar la disponibilidad")
-        Boolean availability,
 
-        @NotNull(message = "Debe especificar si es destacada")
-        Boolean isFavorite
 
 
 ) {}

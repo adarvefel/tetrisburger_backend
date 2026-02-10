@@ -67,7 +67,7 @@ public class ToggleMenuBurgerFavoriteUseCase implements ToggleMenuBurgerFavorite
 
             // 5. Actualizar estado de favorita
             logger.info("Cambiando estado: from={} to={}", burger.isFavorite(), isFavorite);
-            burger.setMenuFavorite(isFavorite, adminUserId);
+            burger.setMenuBurgerFavorite(isFavorite, adminUserId);
 
             // 6. Guardar
             Burger saved = burgerRepository.save(burger);

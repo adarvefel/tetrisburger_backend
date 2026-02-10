@@ -61,7 +61,7 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
             // 3. Validar que sea burger de menú activa
             validateIsMenuBurger(burger);
 
-            logger.debug("📊 Estado actual: name={}, ingredients={}, basePrice={}, finalPrice={}",
+            logger.debug(" Estado actual: name={}, ingredients={}, basePrice={}, finalPrice={}",
                     burger.getName(),
                     burger.getIngredients().size(),
                     burger.getBasePrice(),
@@ -99,11 +99,11 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
             burger.updateMenuBurger(
                     command.name(),
                     command.description(),
-                    newIngredients,
                     command.availability(),
                     null,  // isOnMenu no se cambia (siempre true para menu burgers)
-                    command.isFavorite(),
+                    newIngredients,
                     command.updatedBy()
+
             );
 
             // 8. Logging de cambios
@@ -209,7 +209,7 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
         if (uniqueProducts < ingredients.size()) {
             throw new InvalidBurgerException(
                     "La hamburguesa contiene ingredientes duplicados. " +
-                            "Si deseas más cantidad, aumenta el campo 'quantity'"
+                            "Si deseas más cantidad, aumenta el campo 'cantidad'"
             );
         }
     }

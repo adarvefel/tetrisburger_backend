@@ -36,7 +36,7 @@ public class Burger {
     private String imageKey;              // Ruta S3: products/1769535390022-b29db968-reborm.jpg
     private String imageUrl;              // URL completa y nombre original
     private Integer idUser;               // Cliente dueño (si is_custom = true)
-    private Integer timesOrdered;
+    private int timesOrdered;
 
     // 6. Ingredientes (agregado)
     private List<BurgerIngredient> ingredients;
@@ -282,10 +282,9 @@ public class Burger {
     public void updateMenuBurger(
             String name,
             String description,
-            List<BurgerIngredient> newIngredients,
             Boolean availability,
             Boolean isOnMenu,
-            Boolean favorite,
+            List<BurgerIngredient> newIngredients,
             Integer updatedBy
     ) {
         if (!this.isOnMenu) {
@@ -327,7 +326,6 @@ public class Burger {
         } else {
             // Si había un precio custom, solo actualizar el basePrice
             this.basePrice = newBasePrice;
-            // finalPrice se mantiene (precio promocional o premium)
         }
 
         if (availability != null) {
@@ -336,9 +334,7 @@ public class Burger {
         if (isOnMenu != null) {
             this.isOnMenu = isOnMenu;
         }
-        if (favorite != null) {
-            this.isFavorite = favorite;
-        }
+
 
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
@@ -488,11 +484,13 @@ public class Burger {
 
         // Recalcular precios basado en nuevos ingredientes
         this.basePrice = calculateTotalPriceFromIngredients();
-        this.finalPrice = this.basePrice;  // Custom burgers siempre usan precio calculado
+        this.finalPrice = this.basePrice;
 
         this.updatedAt = LocalDateTime.now();
-        this.updatedBy = idUser;
+
     }
+
+
 
     public void markCustomAsDeleted(Integer idUser) {
         if (!this.isCustom) {
@@ -515,9 +513,7 @@ public class Burger {
 
         this.deletedAt = LocalDateTime.now();
         this.availability = false;
-        this.deletedBy = idUser;
         this.updatedAt = LocalDateTime.now();
-        this.updatedBy = idUser;
     }
 
     // ============================================
@@ -529,7 +525,7 @@ public class Burger {
      * @param isFavorite true para marcar como destacada, false para desmarcar
      * @param updatedBy ID del admin que realiza el cambio
      */
-    public void setMenuFavorite(Boolean isFavorite, Integer updatedBy) {
+    public void setMenuBurgerFavorite(Boolean isFavorite, Integer updatedBy) {
         if (!this.isOnMenu) {
             throw new InvalidBurgerException(
                     "Solo burgers de menú pueden marcarse como destacadas. Burger ID: " + this.idBurger
@@ -553,7 +549,7 @@ public class Burger {
      * Alterna el estado de favorito para hamburguesa de menú (ADMIN)
      * @param updatedBy ID del admin que realiza el cambio
      */
-    public void toggleMenuFavorite(Integer updatedBy) {
+    public void toggleMenuBurgerFavorite(Integer updatedBy) {
         if (!this.isOnMenu) {
             throw new InvalidBurgerException(
                     "Solo burgers de menú pueden marcarse como destacadas. Burger ID: " + this.idBurger
@@ -840,7 +836,7 @@ public class Burger {
         return idUser;
     }
 
-    public Integer getTimesOrdered() {
+    public int getTimesOrdered() {
         return timesOrdered;
     }
 

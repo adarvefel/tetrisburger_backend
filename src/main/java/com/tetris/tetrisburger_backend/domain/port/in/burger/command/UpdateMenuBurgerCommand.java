@@ -6,11 +6,9 @@ public record UpdateMenuBurgerCommand(
         Integer idBurger,
         String name,
         String description,
-        List<IngredientRequest> ingredients,
         Boolean availability,
-        Boolean isFavorite,
+        List<IngredientRequest> ingredients,
         Integer updatedBy
-
 ) {
     public record IngredientRequest(
             Integer idProduct,

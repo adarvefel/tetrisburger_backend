@@ -106,9 +106,8 @@ public interface BurgerRestDtoMapper {
                 burgerId,
                 dto.name(),
                 dto.description(),
-                ingredients,
                 dto.availability(),
-                dto.isFavorite(),
+                ingredients,
                 updatedBy
         );
     }
@@ -201,14 +200,9 @@ public interface BurgerRestDtoMapper {
                 burger.getIdBurger(),
                 burger.getName(),
                 burger.getDescription(),
-                burger.getBasePrice(),
                 burger.getFinalPrice(),
-                burger.isOnMenu(),
                 burger.isFavorite(),
-                burger.isCustom(),
-                burger.isAvailability(),
                 burger.getImageUrl(),
-                burger.getImageKey(),
                 burger.getImageStatus().name(),
                 burger.getIdUser(),
                 burger.getTimesOrdered(),

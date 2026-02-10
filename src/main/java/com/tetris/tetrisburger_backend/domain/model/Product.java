@@ -7,7 +7,7 @@ public class Product {
     private Integer id;
     private String name;
     private String description;
-    private int quantity;
+    private Integer quantity;
     private BigDecimal price;
     private Boolean availability;
     private ProductType productType;
@@ -170,7 +170,7 @@ public class Product {
             BigDecimal price,
             Boolean availability,
             ProductType productType,
-            Boolean isIngredientBurger,  // ✅ AGREGADO
+            Boolean isIngredientBurger,
             ProductCategory productCategory,
             Integer supplierId,
             Integer updatedBy
@@ -376,7 +376,7 @@ public class Product {
     public Integer getId() { return id; }
     public String getName() { return name; }
     public String getDescription() { return description; }
-    public int getQuantity() { return quantity; }
+    public Integer getQuantity() { return quantity; }
     public BigDecimal getPrice() { return price; }
     public Boolean getAvailability() { return availability; }
     public ProductType getProductType() { return productType; }
@@ -397,7 +397,7 @@ public class Product {
     public void setId(Integer id) { this.id = id; }
     public void setName(String name) { this.name = name; }
     public void setDescription(String description) { this.description = description; }
-    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
     public void setPrice(BigDecimal price) { this.price = price; }
     public void setAvailability(Boolean availability) { this.availability = availability; }
     public void setProductType(ProductType productType) { this.productType = productType; }

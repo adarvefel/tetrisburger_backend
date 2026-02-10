@@ -326,7 +326,7 @@ public class AdminBurgerController {
             @Parameter(description = "Dirección de ordenamiento (ASC/DESC)")
             @RequestParam(defaultValue = "DESC") String direction
     ) {
-        logger.info(" GET /api/admin/burgers/menu - page={}, size={}", page, size);
+        logger.info(" GET /a  pi/admin/burgers/menu - page={}, size={}", page, size);
 
         PaginationRequest pagination = new PaginationRequest(page, size, sortBy, direction);
         PageResponse<Burger> burgerPage = listBurgers.handle(pagination);
