@@ -1,16 +1,17 @@
-// src/main/java/com/tetris/tetrisburger_backend/application/usecase/product/UpdateProductUseCase.java
 package com.tetris.tetrisburger_backend.application.usecase.product;
 
+import com.tetris.tetrisburger_backend.domain.exception.ProductCategoryNotFoundException;
+import com.tetris.tetrisburger_backend.domain.exception.ProductNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.Product;
+import com.tetris.tetrisburger_backend.domain.model.ProductCategory;
 import com.tetris.tetrisburger_backend.domain.port.in.product.UpdateProduct;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.UpdateProductCommand;
+import com.tetris.tetrisburger_backend.domain.port.out.ProductCategoryRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
-import java.time.Instant;
 
 @Service
 @Transactional
@@ -18,43 +19,65 @@ public class UpdateProductUseCase implements UpdateProduct {
 
     private static final Logger logger = LoggerFactory.getLogger(UpdateProductUseCase.class);
 
-    private final ProductRepository repo;
+    private final ProductRepository productRepository;
+    private final ProductCategoryRepository productCategoryRepository;
 
-    public UpdateProductUseCase(ProductRepository repo) {
-        this.repo = repo;
+    public UpdateProductUseCase(
+            ProductRepository productRepository,
+            ProductCategoryRepository productCategoryRepository
+    ) {
+        this.productRepository = productRepository;
+        this.productCategoryRepository = productCategoryRepository;
     }
 
     @Override
     public Product update(UpdateProductCommand cmd) {
-        logger.info("Actualizando producto ID: {}", cmd.idProduct());
+        logger.info(" Actualizando producto ID: {}", cmd.idProduct());
 
-        Product current = repo.findById(cmd.idProduct())
-                .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado: " + cmd.idProduct()));
+        // Buscar producto actual
+        Product current = productRepository.findById(cmd.idProduct())
+                .orElseThrow(() -> {
+                    logger.error(" Producto no encontrado: ID {}", cmd.idProduct());
+                    return new ProductNotFoundException(cmd.idProduct());
+                });
 
-        // Reconstruir producto con datos actualizados
-        // IMPORTANTE: Mantener imageUrl e imageKey del producto actual (no se actualizan aquí)
-        Product updated = Product.of(
-                current.getId(),
+        logger.info(" Producto encontrado: '{}' | Categoría actual: '{}'",
+                current.getName(),
+                current.getCategoryName());
+
+        ProductCategory category = null;
+        if (cmd.productCategoryId() != null) {
+            category = productCategoryRepository.findById(cmd.productCategoryId())
+                    .orElseThrow(() -> {
+                        logger.error(" Categoría no encontrada: ID {}", cmd.productCategoryId());
+                        return new ProductCategoryNotFoundException(
+                                "Categoría no encontrada con ID: " + cmd.productCategoryId()
+                        );
+                    });
+            logger.info(" Nueva categoría: '{}' (ID: {})", category.getName(), category.getId());
+        }
+
+        // ✅ Actualizar usando método del dominio
+        current.updateDetails(
                 cmd.name(),
                 cmd.description(),
                 cmd.quantity(),
                 cmd.price(),
                 cmd.availability(),
                 cmd.productType(),
-                cmd.ingredientType(),
-                cmd.burgerIngredient(),
-                current.getImageUrl(),
-                current.getImageKey(),
-                cmd.productCategoryId(),
+                cmd.isBurgerIngredient(),
+                category,
                 cmd.supplierId(),
-                current.getCreatedAt(),
-                Instant.now(),             // ← updatedAt
-                current.getDeletedAt(),
-                current.getCreatedBy(),
-                cmd.updatedBy(),
-                current.getDeletedBy()
+                cmd.updatedBy()
         );
 
-        return repo.save(updated);
+        Product updated = productRepository.save(current);
+        logger.info("Producto actualizado: ID {} | Nombre: '{}' | Categoría: '{}' | Es ingrediente burger: {}",
+                updated.getId(),
+                updated.getName(),
+                updated.getCategoryName(),
+                updated.getIsBurgerIngredient());
+
+        return updated;
     }
 }

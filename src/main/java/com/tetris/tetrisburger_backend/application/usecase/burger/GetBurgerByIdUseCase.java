@@ -1,6 +1,6 @@
-// src/main/java/com/tetris/tetrisburger_backend/application/usecase/burger/GetBurgerByIdUseCase.java
 package com.tetris.tetrisburger_backend.application.usecase.burger;
 
+import com.tetris.tetrisburger_backend.domain.exception.BurgerNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.GetBurgerById;
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
@@ -9,12 +9,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 @Transactional
 public class GetBurgerByIdUseCase implements GetBurgerById {
-    private final Logger logger = LoggerFactory.getLogger(GetBurgerByIdUseCase.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(GetBurgerByIdUseCase.class);
 
     private final BurgerRepository burgerRepository;
 
@@ -23,14 +22,21 @@ public class GetBurgerByIdUseCase implements GetBurgerById {
     }
 
     @Override
+    public Burger execute(Integer idBurger) {
+        logger.info(" Buscando hamburguesa por ID: {}", idBurger);
 
-    public Burger   execute(Integer idBurger) {
-        logger.info("Buscando hamburguesa por ID: {}", idBurger);
-        return burgerRepository.findById(idBurger)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Hamburguesa no encontrada con id: " + idBurger
-                ));
+        Burger burger = burgerRepository.findById(idBurger)
+                .orElseThrow(() -> new BurgerNotFoundException(idBurger));
 
+        // Validar que no esté eliminada
+        if (burger.isDeleted()) {
+            logger.warn(" Intento de acceder a burger eliminada: ID={}", idBurger);
+            throw new BurgerNotFoundException(
+                    "La hamburguesa con ID " + idBurger + " ha sido eliminada"
+            );
+        }
 
+        logger.info("Hamburguesa encontrada: ID={}, name={}", burger.getIdBurger(), burger.getName());
+        return burger;
     }
 }

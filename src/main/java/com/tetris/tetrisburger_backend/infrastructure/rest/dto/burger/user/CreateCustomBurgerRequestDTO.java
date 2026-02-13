@@ -1,0 +1,14 @@
+
+package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user;
+
+
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.IngredientRequestDTO;
+
+import java.util.List;
+
+public record CreateCustomBurgerRequestDTO(
+        String name,
+        String description,
+        List<IngredientRequestDTO> ingredients
+) {
+}

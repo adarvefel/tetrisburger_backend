@@ -1,4 +1,3 @@
-// src/main/java/com/tetris/tetrisburger_backend/infrastructure/persistence/entity/BurgerIngredientEntity.java
 package com.tetris.tetrisburger_backend.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
@@ -24,6 +23,13 @@ public class BurgerIngredientEntity {
     @JoinColumn(name = "id_burger", nullable = false)
     private BurgerEntity burger;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_product", nullable = false, insertable = false, updatable = false)
+    private ProductEntity product;
+
+    @Column(name = "product_name", nullable = false)
+    private String productName;
+
     @Column(name = "id_product", nullable = false)
     private Integer idProduct;
 
@@ -36,7 +42,12 @@ public class BurgerIngredientEntity {
     @Column(name = "price_at_time", nullable = false)
     private BigDecimal priceAtTime;
 
-    // Getters y setters
+    @Column(name = "subtotal", nullable = false)
+    private BigDecimal subtotal;
+
+    // ============================================
+    // GETTERS Y SETTERS
+    // ============================================
 
     public Integer getIdBurgerIngredient() {
         return idBurgerIngredient;
@@ -54,6 +65,18 @@ public class BurgerIngredientEntity {
         this.burger = burger;
     }
 
+    public ProductEntity getProduct() {
+        return product;
+    }
+
+    public void setProduct(ProductEntity product) {
+        this.product = product;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
     public Integer getIdProduct() {
         return idProduct;
     }
@@ -61,6 +84,11 @@ public class BurgerIngredientEntity {
     public void setIdProduct(Integer idProduct) {
         this.idProduct = idProduct;
     }
+
+    public String getProductName() {
+        return productName;
+    }
+
 
     public Integer getQuantity() {
         return quantity;
@@ -74,6 +102,10 @@ public class BurgerIngredientEntity {
         return isOptional;
     }
 
+    public Boolean getOptional() {
+        return isOptional;
+    }
+
     public void setIsOptional(Boolean optional) {
         isOptional = optional;
     }
@@ -84,5 +116,17 @@ public class BurgerIngredientEntity {
 
     public void setPriceAtTime(BigDecimal priceAtTime) {
         this.priceAtTime = priceAtTime;
+    }
+
+    public BigDecimal getSubtotal() {
+        return subtotal;
+    }
+
+    public void setSubtotal(BigDecimal subtotal) {
+        this.subtotal = subtotal;
+    }
+
+    public void setOptional(Boolean optional) {
+        isOptional = optional;
     }
 }

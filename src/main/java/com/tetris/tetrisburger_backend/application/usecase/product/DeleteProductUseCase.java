@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Service
 @Transactional
@@ -35,7 +36,7 @@ public class DeleteProductUseCase implements DeleteProduct {
 
         log.debug("Producto encontrado: '{}' (ID: {})", product.getName(), product.getId());
 
-        product.setDeletedAt(Instant.now());
+        product.setDeletedAt(LocalDateTime.now());
         product.setDeletedBy(deletedBy);
 
         productRepository.save(product);

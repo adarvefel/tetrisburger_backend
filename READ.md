@@ -1120,7 +1120,7 @@ json
 "name": "Burger Deluxe",
 "description": "Hamburguesa gourmet con queso cheddar, tocino y salsa especial",
 "imageUrl": "https://cdn.tetrisburger.com/menu/burger-deluxe.png",
-"favorite": false,
+"isFavorite": false,
 "ingredients": [
 {
 "idProduct": 6,
@@ -1477,14 +1477,14 @@ json
 }
 ],
 "availability": true,
-"favorite": true,
+"isFavorite": true,
 "onMenu": true
 }
 Respuesta: (depende de tu implementación, similar al create de menú con datos actualizados).
 
 8) Marcar hamburguesa custom como favorita (cliente)
    Método: POST
-   URL: http://localhost:8080/api/burgers/custom/19/favorite
+   URL: http://localhost:8080/api/burgers/custom/19/isFavorite
 
 Headers:
 

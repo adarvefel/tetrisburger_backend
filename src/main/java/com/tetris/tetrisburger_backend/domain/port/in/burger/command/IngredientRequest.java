@@ -8,9 +8,7 @@ public record IngredientRequest(
         Boolean isOptional
 ) {
 
-    /**
-     * Compact constructor para validaciones
-     */
+
     public IngredientRequest {
         if (idProduct == null) {
             throw new IllegalArgumentException("El ID del producto es obligatorio");
@@ -19,7 +17,7 @@ public record IngredientRequest(
             throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
         }
         if (isOptional == null) {
-            isOptional = false;  // Valor por defecto
+            isOptional = false;
         }
     }
 }

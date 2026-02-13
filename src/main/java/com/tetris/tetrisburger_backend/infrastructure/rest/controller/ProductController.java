@@ -43,6 +43,8 @@ import java.util.List;
 @SecurityRequirement(name = "bearerAuth")
 public class ProductController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
+
     private final CreateProduct createProduct;
     private final ListProducts listProducts;
     private final GetProductById getProductById;
@@ -55,9 +57,19 @@ public class ProductController {
     private final SetProductAvailability setProductAvailability;
     private final AdjustProductStock adjustProductStock;
 
-    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
-
-    public ProductController(CreateProduct createProduct, ListProducts listProducts, GetProductById getProductById, UpdateProduct updateProduct, UpdateProductImage updateProductImage, DeleteProduct deleteProduct, ProductRestDtoMapper mapper, ImageStoragePort imageStoragePort, SearchProducts searchProducts, SetProductAvailability setProductAvailability, AdjustProductStock adjustProductStock) {
+    public ProductController(
+            CreateProduct createProduct,
+            ListProducts listProducts,
+            GetProductById getProductById,
+            UpdateProduct updateProduct,
+            UpdateProductImage updateProductImage,
+            DeleteProduct deleteProduct,
+            ProductRestDtoMapper mapper,
+            ImageStoragePort imageStoragePort,
+            SearchProducts searchProducts,
+            SetProductAvailability setProductAvailability,
+            AdjustProductStock adjustProductStock
+    ) {
         this.createProduct = createProduct;
         this.listProducts = listProducts;
         this.getProductById = getProductById;
@@ -96,7 +108,7 @@ public class ProductController {
     // ==================== CREATE ====================
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @Operation(
             summary = "Crear producto",
             description = "Crea un nuevo producto con imagen opcional. imageStatus puede ser: NONE, PENDING o READY."
@@ -106,13 +118,9 @@ public class ProductController {
                     content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Datos o imagen inválidos",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado",
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada",  // ✅ NUEVO
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
             @ApiResponse(responseCode = "409", description = "Producto duplicado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "413", description = "Imagen excede 5MB",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
     })
     public ResponseEntity<ProductResponseDTO> create(
@@ -120,10 +128,13 @@ public class ProductController {
             @Parameter(description = "Datos del producto (JSON)")
             @Valid @RequestPart("data") CreateProductRequestDTO dto,
             @Parameter(description = "Imagen del producto (opcional, máx 5MB)")
-            @RequestPart(value = "productImage", required = false) MultipartFile productImage) {
-
+            @RequestPart(value = "productImage", required = false) MultipartFile productImage
+    ) {
         Integer adminId = getUserIdFromDetails(userDetails);
         boolean imageWasSent = (productImage != null && !productImage.isEmpty());
+
+        logger.info("🔵 POST /api/products - Admin {} creando: '{}' | Categoría: {}",
+                adminId, dto.getName(), dto.getProductCategoryId());
 
         CreateProductCommand command = mapper.toCreateProductCommand(dto, productImage, adminId);
         Product created = createProduct.create(command);
@@ -134,6 +145,9 @@ public class ProductController {
         ProductResponseDTO response = mapper.toProductResponseDTO(created);
         response.setImageUrl(imageUrl);
         response.setImageStatus(imageStatus);
+
+        logger.info(" Producto creado: ID {} | Categoría: '{}'",
+                created.getId(), created.getCategoryName());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -147,17 +161,18 @@ public class ProductController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida",
-                    content = @Content(schema = @Schema(implementation = ListProductResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Parámetros inválidos",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
+                    content = @Content(schema = @Schema(implementation = ListProductResponseDTO.class)))
     })
     public ResponseEntity<ListProductResponseDTO> getAll(
             @Parameter(description = "Número de página (inicia en 0)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Tamaño de página") @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Campo de ordenamiento (ej: name, price)") @RequestParam(required = false) String sortBy,
+            @Parameter(description = "Campo de ordenamiento") @RequestParam(required = false) String sortBy,
             @Parameter(description = "Dirección (ASC/DESC)") @RequestParam(defaultValue = "ASC") String direction,
-            @Parameter(description = "Filtrar por categoría") @RequestParam(required = false) Integer productCategoryId,
-            @Parameter(description = "Filtrar por disponibilidad") @RequestParam(required = false) Boolean availability) {
+            @Parameter(description = "Filtrar por ID de categoría") @RequestParam(required = false) Integer productCategoryId,
+            @Parameter(description = "Filtrar por disponibilidad") @RequestParam(required = false) Boolean availability
+    ) {
+        logger.info("🔵 GET /api/products/list - Categoría: {}, Disponibilidad: {}",
+                productCategoryId, availability);
 
         ListProductsQuery query = new ListProductsQuery(productCategoryId, availability);
         PaginationRequest pagination = new PaginationRequest(page, size, sortBy, direction);
@@ -185,6 +200,7 @@ public class ProductController {
                 .totalPages(pageResponse.totalPages())
                 .build();
 
+        logger.info("Productos listados: {} resultados", pageResponse.totalElements());
         return ResponseEntity.ok(response);
     }
 
@@ -205,10 +221,10 @@ public class ProductController {
             @Parameter(description = "Tamaño de página") @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "Campo de ordenamiento") @RequestParam(required = false) String sortBy,
             @Parameter(description = "Dirección (ASC/DESC)") @RequestParam(defaultValue = "ASC") String direction,
-            @Parameter(description = "Filtrar por categoría") @RequestParam(required = false) Integer productCategoryId,
-            @Parameter(description = "Filtrar por disponibilidad") @RequestParam(required = false) Boolean availability) {
-
-        logger.info(" GET /api/products/search - Buscando: {}", q);
+            @Parameter(description = "Filtrar por ID de categoría") @RequestParam(required = false) Integer productCategoryId,
+            @Parameter(description = "Filtrar por disponibilidad") @RequestParam(required = false) Boolean availability
+    ) {
+        logger.info(" GET /api/products/search - Query: '{}' | Categoría: {}", q, productCategoryId);
 
         SearchProductsQuery query = new SearchProductsQuery(q, productCategoryId, availability);
         PaginationRequest pagination = new PaginationRequest(page, size, sortBy, direction);
@@ -236,7 +252,7 @@ public class ProductController {
                 .totalPages(pageResponse.totalPages())
                 .build();
 
-        logger.info("Búsqueda completada: {} resultados", pageResponse.totalElements());
+        logger.info(" Búsqueda completada: {} resultados", pageResponse.totalElements());
         return ResponseEntity.ok(response);
     }
 
@@ -250,14 +266,12 @@ public class ProductController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Producto encontrado",
                     content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "ID inválido",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
     })
     public ResponseEntity<ProductResponseDTO> getById(
-            @Parameter(description = "ID del producto") @PathVariable Integer id) {
-
+            @Parameter(description = "ID del producto") @PathVariable Integer id
+    ) {
         GetProductByIdQuery query = new GetProductByIdQuery(id);
         Product product = getProductById.get(query);
 
@@ -274,29 +288,26 @@ public class ProductController {
     // ==================== UPDATE ====================
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @Operation(
             summary = "Actualizar producto",
-            description = "Actualiza datos del producto (excepto imagen). Para actualizar imagen usar PUT /api/products/image/{id}."
+            description = "Actualiza datos del producto (excepto imagen)."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Producto actualizado",
                     content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado ",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Producto no encontrado",
+            @ApiResponse(responseCode = "404", description = "Producto o categoría no encontrado",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
     })
     public ResponseEntity<ProductResponseDTO> update(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "ID del producto") @PathVariable Integer id,
-            @Valid @RequestBody UpdateProductRequestDTO dto) {
-
+            @Valid @RequestBody UpdateProductRequestDTO dto
+    ) {
         Integer adminId = getUserIdFromDetails(userDetails);
+
+        logger.info(" PUT /api/products/{} - Admin {} | Categoría: {}",
+                id, adminId, dto.getProductCategoryId());
 
         UpdateProductCommand command = mapper.toUpdateProductCommand(id, dto, adminId);
         Product updated = updateProduct.update(command);
@@ -308,36 +319,32 @@ public class ProductController {
         response.setImageUrl(imageUrl);
         response.setImageStatus(imageStatus);
 
+        logger.info(" Producto actualizado: ID {} | Categoría: '{}'",
+                updated.getId(), updated.getCategoryName());
+
         return ResponseEntity.ok(response);
     }
 
     // ==================== UPDATE IMAGE ====================
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE')")
+
     @PutMapping(value = "/image/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @Operation(
             summary = "Actualizar imagen del producto",
-            description = "Actualiza únicamente la imagen. Responde con imageStatus PENDING (consulta GET /api/products/{id} para verificar cuando esté READY)."
+            description = "Actualiza únicamente la imagen."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Imagen aceptada (en proceso)",
                     content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Imagen inválida",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No autenticado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado - Solo ADMIN",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "413", description = "Imagen excede 5MB",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
     })
     public ResponseEntity<ProductResponseDTO> updateImage(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "ID del producto") @PathVariable Integer id,
             @Parameter(description = "Nueva imagen (JPG, PNG, WEBP, máx 5MB)")
-            @RequestPart("productImage") MultipartFile productImage) {
-
+            @RequestPart("productImage") MultipartFile productImage
+    ) {
         Integer adminId = getUserIdFromDetails(userDetails);
 
         FileData fileData = FileData.from(productImage);
@@ -355,26 +362,21 @@ public class ProductController {
     // ==================== CHANGE AVAILABILITY ====================
 
     @PatchMapping("/{id}/availability")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @Operation(summary = "Cambiar disponibilidad", description = "Activa o desactiva un producto.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Disponibilidad actualizada",
                     content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "ID inválido o parámetro availability faltante",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
     })
     public ResponseEntity<ProductResponseDTO> changeAvailability(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Integer id,
-            @RequestParam Boolean availability) {
-
+            @RequestParam Boolean availability
+    ) {
         Integer adminId = getUserIdFromDetails(userDetails);
 
-        // ✅ LLAMAR AL USE CASE CORRECTO
         Product updated = setProductAvailability.setAvailability(id, availability, adminId);
 
         String imageUrl = resolveImageUrlFromProduct(updated);
@@ -387,18 +389,14 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-// ==================== ADJUST STOCK ====================
+    // ==================== ADJUST STOCK ====================
 
     @PatchMapping("/{id}/stock")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @Operation(summary = "Ajustar stock", description = "Aumenta o disminuye la cantidad disponible.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Stock actualizado",
                     content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "ID inválido, delta faltante o stock insuficiente",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
     })
@@ -406,8 +404,8 @@ public class ProductController {
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Integer id,
             @Parameter(description = "Cantidad a ajustar (positivo=aumentar, negativo=disminuir)")
-            @RequestParam Integer delta) {
-
+            @RequestParam Integer delta
+    ) {
         Integer adminId = getUserIdFromDetails(userDetails);
 
         Product updated = adjustProductStock.adjustStock(id, delta, adminId);
@@ -422,27 +420,27 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+    // ==================== DELETE ====================
+
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @Operation(
             summary = "Eliminar producto",
-            description = "Elimina un producto mediante soft delete",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = "Elimina un producto mediante soft delete"
     )
-    @ApiResponse(responseCode = "200", description = "Producto eliminado exitosamente")
-    @ApiResponse(responseCode = "404", description = "Producto no encontrado")
-    @ApiResponse(responseCode = "403", description = "No autorizado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Producto eliminado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+    })
     public ResponseEntity<MessageResponseDTO> deleteProduct(
-            @Parameter(description = "ID del producto", example = "27")
             @PathVariable Integer id,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-
-        logger.info("DELETE producto ID: {} por usuario ID: {}", id, userDetails.getId());
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        logger.info(" DELETE producto ID: {} por usuario ID: {}", id, userDetails.getId());
 
         deleteProduct.delete(id, userDetails.getId());
 
-        return ResponseEntity.ok(new MessageResponseDTO("Producto eliminado exitosamente",true));
+        logger.info(" Producto eliminado: ID {}", id);
+        return ResponseEntity.ok(new MessageResponseDTO("Producto eliminado exitosamente", true));
     }
-
-
 }

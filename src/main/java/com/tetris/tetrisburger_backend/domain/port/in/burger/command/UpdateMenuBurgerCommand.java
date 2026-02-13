@@ -6,11 +6,13 @@ public record UpdateMenuBurgerCommand(
         Integer idBurger,
         String name,
         String description,
-        String imageUrl,
-        List<IngredientRequest> ingredients,
         Boolean availability,
-        Boolean favorite,
-        Boolean onMenu
-
+        List<IngredientRequest> ingredients,
+        Integer updatedBy
 ) {
+    public record IngredientRequest(
+            Integer idProduct,
+            Integer quantity,
+            Boolean isOptional
+    ) {}
 }

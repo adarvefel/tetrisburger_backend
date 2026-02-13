@@ -9,10 +9,9 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "menu_category")
 @Data
-@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class MenuCategoryEntity extends Auditable {
+public class MenuCategoryEntity  {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

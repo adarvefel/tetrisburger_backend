@@ -1,5 +1,7 @@
 package com.tetris.tetrisburger_backend.domain.port.in.product.command;
 
+import com.tetris.tetrisburger_backend.domain.model.ProductType;
+
 import java.math.BigDecimal;
 
 public record UpdateProductCommand(
@@ -9,9 +11,8 @@ public record UpdateProductCommand(
         Integer quantity,
         BigDecimal price,
         Boolean availability,
-        String productType,
-        String ingredientType,
-        Boolean burgerIngredient,
+        ProductType productType,
+        Boolean isBurgerIngredient,
         Integer productCategoryId,
         Integer supplierId,
         Integer updatedBy

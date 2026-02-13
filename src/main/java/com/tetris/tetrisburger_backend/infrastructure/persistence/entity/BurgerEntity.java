@@ -23,7 +23,6 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Setter
-@EntityListeners(AuditingEntityListener.class)
 public class BurgerEntity {
 
     @Id
@@ -58,6 +57,9 @@ public class BurgerEntity {
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
+    @Column(name = "image_key")
+    private String imageKey;
+
     @Column(name = "id_user")
     private Integer idUser;
 
@@ -65,11 +67,9 @@ public class BurgerEntity {
     private Integer timesOrdered;
 
     // Auditoría de fechas
-    @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
@@ -78,11 +78,9 @@ public class BurgerEntity {
     private LocalDateTime deletedAt;
 
     // Auditoría de usuario (pueden ser NULL si aún no tienes auditor configurado)
-    @CreatedBy
     @Column(name = "created_by", updatable = false)
     private Integer createdBy;
 
-    @LastModifiedBy
     @Column(name = "updated_by")
     private Integer updatedBy;
 
@@ -92,11 +90,14 @@ public class BurgerEntity {
     @OneToMany(
             mappedBy = "burger",
             cascade = CascadeType.ALL,
-            orphanRemoval = true
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
     )
     private List<BurgerIngredientEntity> ingredients = new ArrayList<>();
 
-    // Helpers para la relación bidireccional
+
+    // ========= HELPERS =========
+
     public void addIngredient(BurgerIngredientEntity ingredient) {
         if (ingredient == null) return;
         ingredient.setBurger(this);

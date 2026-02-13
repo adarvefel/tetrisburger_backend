@@ -1,7 +1,9 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.advice;
 
 import com.tetris.tetrisburger_backend.domain.exception.*;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.ErrorResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+
+import java.time.LocalDateTime;
 
 @RestControllerAdvice
 @Order(100)
@@ -41,6 +45,9 @@ public class GlobalExceptionHandler {
         logger.warn("Usuario ya existe: {} - Path: {}", ex.getMessage(), request.getDescription(false));
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
+
+
+
 
     // 404 NOT FOUND — recursos no encontrados
     @ExceptionHandler(UserNotFoundException.class)
@@ -143,6 +150,47 @@ public class GlobalExceptionHandler {
     public ResponseEntity<MessageResponseDTO> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
         logger.warn("Method not allowed: {} - Path: {}", ex.getMessage(), req.getRequestURI());
         return buildErrorResponse(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage());
+    }
+
+    @ExceptionHandler(ProductCategoryNotFoundException.class)
+    public ResponseEntity<ErrorResponseDTO> handleProductCategoryNotFound(
+            ProductCategoryNotFoundException ex
+    ) {
+        ErrorResponseDTO error = new ErrorResponseDTO(
+                HttpStatus.NOT_FOUND.value(),           // status: 404
+                HttpStatus.NOT_FOUND.getReasonPhrase(), // error: "Not Found"
+                ex.getMessage(),                        // message: "Categoría no encontrada con ID: 5"
+                LocalDateTime.now()                     // timestamp
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponseDTO> handleJpaEntityNotFound(
+            EntityNotFoundException ex,
+            WebRequest request
+    ) {
+        String path = request.getDescription(false).replace("uri=", "");
+
+        String userMessage = "Recurso no encontrado";
+
+        if (ex.getMessage() != null) {
+            if (ex.getMessage().contains("ProductCategoryEntity")) {
+                userMessage = "Error: El producto tiene una categoría inexistente en la base de datos";
+            } else if (ex.getMessage().contains("ProductEntity")) {
+                userMessage = "Producto no encontrado";
+            }
+        }
+
+        ErrorResponseDTO error = new ErrorResponseDTO(
+                HttpStatus.NOT_FOUND.value(),              // 404
+                HttpStatus.NOT_FOUND.getReasonPhrase(),    // "Not Found"
+                userMessage,
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     // ========================================
