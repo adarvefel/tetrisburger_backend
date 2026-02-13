@@ -8,8 +8,8 @@ import java.util.List;
 
 public record CreateBurgerCommand(
         String name,
-        String description
-        imageData,
+        String description,
+        FileData  imageData,
         ImageStatus imageStatus,
         List<IngredientRequest> ingredients,
         Boolean isFavorite,
