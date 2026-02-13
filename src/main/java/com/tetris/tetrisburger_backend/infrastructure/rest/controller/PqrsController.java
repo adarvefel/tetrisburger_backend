@@ -7,10 +7,7 @@ import com.tetris.tetrisburger_backend.application.usecase.pqrs.ListPqrsUseCase;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Pqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.*;
-import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.CreatePqrsCommand;
-import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.DeleteSoftPqrsCommand;
-import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.UpdatePqrsByAdminCommand;
-import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.UpdatePqrsCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.*;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.GetPqrsByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.query.ListPqrsQuery;
@@ -73,15 +70,16 @@ public class PqrsController {
     }
 
     //Buscar pqrs por id
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    @GetMapping("/{id}")
-    public ResponseEntity<PqrsResponseDTO> getPqrsById(@PathVariable Integer id){
-        logger.info("Admin buscando PQRS con el ID: {}", id);
+    @GetMapping("/{idPqrs}")
+    public ResponseEntity<PqrsResponseDTO> getPqrsById(@PathVariable Integer idPqrs, @AuthenticationPrincipal CustomUserDetails customUserDetails){
+        logger.info("Admin buscando PQRS con el ID: {}", idPqrs);
 
-        Pqrs pqrs = getPqrsById.handle(new GetPqrsByIdQuery(id));
+        Integer idUser = customUserDetails.getId();
+
+        Pqrs pqrs = getPqrsById.handle(new GetPqrsByIdCommand(idPqrs, idUser));
         PqrsResponseDTO response = pqrsRestDtoMapper.toPqrsResponseDTO(pqrs);
 
-        logger.info("PQRS encontrada con el ID: {}", id);
+        logger.info("PQRS encontrada con el ID: {}", idPqrs);
         return ResponseEntity.ok(response);
     }
 
