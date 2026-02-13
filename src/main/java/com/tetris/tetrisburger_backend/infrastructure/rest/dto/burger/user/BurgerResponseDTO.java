@@ -1,7 +1,7 @@
-package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger;
+package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user;
 
 
-import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.BurgerIngredientResponseDTO;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,7 +14,7 @@ public record BurgerResponseDTO(
         Boolean isFavorite,
         Boolean isAvailability,
         String imageUrl,
-        ImageStatus imageStatus,
+        String imageStatus,
         Integer timesOrdered,
         List<BurgerIngredientResponseDTO> ingredients
 ){

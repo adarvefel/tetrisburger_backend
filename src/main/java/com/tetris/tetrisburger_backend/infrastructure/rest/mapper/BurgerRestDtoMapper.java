@@ -10,6 +10,10 @@ import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateCusto
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuBurgerCommand;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.*;
 import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.admin.*;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user.BurgerResponseDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user.CreateCustomBurgerRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user.UpdateCustomBurgerRequestDTO;
 import org.mapstruct.Mapper;
 
 import org.springframework.web.multipart.MultipartFile;

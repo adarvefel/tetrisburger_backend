@@ -99,9 +99,8 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
             burger.updateMenuBurger(
                     command.name(),
                     command.description(),
-                    command.availability(),
-                    null,  // isOnMenu no se cambia (siempre true para menu burgers)
                     newIngredients,
+                    command.availability(),
                     command.updatedBy()
 
             );

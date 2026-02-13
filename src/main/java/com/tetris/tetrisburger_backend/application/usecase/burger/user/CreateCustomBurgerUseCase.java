@@ -5,8 +5,10 @@ import com.tetris.tetrisburger_backend.domain.exception.InsufficientStockExcepti
 import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
 import com.tetris.tetrisburger_backend.domain.exception.ProductNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
+import com.tetris.tetrisburger_backend.domain.model.BurgerSettings;
 import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.GetBurgerSettings;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.user.CreateCustomBurger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.CreateCustomBurgerCommand;
@@ -15,9 +17,9 @@ import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Set;
 
 @Service
@@ -32,12 +34,16 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
 
     private final BurgerRepository burgerRepository;
     private final ProductRepository productRepository;
+    private final GetBurgerSettings getBurgerSettings;
 
-    public CreateCustomBurgerUseCase(BurgerRepository burgerRepository,
-                                     ProductRepository productRepository
-                                     ) {
+    public CreateCustomBurgerUseCase(
+            BurgerRepository burgerRepository,
+            ProductRepository productRepository,
+            GetBurgerSettings getBurgerSettings
+    ) {
         this.burgerRepository = burgerRepository;
         this.productRepository = productRepository;
+        this.getBurgerSettings = getBurgerSettings;
     }
 
     @Override
@@ -46,30 +52,37 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
                 command.name(), command.createdBy());
 
         try {
+            //  0. Obtener y validar settings PRIMERO
+            BurgerSettings settings = getBurgerSettings.handle();
+            validateCustomBurgersEnabled(settings);
+
             // 1. Validar command
             validateCommand(command);
 
-            // 2. Validar ingredientes duplicados
+            //  2. Validar cantidad de ingredientes contra settings
+            validateIngredientCount(command.ingredients().size(), settings);
+
+            // 3. Validar ingredientes duplicados
             validateNoDuplicateIngredients(command.ingredients());
 
-            // 3. Iniciar el builder
+            // 4. Iniciar el builder
             Burger.CustomBuilder builder = new Burger.CustomBuilder(
                     command.name(),
                     command.createdBy()
             );
 
-            // 4. Agregar descripción si existe
+            // 5. Agregar descripción si existe
             if (command.description() != null && !command.description().isBlank()) {
                 builder.withDescription(command.description());
             }
 
-            // 5. Agregar ingredientes uno por uno
+            // 6. Agregar ingredientes uno por uno
             for (CreateCustomBurgerCommand.IngredientRequest ing : command.ingredients()) {
                 // Buscar el producto
                 Product product = productRepository.findById(ing.idProduct())
                         .orElseThrow(() -> new ProductNotFoundException(ing.idProduct()));
 
-                //  Validación completa del producto
+                // Validación completa del producto
                 validateProductForBurger(product, ing.quantity());
 
                 // Crear snapshot del producto
@@ -83,14 +96,17 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
                 builder.addIngredient(snapshot);
             }
 
-            // 6. Construir la burger
+            // 7. Construir la burger
             Burger burger = builder.build();
+
+            //  8. Validar precio final contra settings
+            validateBurgerPrice(burger.getFinalPrice(), settings);
 
             logger.info(" Guardando hamburguesa personalizada: name={}, userId={}, price={}, ingredients={}",
                     burger.getName(), burger.getIdUser(), burger.getFinalPrice(),
                     burger.getIngredients().size());
 
-            // 7. Guardar en repositorio
+            // 9. Guardar en repositorio
             Burger savedBurger = burgerRepository.save(burger);
 
             if (savedBurger == null || savedBurger.getIdBurger() == null) {
@@ -99,8 +115,6 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
 
             logger.info(" Hamburguesa personalizada guardada exitosamente: ID={}",
                     savedBurger.getIdBurger());
-
-
 
             return savedBurger;
 
@@ -115,7 +129,82 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
         }
     }
 
-    // ==================== VALIDACIONES ====================
+    // ==================== VALIDACIONES DE SETTINGS ==================== ✅ NUEVO
+
+    /**
+     * ✅ Valida que las hamburguesas personalizadas estén habilitadas
+     */
+    private void validateCustomBurgersEnabled(BurgerSettings settings) {
+        if (!settings.isCustomBurgersEnabled()) {
+            logger.warn(" Intento de crear burger personalizada con feature deshabilitada");
+            throw new InvalidBurgerException(
+                    "Las hamburguesas personalizadas están temporalmente deshabilitadas. " +
+                            "Por favor, intenta más tarde o elige una de nuestras hamburguesas del menú."
+            );
+        }
+    }
+
+    /**
+     * ✅ Valida que la cantidad de ingredientes esté dentro de los límites configurados
+     */
+    private void validateIngredientCount(int ingredientCount, BurgerSettings settings) {
+        if (ingredientCount < settings.getMinIngredients()) {
+            throw new InvalidBurgerException(
+                    String.format(
+                            "La hamburguesa debe tener al menos %d ingrediente(s). " +
+                                    "Cantidad actual: %d",
+                            settings.getMinIngredients(),
+                            ingredientCount
+                    )
+            );
+        }
+
+        if (ingredientCount > settings.getMaxIngredients()) {
+            throw new InvalidBurgerException(
+                    String.format(
+                            "La hamburguesa no puede tener más de %d ingredientes. " +
+                                    "Cantidad actual: %d",
+                            settings.getMaxIngredients(),
+                            ingredientCount
+                    )
+            );
+        }
+
+        logger.debug("✅ Cantidad de ingredientes válida: {} (Min: {}, Max: {})",
+                ingredientCount, settings.getMinIngredients(), settings.getMaxIngredients());
+    }
+
+    /**
+     * ✅ Valida que el precio final esté dentro del rango configurado
+     */
+    private void validateBurgerPrice(BigDecimal finalPrice, BurgerSettings settings) {
+        if (finalPrice.compareTo(settings.getCustomBurgerMinPrice()) < 0) {
+            throw new InvalidBurgerException(
+                    String.format(
+                            "El precio de la hamburguesa ($%,.0f) es menor al mínimo permitido ($%,.0f). " +
+                                    "Agrega más ingredientes.",
+                            finalPrice,
+                            settings.getCustomBurgerMinPrice()
+                    )
+            );
+        }
+
+        if (finalPrice.compareTo(settings.getCustomBurgerMaxPrice()) > 0) {
+            throw new InvalidBurgerException(
+                    String.format(
+                            "El precio de la hamburguesa ($%,.0f) excede el máximo permitido ($%,.0f). " +
+                                    "Reduce la cantidad de ingredientes.",
+                            finalPrice,
+                            settings.getCustomBurgerMaxPrice()
+                    )
+            );
+        }
+
+        logger.debug(" Precio válido: ${} (Min: ${}, Max: ${})",
+                finalPrice, settings.getCustomBurgerMinPrice(), settings.getCustomBurgerMaxPrice());
+    }
+
+    // ==================== VALIDACIONES ORIGINALES ====================
 
     private void validateCommand(CreateCustomBurgerCommand command) {
         if (command == null) {
@@ -138,7 +227,7 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
     }
 
     /**
-     *  Valida que no haya ingredientes duplicados
+     * Valida que no haya ingredientes duplicados
      */
     private void validateNoDuplicateIngredients(
             java.util.List<CreateCustomBurgerCommand.IngredientRequest> ingredients) {
@@ -157,7 +246,7 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
     }
 
     /**
-     *  Validación completa del producto para hamburguesa personalizada
+     * Validación completa del producto para hamburguesa personalizada
      */
     private void validateProductForBurger(Product product, Integer quantity) {
 
@@ -204,6 +293,4 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
                 product.getQuantity(),
                 quantity);
     }
-
-
 }

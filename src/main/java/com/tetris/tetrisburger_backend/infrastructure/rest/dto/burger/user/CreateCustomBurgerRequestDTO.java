@@ -1,6 +1,8 @@
 
-package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger;
+package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user;
 
+
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.IngredientRequestDTO;
 
 import java.util.List;
 

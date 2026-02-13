@@ -9,7 +9,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.*;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuBurgerImageCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.query.SearchMenuBurgersQuery;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.*;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.admin.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.BurgerRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.rest.validator.ImageValidator;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;

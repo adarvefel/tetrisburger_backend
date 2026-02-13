@@ -1,5 +1,6 @@
-package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger;
+package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.admin;
 
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.IngredientRequestDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 

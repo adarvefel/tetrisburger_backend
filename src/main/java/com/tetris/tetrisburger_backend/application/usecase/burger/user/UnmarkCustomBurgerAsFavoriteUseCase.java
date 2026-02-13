@@ -1,7 +1,7 @@
 package com.tetris.tetrisburger_backend.application.usecase.burger.user;
 
 import com.tetris.tetrisburger_backend.domain.model.Burger;
-import com.tetris.tetrisburger_backend.domain.port.in.burger.UnmarkCustomBurgerAsFavorite;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.user.UnmarkCustomBurgerAsFavorite;
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;

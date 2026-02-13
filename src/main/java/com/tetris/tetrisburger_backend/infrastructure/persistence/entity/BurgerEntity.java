@@ -23,7 +23,6 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Setter
-@EntityListeners(AuditingEntityListener.class)
 public class BurgerEntity {
 
     @Id
@@ -68,11 +67,9 @@ public class BurgerEntity {
     private Integer timesOrdered;
 
     // Auditoría de fechas
-    @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
@@ -81,11 +78,9 @@ public class BurgerEntity {
     private LocalDateTime deletedAt;
 
     // Auditoría de usuario (pueden ser NULL si aún no tienes auditor configurado)
-    @CreatedBy
     @Column(name = "created_by", updatable = false)
     private Integer createdBy;
 
-    @LastModifiedBy
     @Column(name = "updated_by")
     private Integer updatedBy;
 

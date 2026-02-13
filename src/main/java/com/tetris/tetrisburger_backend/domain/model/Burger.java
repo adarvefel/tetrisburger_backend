@@ -263,8 +263,6 @@ public class Burger {
             String description,
             List<BurgerIngredient> newIngredients,
             Boolean availability,
-            Boolean isOnMenu,
-            Boolean favorite,
             Integer updatedBy
     ) {
         if (!this.isOnMenu) {
@@ -312,12 +310,8 @@ public class Burger {
         if (availability != null) {
             this.availability = availability;
         }
-        if (isOnMenu != null) {
-            this.isOnMenu = isOnMenu;
-        }
-        if (favorite != null) {
-            this.isFavorite = favorite;
-        }
+
+
 
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
@@ -508,7 +502,7 @@ public class Burger {
      * @param isFavorite true para marcar como destacada, false para desmarcar
      * @param updatedBy ID del admin que realiza el cambio
      */
-    public void setMenuFavorite(Boolean isFavorite, Integer updatedBy) {
+    public void setMenuBurgerFavorite(Boolean isFavorite, Integer updatedBy) {
         if (!this.isOnMenu) {
             throw new InvalidBurgerException(
                     "Solo burgers de menú pueden marcarse como destacadas. Burger ID: " + this.idBurger
