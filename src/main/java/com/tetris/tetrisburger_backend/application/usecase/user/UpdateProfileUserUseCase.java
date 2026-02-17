@@ -60,17 +60,7 @@ public class UpdateProfileUserUseCase implements UpdateProfileUser {
 
         User updatedUser = userRepository.saveUser(user);
 
-        FileData image = command.userImage();
-        if (image != null && image.bytes() != null && image.bytes().length > 0) {
-            eventPublisher.publishEvent(new UserProfileImageChangeRequestedEvent(
-                    updatedUser.getIdUser(),
-                    image.bytes(),
-                    image.contentType(),
-                    image.originalFilename(),
-                    oldImageKey,
-                    currentUserId
-            ));
-        }
+
 
         return updatedUser;
     }

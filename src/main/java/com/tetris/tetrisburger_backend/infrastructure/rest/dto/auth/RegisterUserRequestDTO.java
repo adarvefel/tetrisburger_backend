@@ -1,4 +1,4 @@
-package com.tetris.tetrisburger_backend.infrastructure.rest.dto.user;
+package com.tetris.tetrisburger_backend.infrastructure.rest.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -15,6 +15,9 @@ public record RegisterUserRequestDTO(
 
         @NotBlank(message = "La contraseña es obligatoria.")
         @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres.")
-        String password
+        String password,
+
+        @NotBlank(message = "El token de reCAPTCHA es obligatorio")
+        String recaptchaToken
 ) {
 }

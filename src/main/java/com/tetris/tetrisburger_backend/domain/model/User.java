@@ -7,7 +7,7 @@ public class User {
     private String userName;
     private String email;
     private String password;
-    private String userImage;      // nombre original
+    private String userImage;      // url
     private String userImageKey;   // key de S3
     private Role role;
     private String phone;
@@ -109,9 +109,16 @@ public class User {
     public void updateImage(String imageKey, String imageName, Integer updatedBy) {
         this.userImageKey = imageKey;
         this.userImage = imageName;
-        this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
     }
+
+    public void updateImageProfile(String imageKey, String imageName) {
+        this.userImageKey = imageKey;
+        this.userImage = imageName;
+    }
+
+
 
     // Desvincula la imagen de un usuario
     public void removeImage(Integer updatedBy){
@@ -132,8 +139,8 @@ public class User {
         if (phone != null) {
             this.phone = phone;
         }
-        this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
     }
 
     /**
@@ -235,9 +242,17 @@ public class User {
         if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             throw new IllegalArgumentException("Formato de email inválido");
         }
+        if (!email.contains("@") || !email.substring(email.indexOf("@")).contains(".")) {
+            throw new IllegalArgumentException("Formato de email inválido");
+        }
+
+
     }
 
-    private static void validateHashedPassword(String hashedPassword) {
+
+
+
+private static void validateHashedPassword(String hashedPassword) {
         if (hashedPassword == null || hashedPassword.isBlank()) {
             throw new IllegalArgumentException("La contraseña hasheada es requerida");
         }

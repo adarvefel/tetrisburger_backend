@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.advice;
 
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.ErrorResponseDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.ValidationErrorResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -12,12 +13,13 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;  // ✅ AGREGAR IMPORT
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
-import java.util.HashMap;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -27,29 +29,50 @@ public class ValidationExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ValidationExceptionHandler.class);
 
-    private ResponseEntity<MessageResponseDTO> buildErrorResponse(HttpStatus status, String message) {
-        return ResponseEntity.status(status).body(new MessageResponseDTO(message, false));
+    // ========================================
+    // MÉTODOS AUXILIARES
+    // ========================================
+
+    private String extractPath(WebRequest request) {
+        if (request instanceof ServletWebRequest) {
+            return ((ServletWebRequest) request).getRequest().getRequestURI();
+        }
+        return request.getDescription(false).replace("uri=", "");
     }
 
-    private ResponseEntity<Map<String, Object>> buildValidationErrorResponse(
-            HttpStatus status, String message, Map<String, String> errors) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", message);
-        response.put("success", false);
-        response.put("timestamp", System.currentTimeMillis());
-        response.put("errors", errors);
-        return ResponseEntity.status(status).body(response);
+    private ResponseEntity<ErrorResponseDTO> buildErrorResponse(
+            HttpStatus status, String message, WebRequest request) {
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+                status.value(),
+                status.getReasonPhrase(),
+                message,
+                LocalDateTime.now(),
+                extractPath(request)
+        );
+        return ResponseEntity.status(status).body(errorResponse);
+    }
+
+    private ResponseEntity<ValidationErrorResponseDTO> buildValidationErrorResponse(
+            HttpStatus status, String message, Map<String, String> errors, WebRequest request) {
+        ValidationErrorResponseDTO errorResponse = new ValidationErrorResponseDTO(
+                status.value(),
+                status.getReasonPhrase(),
+                message,
+                LocalDateTime.now(),
+                extractPath(request),
+                errors
+        );
+        return ResponseEntity.status(status).body(errorResponse);
     }
 
     // ========================================
     // VALIDATION EXCEPTIONS
     // ========================================
 
-    // ✅ AGREGAR ESTE HANDLER
     // 400 BAD REQUEST — tipo de parámetro incorrecto (@PathVariable/@RequestParam)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<MessageResponseDTO> handleTypeMismatch(
-            MethodArgumentTypeMismatchException ex, HttpServletRequest req) {
+    public ResponseEntity<ErrorResponseDTO> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex, WebRequest request) {
 
         String paramName = ex.getName();
         String requiredType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "válido";
@@ -63,64 +86,93 @@ public class ValidationExceptionHandler {
         );
 
         logger.warn("⚠️ Type mismatch - Parámetro: {} - Esperado: {} - Recibido: {} - Path: {}",
-                paramName, requiredType, providedValue, req.getRequestURI());
+                paramName, requiredType, providedValue, extractPath(request));
 
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, message);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 
     // 400 BAD REQUEST — parte requerida faltante en multipart
     @ExceptionHandler(MissingServletRequestPartException.class)
-    public ResponseEntity<MessageResponseDTO> handleMissingServletRequestPart(
+    public ResponseEntity<ErrorResponseDTO> handleMissingServletRequestPart(
             MissingServletRequestPartException ex, WebRequest request) {
         String partName = ex.getRequestPartName();
         String message = String.format("El campo '%s' es requerido", partName);
-        logger.warn("⚠️ Parte de request faltante: {} - Path: {}", partName, request.getDescription(false));
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, message);
+        logger.warn("⚠️ Parte de request faltante: {} - Path: {}", partName, extractPath(request));
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 
     // 400 BAD REQUEST — @Valid en body (Bean Validation)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex, WebRequest request) {
-        logger.warn("⚠️ Errores de validación - Path: {}", request.getDescription(false));
+    public ResponseEntity<ValidationErrorResponseDTO> handleValidationErrors(
+            MethodArgumentNotValidException ex, WebRequest request) {
+        logger.warn("⚠️ Errores de validación - Path: {}", extractPath(request));
+
         Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .collect(Collectors.toMap(
                         err -> err.getField(),
                         err -> err.getDefaultMessage() != null ? err.getDefaultMessage() : "Error de validación",
                         (existing, replacement) -> existing
                 ));
-        return buildValidationErrorResponse(HttpStatus.BAD_REQUEST, "Errores de validación", errors);
+
+        return buildValidationErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "Errores de validación en los datos enviados",
+                errors,
+                request
+        );
     }
 
     // 400 BAD REQUEST — validación en @RequestParam/@PathVariable
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
-        logger.warn("⚠️ Constraint violation - Path: {}", req.getRequestURI());
+    public ResponseEntity<ValidationErrorResponseDTO> handleConstraintViolation(
+            ConstraintViolationException ex, WebRequest request) {
+        logger.warn("⚠️ Constraint violation - Path: {}", extractPath(request));
+
         Map<String, String> errors = ex.getConstraintViolations().stream()
                 .collect(Collectors.toMap(
                         v -> v.getPropertyPath().toString(),
                         v -> v.getMessage(),
                         (a, b) -> a
                 ));
-        return buildValidationErrorResponse(HttpStatus.BAD_REQUEST, "Errores de validación", errors);
+
+        return buildValidationErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "Errores de validación en los parámetros",
+                errors,
+                request
+        );
     }
 
     // 400 BAD REQUEST — binding de query/form
     @ExceptionHandler(BindException.class)
-    public ResponseEntity<Map<String, Object>> handleBindException(BindException ex, HttpServletRequest req) {
-        logger.warn("⚠️ BindException - Path: {}", req.getRequestURI());
+    public ResponseEntity<ValidationErrorResponseDTO> handleBindException(
+            BindException ex, WebRequest request) {
+        logger.warn("⚠️ BindException - Path: {}", extractPath(request));
+
         Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .collect(Collectors.toMap(
                         err -> err.getField(),
                         err -> err.getDefaultMessage() != null ? err.getDefaultMessage() : "Error de validación",
                         (a, b) -> a
                 ));
-        return buildValidationErrorResponse(HttpStatus.BAD_REQUEST, "Errores de validación", errors);
+
+        return buildValidationErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "Errores de validación en el binding",
+                errors,
+                request
+        );
     }
 
     // 413 PAYLOAD TOO LARGE — imagen excede tamaño máximo
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<MessageResponseDTO> handleMaxUploadSize(MaxUploadSizeExceededException ex, WebRequest request) {
-        logger.warn("⚠️ Archivo excede tamaño máximo - Path: {}", request.getDescription(false));
-        return buildErrorResponse(HttpStatus.PAYLOAD_TOO_LARGE, "El archivo excede el tamaño máximo permitido (5MB)");
+    public ResponseEntity<ErrorResponseDTO> handleMaxUploadSize(
+            MaxUploadSizeExceededException ex, WebRequest request) {
+        logger.warn(" Archivo excede tamaño máximo - Path: {}", extractPath(request));
+        return buildErrorResponse(
+                HttpStatus.PAYLOAD_TOO_LARGE,
+                "El archivo excede el tamaño máximo permitido (5MB)",
+                request
+        );
     }
 }

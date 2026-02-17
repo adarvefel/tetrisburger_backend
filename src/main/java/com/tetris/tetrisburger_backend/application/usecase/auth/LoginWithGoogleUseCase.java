@@ -85,7 +85,7 @@ public class LoginWithGoogleUseCase implements LoginWithGoogle {
         // Generar contraseña aleatoria (no será usada en Google OAuth)
         String randomPassword = passwordEncoder.encode(UUID.randomUUID().toString());
 
-        // ✅ Usar factory method del dominio
+        // Usar factory method del dominio
         User newUser = User.createClient(
                 userName,
                 email,

@@ -6,6 +6,7 @@ public record ErrorResponseDTO(
         Integer status,
         String error,
         String message,
-        LocalDateTime timestamp
+        LocalDateTime timestamp,
+        String path
 ) {
 }

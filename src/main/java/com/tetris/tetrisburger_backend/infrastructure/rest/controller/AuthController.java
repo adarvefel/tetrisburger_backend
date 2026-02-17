@@ -14,7 +14,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.user.RegisterUser;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.RegisterUserCommand;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.auth.*;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.RegisterUserRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.auth.RegisterUserRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.RegisterUserResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.AuthRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.UserRestDtoMapper;

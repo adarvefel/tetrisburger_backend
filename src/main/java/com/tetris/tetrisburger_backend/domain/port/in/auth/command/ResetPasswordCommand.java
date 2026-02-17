@@ -13,9 +13,10 @@ public record ResetPasswordCommand(
             throw new IllegalArgumentException("La nueva contraseña es requerida");
 
         }
-        if (newPassword.length() < 6) {
+        if (newPassword.length() < 8 ){
             throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres ");
 
         }
+
     }
 }

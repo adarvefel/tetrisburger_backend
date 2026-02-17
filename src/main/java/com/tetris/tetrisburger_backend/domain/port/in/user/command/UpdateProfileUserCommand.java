@@ -6,7 +6,6 @@ public record UpdateProfileUserCommand(
         Integer idUser,
         String userName,
         String password,
-        FileData userImage,
         String phone
 ){
 

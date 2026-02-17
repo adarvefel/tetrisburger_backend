@@ -5,6 +5,7 @@ import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.auth.ResetPassword;
 import com.tetris.tetrisburger_backend.domain.port.in.auth.command.ResetPasswordCommand;
+import com.tetris.tetrisburger_backend.domain.port.out.RecaptchaPort;
 import com.tetris.tetrisburger_backend.domain.port.out.TokenPort;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import org.slf4j.Logger;
@@ -22,18 +23,20 @@ public class ResetPasswordUseCase implements ResetPassword {
     private final UserRepository userRepository;
     private final TokenPort tokenPort;
     private final PasswordEncoder passwordEncoder;
+    private final RecaptchaPort recaptchaPort;
 
-    public ResetPasswordUseCase(UserRepository userRepository,
-                                TokenPort tokenPort,
-                                PasswordEncoder passwordEncoder) {
+    public ResetPasswordUseCase(UserRepository userRepository, TokenPort tokenPort, PasswordEncoder passwordEncoder, RecaptchaPort recaptchaPort) {
         this.userRepository = userRepository;
         this.tokenPort = tokenPort;
         this.passwordEncoder = passwordEncoder;
+        this.recaptchaPort = recaptchaPort;
     }
 
     @Override
     public void handle(ResetPasswordCommand command) {
         logger.info("Reseteando contraseña con token");
+
+
 
         // 1. Validar token de PASSWORD RESET
         if (!tokenPort.validatePasswordResetToken(command.token())) {

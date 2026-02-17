@@ -17,6 +17,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
@@ -27,12 +28,35 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    // ========================================
+    // MÉTODOS AUXILIARES
+    // ========================================
+
+    private String extractPath(WebRequest request) {
+        if (request instanceof ServletWebRequest) {
+            return ((ServletWebRequest) request).getRequest().getRequestURI();
+        }
+        return request.getDescription(false).replace("uri=", "");
+    }
+
     private ResponseEntity<MessageResponseDTO> buildErrorResponse(String message) {
         return ResponseEntity.badRequest().body(new MessageResponseDTO(message, false));
     }
 
     private ResponseEntity<MessageResponseDTO> buildErrorResponse(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(new MessageResponseDTO(message, false));
+    }
+
+    private ResponseEntity<ErrorResponseDTO> buildErrorResponseDTO(
+            HttpStatus status, String message, WebRequest request) {
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+                status.value(),
+                status.getReasonPhrase(),
+                message,
+                LocalDateTime.now(),
+                extractPath(request)
+        );
+        return ResponseEntity.status(status).body(errorResponse);
     }
 
     // ========================================
@@ -42,31 +66,28 @@ public class GlobalExceptionHandler {
     // 409 CONFLICT — reglas de negocio/únicos
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<MessageResponseDTO> handleUserExists(UserAlreadyExistsException ex, WebRequest request) {
-        logger.warn("Usuario ya existe: {} - Path: {}", ex.getMessage(), request.getDescription(false));
+        logger.warn("Usuario ya existe: {} - Path: {}", ex.getMessage(), extractPath(request));
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
-
-
-
 
     // 404 NOT FOUND — recursos no encontrados
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<MessageResponseDTO> handleUserNotFound(UserNotFoundException ex, WebRequest request) {
-        logger.warn("Usuario no encontrado: {} - Path: {}", ex.getMessage(), request.getDescription(false));
+        logger.warn("Usuario no encontrado: {} - Path: {}", ex.getMessage(), extractPath(request));
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     // 401 UNAUTHORIZED — credenciales inválidas
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<MessageResponseDTO> handleInvalidCredentials(InvalidCredentialsException ex, WebRequest request) {
-        logger.warn("Credenciales inválidas - Path: {}", request.getDescription(false));
+        logger.warn("Credenciales inválidas - Path: {}", extractPath(request));
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Credenciales inválidas");
     }
 
     // 400 BAD REQUEST — token inválido
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<MessageResponseDTO> handleInvalidToken(InvalidTokenException ex, WebRequest request) {
-        logger.warn("Token inválido: {} - Path: {}", ex.getMessage(), request.getDescription(false));
+        logger.warn("Token inválido: {} - Path: {}", ex.getMessage(), extractPath(request));
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
@@ -77,7 +98,7 @@ public class GlobalExceptionHandler {
     // 500 INTERNAL SERVER ERROR — fallo al subir imagen
     @ExceptionHandler(ImageUploadException.class)
     public ResponseEntity<MessageResponseDTO> handleImageUpload(ImageUploadException ex, WebRequest request) {
-        logger.error("Error al subir imagen: {} - Path: {}", ex.getMessage(), request.getDescription(false), ex);
+        logger.error("Error al subir imagen: {} - Path: {}", ex.getMessage(), extractPath(request), ex);
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo subir la imagen. Intenta de nuevo.");
     }
 
@@ -88,7 +109,7 @@ public class GlobalExceptionHandler {
     // 400 BAD REQUEST — PQRS ya eliminada
     @ExceptionHandler(PqrsAlreadyDeletedException.class)
     public ResponseEntity<MessageResponseDTO> handlePqrsAlreadyDeleted(PqrsAlreadyDeletedException ex, WebRequest request) {
-        logger.warn("PQRS ya eliminada o no encontrada: {} - Path: {}", ex.getMessage(), request.getDescription(false));
+        logger.warn("PQRS ya eliminada o no encontrada: {} - Path: {}", ex.getMessage(), extractPath(request));
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
@@ -99,7 +120,7 @@ public class GlobalExceptionHandler {
     // 409 CONFLICT — violación de integridad (únicos/FK)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<MessageResponseDTO> handleDataIntegrityViolation(DataIntegrityViolationException ex, WebRequest request) {
-        logger.error("Error de integridad de datos - Path: {}", request.getDescription(false), ex);
+        logger.error("Error de integridad de datos - Path: {}", extractPath(request), ex);
         String message = "Conflicto de integridad de datos";
         String cause = ex.getMostSpecificCause() != null && ex.getMostSpecificCause().getMessage() != null
                 ? ex.getMostSpecificCause().getMessage().toLowerCase()
@@ -119,7 +140,7 @@ public class GlobalExceptionHandler {
     // 400 BAD REQUEST — argumentos de negocio inválidos
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<MessageResponseDTO> handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
-        logger.warn("Argumento inválido: {} - Path: {}", ex.getMessage(), request.getDescription(false));
+        logger.warn("Argumento inválido: {} - Path: {}", ex.getMessage(), extractPath(request));
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
@@ -152,26 +173,27 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage());
     }
 
+    // ========================================
+    // PRODUCT EXCEPTIONS
+    // ========================================
+
+    // 404 NOT FOUND — categoría de producto no encontrada
     @ExceptionHandler(ProductCategoryNotFoundException.class)
     public ResponseEntity<ErrorResponseDTO> handleProductCategoryNotFound(
-            ProductCategoryNotFoundException ex
+            ProductCategoryNotFoundException ex,
+            WebRequest request
     ) {
-        ErrorResponseDTO error = new ErrorResponseDTO(
-                HttpStatus.NOT_FOUND.value(),           // status: 404
-                HttpStatus.NOT_FOUND.getReasonPhrase(), // error: "Not Found"
-                ex.getMessage(),                        // message: "Categoría no encontrada con ID: 5"
-                LocalDateTime.now()                     // timestamp
-        );
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        logger.warn(" Categoría no encontrada: {} - Path: {}", ex.getMessage(), extractPath(request));
+        return buildErrorResponseDTO(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-
+    // 404 NOT FOUND — entidad JPA no encontrada
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ErrorResponseDTO> handleJpaEntityNotFound(
             EntityNotFoundException ex,
             WebRequest request
     ) {
-        String path = request.getDescription(false).replace("uri=", "");
+        logger.warn(" Entidad JPA no encontrada - Path: {}", extractPath(request));
 
         String userMessage = "Recurso no encontrado";
 
@@ -183,14 +205,7 @@ public class GlobalExceptionHandler {
             }
         }
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
-                HttpStatus.NOT_FOUND.value(),              // 404
-                HttpStatus.NOT_FOUND.getReasonPhrase(),    // "Not Found"
-                userMessage,
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        return buildErrorResponseDTO(HttpStatus.NOT_FOUND, userMessage, request);
     }
 
     // ========================================
@@ -201,7 +216,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<MessageResponseDTO> handleGenericException(Exception ex, WebRequest request) {
         logger.error("Error inesperado en {} - Tipo: {} - Mensaje: {}",
-                request.getDescription(false), ex.getClass().getSimpleName(), ex.getMessage(), ex);
+                extractPath(request), ex.getClass().getSimpleName(), ex.getMessage(), ex);
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
     }
 }

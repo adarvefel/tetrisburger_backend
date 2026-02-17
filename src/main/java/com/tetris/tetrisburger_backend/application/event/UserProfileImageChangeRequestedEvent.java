@@ -5,6 +5,5 @@ public record UserProfileImageChangeRequestedEvent(
         byte[] fileBytes,
         String contentType,
         String originalFileName,
-        String oldImageKey,
-        Integer updatedBy
+        String oldImageKey
 ) {}

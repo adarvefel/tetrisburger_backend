@@ -3,9 +3,8 @@ package com.tetris.tetrisburger_backend.domain.port.in.user.command;
 public record RegisterUserCommand(
         String userName,
         String email,
-        String password
-
-
+        String password,
+        String recaptchaToken
 
 ) {
         public RegisterUserCommand {
@@ -31,6 +30,9 @@ public record RegisterUserCommand(
             }
             if (password.length() < 6) {
                 throw new IllegalArgumentException("La contraseña debe de tener al menos 6 caracteres");
+            }
+            if (recaptchaToken == null || recaptchaToken.isBlank()) {
+                throw new IllegalArgumentException("El token de reCAPTCHA es requerido");
             }
 
 
