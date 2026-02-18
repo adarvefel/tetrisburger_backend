@@ -74,7 +74,7 @@ public class SecurityConfig {
 //                        .requestMatchers(HttpMethod.GET, "/api/burgers/**").permitAll()
 
                         // Protegidos
-                        .requestMatchers("/api/profile/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT")
+                        .requestMatchers("/api/profile/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT", "ROLE_EMPLOYEE")
 //                        .requestMatchers("/api/orders/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLOYEE")
                         .requestMatchers("/api/users/**").authenticated()
 
