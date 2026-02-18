@@ -118,41 +118,41 @@ public class ProfileController {
         return ResponseEntity.ok(mapper.toUpdateProfileUserResponseDTO(updatedUser, imageUrl, imageStatus));
     }
 
-    @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("isAuthenticated()")
-    @Operation(
-            summary = "Actualizar perfil (multipart)",
-            description = "Actualiza datos usando form-data. Opcionalmente puede incluir userImage como archivo."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Perfil actualizado",
-                    content = @Content(schema = @Schema(implementation = UpdateProfileUserResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-            @ApiResponse(responseCode = "401", description = "No autenticado")
-    })
-    public ResponseEntity<UpdateProfileUserResponseDTO> updateMyProfileMultipart(
-            @Parameter(description = "Datos del perfil (userName, phone)")
-            @Valid @ModelAttribute UpdateProfileUserRequestDTO requestDTO,
-            @Parameter(description = "Imagen de perfil (opcional)")
-            @RequestPart(value = "userImage", required = false) MultipartFile userImage,
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        Integer currentUserId = getUserIdFromDetails(userDetails);
-        boolean imageWasSent = (userImage != null && !userImage.isEmpty());
-
-        // Validar imagen si se envió
-        if (imageWasSent) {
-            imageValidator.validate(userImage);
-        }
-
-        UpdateProfileUserCommand command = mapper.toUpdateProfileUserCommand(currentUserId, requestDTO);
-        User updatedUser = updateProfileUser.handle(currentUserId, command);
-
-        String imageUrl = resolveImageUrl(updatedUser);
-        ImageStatus imageStatus = resolveImageStatus(imageWasSent, updatedUser.getUserImageKey());
-
-        return ResponseEntity.ok(mapper.toUpdateProfileUserResponseDTO(updatedUser, imageUrl, imageStatus));
-    }
+//    @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PreAuthorize("isAuthenticated()")
+//    @Operation(
+//            summary = "Actualizar perfil (multipart)",
+//            description = "Actualiza datos usando form-data. Opcionalmente puede incluir userImage como archivo."
+//    )
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "200", description = "Perfil actualizado",
+//                    content = @Content(schema = @Schema(implementation = UpdateProfileUserResponseDTO.class))),
+//            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+//            @ApiResponse(responseCode = "401", description = "No autenticado")
+//    })
+//    public ResponseEntity<UpdateProfileUserResponseDTO> updateMyProfileMultipart(
+//            @Parameter(description = "Datos del perfil (userName, phone)")
+//            @Valid @ModelAttribute UpdateProfileUserRequestDTO requestDTO,
+//            @Parameter(description = "Imagen de perfil (opcional)")
+//            @RequestPart(value = "userImage", required = false) MultipartFile userImage,
+//            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+//    ) {
+//        Integer currentUserId = getUserIdFromDetails(userDetails);
+//        boolean imageWasSent = (userImage != null && !userImage.isEmpty());
+//
+//        // Validar imagen si se envió
+//        if (imageWasSent) {
+//            imageValidator.validate(userImage);
+//        }
+//
+//        UpdateProfileUserCommand command = mapper.toUpdateProfileUserCommand(currentUserId, requestDTO);
+//        User updatedUser = updateProfileUser.handle(currentUserId, command);
+//
+//        String imageUrl = resolveImageUrl(updatedUser);
+//        ImageStatus imageStatus = resolveImageStatus(imageWasSent, updatedUser.getUserImageKey());
+//
+//        return ResponseEntity.ok(mapper.toUpdateProfileUserResponseDTO(updatedUser, imageUrl, imageStatus));
+//    }
 
     @PutMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")

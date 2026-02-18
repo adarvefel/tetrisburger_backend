@@ -38,7 +38,7 @@ public class RegisterUserUseCase implements RegisterUser {
     public User handle(RegisterUserCommand cmd) {
         logger.info("Registrando usuario con email: {}", cmd.email());
 
-        boolean isHuman = recaptchaPort.verifyToken(cmd.recaptchaToken(),"Register");
+        boolean isHuman = recaptchaPort.verifyToken(cmd.recaptchaToken(),"register");
         if(!isHuman){
             logger.warn("reCAPTCHA fallo para :{}",cmd.email());
             throw new InvalidRecaptchaException("  \"Verificación de seguridad falló. Por favor intenta de nuevo.");

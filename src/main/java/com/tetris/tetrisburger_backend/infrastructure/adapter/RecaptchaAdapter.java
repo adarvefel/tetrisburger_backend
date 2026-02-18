@@ -5,7 +5,10 @@ import com.tetris.tetrisburger_backend.domain.port.out.RecaptchaPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -39,10 +42,15 @@ public class RecaptchaAdapter implements RecaptchaPort {
         try {
             logger.info("🔐 Verificando reCAPTCHA token para acción: {}", action);
 
-            // Llamar a Google API
+            // Crear body correctamente como form-urlencoded
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            formData.add("secret", secretKey);
+            formData.add("response", token);
+
             RecaptchaResponse response = webClient.post()
                     .uri(verifyUrl)
-                    .bodyValue(buildRequestBody(token))
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .bodyValue(formData)
                     .retrieve()
                     .bodyToMono(RecaptchaResponse.class)
                     .block();
@@ -55,7 +63,6 @@ public class RecaptchaAdapter implements RecaptchaPort {
             logger.info("📊 reCAPTCHA response - Success: {}, Score: {}, Action: {}",
                     response.success, response.score, response.action);
 
-            // Validaciones
             if (!response.success) {
                 logger.warn("⚠️ reCAPTCHA falló: {}", response.errorCodes);
                 return false;
@@ -82,10 +89,6 @@ public class RecaptchaAdapter implements RecaptchaPort {
         }
     }
 
-    private String buildRequestBody(String token) {
-        return String.format("secret=%s&response=%s", secretKey, token);
-    }
-
     // DTO para la respuesta de Google
     private static class RecaptchaResponse {
 
@@ -106,6 +109,5 @@ public class RecaptchaAdapter implements RecaptchaPort {
 
         @JsonProperty("error-codes")
         private String[] errorCodes;
-
     }
 }

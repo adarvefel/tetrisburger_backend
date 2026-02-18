@@ -36,7 +36,7 @@ public class LoginUserUseCase implements LoginUser {
 
     @Override
     public LoginResponse execute(LoginUserCommand command) {
-        boolean isHuman = recaptchaPort.verifyToken(command.recaptchaToken(),"Login");
+        boolean isHuman = recaptchaPort.verifyToken(command.recaptchaToken(),"login");
         if(!isHuman){
             logger.warn("reCAPTCHA fallo para :{}",command.email());
             throw new InvalidRecaptchaException("  \"Verificación de seguridad falló. Por favor intenta de nuevo.");

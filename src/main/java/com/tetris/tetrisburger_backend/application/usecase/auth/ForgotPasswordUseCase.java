@@ -47,7 +47,7 @@ public class ForgotPasswordUseCase implements ForgotPassword {
     @Override
     public String execute(ForgotPasswordCommand command) {
 
-        boolean isHuman = recaptchaPort.verifyToken(command.recaptchaToken(),"ForgotPassword");
+        boolean isHuman = recaptchaPort.verifyToken(command.recaptchaToken(),"forgotPassword");
         if(!isHuman){
             logger.warn("reCAPTCHA fallo para :{}",command.email());
             throw new InvalidRecaptchaException("  \"Verificación de seguridad falló. Por favor intenta de nuevo.");

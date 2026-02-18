@@ -34,7 +34,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/admin/users")
 @Tag(name = "User Management", description = "Gestión de usuarios por administradores")
 public class UserController {
 
