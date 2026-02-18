@@ -1,5 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.user;
 
+import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
+
 import java.time.LocalDateTime;
 
 public record UserResponseDTO(
@@ -7,7 +9,7 @@ public record UserResponseDTO(
         String userName,
         String email,
         String userImage,
-        String imageStatus,
+        ImageStatus imageStatus,
         String role,
         String phone,
         LocalDateTime createdAt,

@@ -6,7 +6,7 @@ import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
 public interface ImageStoragePort {
 
     // ====== USUARIOS ======
-    ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName) throws Exception;
+    ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName);
 
     // ====== PRODUCTOS ======
     ImageUploadResult uploadProductImage(FileData fileData);

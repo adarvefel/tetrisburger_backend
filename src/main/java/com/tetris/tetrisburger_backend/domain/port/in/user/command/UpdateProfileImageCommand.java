@@ -4,6 +4,4 @@ public record UpdateProfileImageCommand(
         Integer idUser,
         byte[] fileBytes,
         String contentType,
-        String originalFileName,
-        Integer updatedBy
-) {}
+        String originalFileName) {}

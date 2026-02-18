@@ -9,7 +9,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.auth.command.LoginWithGoog
 import com.tetris.tetrisburger_backend.domain.port.in.auth.command.ResetPasswordCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.RegisterUserCommand;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.auth.*;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.RegisterUserRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.auth.RegisterUserRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.RegisterUserResponseDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -52,6 +52,8 @@ public interface AuthRestDtoMapper {
      * Mapea ForgotPasswordRequestDTO → ForgotPasswordCommand
      */
     @Mapping(source = "email", target = "email")
+    @Mapping(source = "recaptchaToken", target = "recaptchaToken")
+
     ForgotPasswordCommand toForgotPasswordCommand(  //Nombre correcto
                                                     ForgotPasswordRequestDTO dto);
 
@@ -81,8 +83,6 @@ public interface AuthRestDtoMapper {
     @Mapping(source = "idUser", target = "idUser")
     @Mapping(source = "userName", target = "userName")
     @Mapping(source = "email", target = "email")
-    @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "userImage", target = "userImage")
     RegisterUserResponseDTO toRegisterResponseDTO(User user);
 
     /**

@@ -68,14 +68,14 @@ public class SecurityConfig {
 
                         // Públicos
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/product-categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/suppliers/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/burgers/**").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/api/product-categories/**").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/api/suppliers/**").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/api/burgers/**").permitAll()
 
                         // Protegidos
-                        .requestMatchers("/api/profile/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT")
-                        .requestMatchers("/api/orders/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLOYEE")
+                        .requestMatchers("/api/profile/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT", "ROLE_EMPLOYEE")
+//                        .requestMatchers("/api/orders/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLOYEE")
                         .requestMatchers("/api/users/**").authenticated()
 
                         .anyRequest().authenticated()

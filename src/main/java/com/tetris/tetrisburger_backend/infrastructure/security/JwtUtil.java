@@ -86,7 +86,7 @@ public class JwtUtil {
     }
 
 
-    // ⭐️ MÉTODOS DE REESTABLECIMIENTO DE CONTRASEÑA (PASSWORD RESET) ⭐️
+    //  MÉTODOS DE REESTABLECIMIENTO DE CONTRASEÑA (PASSWORD RESET) ⭐
 
     /**
      * Genera un token especializado para el proceso de reestablecimiento de contraseña.

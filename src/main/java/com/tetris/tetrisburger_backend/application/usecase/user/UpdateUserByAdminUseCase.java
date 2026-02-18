@@ -62,19 +62,6 @@ public class UpdateUserByAdminUseCase implements UpdateUserByAdmin {
         // Guardar cambios de usuario (sin imagen todavía)
         User updatedUser = userRepository.saveUser(user);
 
-        // Publicar evento para manejar imagen AFTER_COMMIT
-        FileData image = command.userImage();
-        if (image != null && image.bytes() != null && image.bytes().length > 0) {
-            eventPublisher.publishEvent(new UserAdminImageChangeRequestedEvent(
-                    updatedUser.getIdUser(),
-                    image.bytes(),
-                    image.contentType(),
-                    image.originalFilename(),
-                    oldImageKey,
-                    command.updatedBy()
-            ));
-        }
-
 
         return updatedUser;
     }

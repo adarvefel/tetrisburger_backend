@@ -1,10 +1,12 @@
 package com.tetris.tetrisburger_backend.application.usecase.auth;
 
+import com.tetris.tetrisburger_backend.domain.exception.InvalidRecaptchaException;
 import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.auth.ForgotPassword;
 import com.tetris.tetrisburger_backend.domain.port.in.auth.command.ForgotPasswordCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.EmailPort;
+import com.tetris.tetrisburger_backend.domain.port.out.RecaptchaPort;
 import com.tetris.tetrisburger_backend.domain.port.out.TokenPort;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import jakarta.transaction.Transactional;
@@ -23,14 +25,13 @@ public class ForgotPasswordUseCase implements ForgotPassword {
     private final UserRepository userRepository;
     private final EmailPort emailPort;
     private final TokenPort tokenPort;
+    private final RecaptchaPort recaptchaPort;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
-    public ForgotPasswordUseCase(
-            UserRepository userRepository,
-            EmailPort emailPort,
-            TokenPort tokenPort) {
+    public ForgotPasswordUseCase(RecaptchaPort recaptchaPort, UserRepository userRepository, EmailPort emailPort, TokenPort tokenPort) {
+        this.recaptchaPort = recaptchaPort;
         this.userRepository = userRepository;
         this.emailPort = emailPort;
         this.tokenPort = tokenPort;
@@ -45,6 +46,13 @@ public class ForgotPasswordUseCase implements ForgotPassword {
      */
     @Override
     public String execute(ForgotPasswordCommand command) {
+
+        boolean isHuman = recaptchaPort.verifyToken(command.recaptchaToken(),"forgotPassword");
+        if(!isHuman){
+            logger.warn("reCAPTCHA fallo para :{}",command.email());
+            throw new InvalidRecaptchaException("  \"Verificación de seguridad falló. Por favor intenta de nuevo.");
+        }
+        logger.info(" reCAPTCHA verificado para: {}", command.email());
 
         User user = userRepository.findUserByEmail(command.email())
                 .orElseThrow(() -> {

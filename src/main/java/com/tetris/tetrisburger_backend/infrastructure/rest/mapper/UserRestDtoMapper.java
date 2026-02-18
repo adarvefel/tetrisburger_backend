@@ -1,12 +1,14 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.mapper;
 
 import com.tetris.tetrisburger_backend.domain.common.FileData;
+import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.auth.command.LoginUserCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.auth.LoginRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.auth.RegisterUserRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -34,12 +36,13 @@ public interface UserRestDtoMapper {
             Integer createdBy
     ) {
         if (dto == null) return null;
+        FileData imageData = multipartToFileData(userImage);
 
         return new CreateUserByAdminCommand(
                 dto.userName(),
                 dto.email(),
                 dto.password(),
-                userImage,
+                imageData,
                 stringToRole(dto.role()),
                 dto.phone(),
                 createdBy
@@ -56,15 +59,13 @@ public interface UserRestDtoMapper {
                 idUser,
                 dto.userName(),
                 dto.password(),
-                null,
                 dto.phone()
         );
     }
 
     default UpdateProfileImageCommand toUpdateProfileImageCommand(
             Integer idUser,
-            MultipartFile userImage,
-            Integer updatedBy
+            MultipartFile userImage
     ) {
         FileData fd = multipartToFileData(userImage);
         if (fd == null || fd.bytes() == null || fd.bytes().length == 0) {
@@ -75,8 +76,7 @@ public interface UserRestDtoMapper {
                 idUser,
                 fd.bytes(),
                 fd.contentType(),
-                fd.originalFilename(),
-                updatedBy
+                fd.originalFilename()
         );
     }
 
@@ -92,7 +92,6 @@ public interface UserRestDtoMapper {
                 dto.userName(),
                 dto.email(),
                 dto.password(),
-                null,
                 stringToRole(dto.role()),
                 dto.phone(),
                 updatedBy
@@ -154,26 +153,25 @@ public interface UserRestDtoMapper {
     @Mapping(source = "user.role", target = "role", qualifiedByName = "roleToString")
     @Mapping(source = "imageUrl", target = "userImage")
     @Mapping(source = "imageStatus", target = "imageStatus")
-    UserResponseDTO toUserResponseDTO(User user, String imageUrl, String imageStatus);
+    UserResponseDTO toUserResponseDTO(User user, String imageUrl, ImageStatus imageStatus);
+
+    @Mapping(source = "user.role", target = "role", qualifiedByName = "roleToString")
+    @Mapping(source = "imageUrl", target = "userImage")
+    CreateUserByAdminResponseDTO toCreateUserByAdminResponseDTO(User user, String imageUrl, ImageStatus imageStatus);
 
     @Mapping(source = "user.role", target = "role", qualifiedByName = "roleToString")
     @Mapping(source = "imageUrl", target = "userImage")
     @Mapping(source = "imageStatus", target = "imageStatus")
-    CreateUserByAdminResponseDTO toCreateUserByAdminResponseDTO(User user, String imageUrl, String imageStatus);
+    UpdateUserByAdminResponseDTO toUpdateUserByAdminResponseDTO(User user, String imageUrl, ImageStatus imageStatus);
+
+    @Mapping(source = "imageUrl", target = "userImage")
+    @Mapping(source = "imageStatus", target = "imageStatus")
+    UpdateProfileUserResponseDTO toUpdateProfileUserResponseDTO(User user, String imageUrl, ImageStatus imageStatus);
 
     @Mapping(source = "user.role", target = "role", qualifiedByName = "roleToString")
     @Mapping(source = "imageUrl", target = "userImage")
     @Mapping(source = "imageStatus", target = "imageStatus")
-    UpdateUserByAdminResponseDTO toUpdateUserByAdminResponseDTO(User user, String imageUrl, String imageStatus);
-
-    @Mapping(source = "imageUrl", target = "userImage")
-    @Mapping(source = "imageStatus", target = "imageStatus")
-    UpdateProfileUserResponseDTO toUpdateProfileUserResponseDTO(User user, String imageUrl, String imageStatus);
-
-    @Mapping(source = "user.role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "imageUrl", target = "userImage")
-    @Mapping(source = "imageStatus", target = "imageStatus")
-    GetUserProfileResponseDTO toGetUserProfileResponseDTO(User user, String imageUrl, String imageStatus);
+    GetUserProfileResponseDTO toGetUserProfileResponseDTO(User user, String imageUrl, ImageStatus imageStatus);
 
     // ============================================
     // Paginación

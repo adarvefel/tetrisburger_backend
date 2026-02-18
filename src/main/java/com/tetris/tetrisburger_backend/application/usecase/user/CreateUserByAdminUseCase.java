@@ -60,22 +60,15 @@ public class CreateUserByAdminUseCase implements CreateUserByAdmin {
         User savedUser = userRepository.saveUser(newUser);
 
         // Publicar evento: subir imagen después del commit
-        if (cmd.userImage() != null && !cmd.userImage().isEmpty()) {
-            var file = cmd.userImage();
-            try {
-                eventPublisher.publishEvent(new UserImageUploadRequestedEvent(
-                        savedUser.getIdUser(),
-                        file.getBytes(),
-                        file.getContentType(),
-                        file.getOriginalFilename(),
-                        cmd.createdBy()
-                ));
-            } catch (IOException e) {
-                throw new RuntimeException("No se pudo leer la imagen del usuario", e);
-                // o tu ImageUploadException si prefieres
-            }
+        if (cmd.userImage() != null && cmd.userImage().isValid()) {
+            eventPublisher.publishEvent(new UserImageUploadRequestedEvent(
+                    savedUser.getIdUser(),
+                    cmd.userImage().bytes(),           // ✅ byte[]
+                    cmd.userImage().contentType(),     // ✅ String
+                    cmd.userImage().originalFilename(), // ✅ String
+                    cmd.createdBy()
+            ));
         }
-
 
         return savedUser;
     }

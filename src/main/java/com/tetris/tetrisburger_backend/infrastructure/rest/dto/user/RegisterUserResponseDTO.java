@@ -6,8 +6,6 @@ public record RegisterUserResponseDTO(
         Integer idUser,
         String userName,
         String email,
-        String userImage,
-        String phone,
         LocalDateTime createdAt
 
 ) {

@@ -49,7 +49,7 @@ public class UserImageUploadListener {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    protected void persistUserImage(Integer idUser, ImageUploadResult upload, Integer updatedBy) {
+     void persistUserImage(Integer idUser, ImageUploadResult upload, Integer updatedBy) {
         User user = userRepository.findUserById(idUser)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 

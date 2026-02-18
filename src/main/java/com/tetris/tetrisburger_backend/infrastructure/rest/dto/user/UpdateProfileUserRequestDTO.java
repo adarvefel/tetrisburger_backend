@@ -18,8 +18,6 @@ public record UpdateProfileUserRequestDTO(
         @Size(min = 6, message = "La contraseña debe tener mínimo 6 caracteres")
         String password,
 
-
-
         @Schema(description = "Teléfono", example = "3001234567", nullable = true)
         String phone
 ) {}

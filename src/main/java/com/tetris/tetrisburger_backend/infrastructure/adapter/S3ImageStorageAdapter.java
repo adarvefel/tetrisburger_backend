@@ -21,7 +21,6 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
     // ====== CONSTANTES DE CARPETAS ======
     private static final String USERS_FOLDER = "users";
     private static final String PRODUCTS_FOLDER = "products";
-    private static final String CUSTOM_BURGERS_FOLDER = "burgers";
     private static final String MENU_BURGERS_FOLDER = "burgers-menu";
 
     private final S3Client s3Client;
@@ -41,7 +40,7 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
 
     // ====== USUARIOS ======
     @Override
-    public ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName) throws Exception {
+    public ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName)  {
         logger.info("Uploading user image: {}", originalFileName);
         return uploadImageInternal(bytes, contentType, originalFileName, USERS_FOLDER);
     }

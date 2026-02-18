@@ -8,7 +8,6 @@ public record UpdateUserByAdminCommand(
         String userName,
         String email,
         String password,
-        FileData userImage,
         Role role,
         String phone,
         Integer updatedBy

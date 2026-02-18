@@ -38,7 +38,7 @@ public class UserProfileImageChangeListener {
             if (upload == null) return;
 
             // 2) Guardar metadata en BD (transacción nueva)
-            persistUserImage(event.idUser(), upload, event.updatedBy());
+            persistUserImage(event.idUser(), upload);
 
             // 3) Borrar anterior (best-effort)
             if (event.oldImageKey() != null && !event.oldImageKey().isBlank()) {
@@ -52,11 +52,11 @@ public class UserProfileImageChangeListener {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    protected void persistUserImage(Integer idUser, ImageUploadResult upload, Integer updatedBy) {
+    void persistUserImage(Integer idUser, ImageUploadResult upload) {
         User user = userRepository.findUserById(idUser)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
-        user.updateImage(upload.imageKey(), upload.originalFileName(), updatedBy);
+        user.updateImageProfile(upload.imageKey(), upload.originalFileName());
         userRepository.saveUser(user);
     }
 }

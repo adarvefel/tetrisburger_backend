@@ -28,9 +28,7 @@ public class UpdateProfileImageUseCase implements UpdateProfileImage {
         if (!currentUserId.equals(command.idUser())) {
             throw new IllegalArgumentException("No tienes permiso para modificar este perfil");
         }
-        if (!currentUserId.equals(command.updatedBy())) {
-            throw new IllegalArgumentException("updatedBy no coincide con el usuario autenticado");
-        }
+
         if (command.fileBytes() == null || command.fileBytes().length == 0) {
             throw new IllegalArgumentException("fileBytes es requerido");
         }
@@ -51,8 +49,7 @@ public class UpdateProfileImageUseCase implements UpdateProfileImage {
                 command.fileBytes(),
                 command.contentType(),
                 command.originalFileName(),
-                oldImageKey,
-                command.updatedBy()
+                oldImageKey
         ));
 
         return user;

@@ -1,5 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
 
+import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
+import com.tetris.tetrisburger_backend.domain.exception.UnauthorizedException;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.DeleteProfileUser;
 import com.tetris.tetrisburger_backend.domain.port.in.user.GetUserProfile;
@@ -15,6 +17,7 @@ import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.GetUserProfi
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.UpdateProfileUserRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.UpdateProfileUserResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.UserRestDtoMapper;
+import com.tetris.tetrisburger_backend.infrastructure.rest.validator.ImageValidator;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,67 +48,54 @@ public class ProfileController {
     private final DeleteProfileUser deleteProfileUser;
     private final ImageStoragePort imageStoragePort;
     private final UserRestDtoMapper mapper;
+    private final ImageValidator imageValidator;
 
-    public ProfileController(GetUserProfile getUserProfile,
-                             UpdateProfileUser updateProfileUser,
-                             UpdateProfileImage updateProfileImage,
-                             DeleteProfileUser deleteProfileUser,
-                             ImageStoragePort imageStoragePort,
-                             UserRestDtoMapper mapper) {
+    public ProfileController(
+            GetUserProfile getUserProfile,
+            UpdateProfileUser updateProfileUser,
+            UpdateProfileImage updateProfileImage,
+            DeleteProfileUser deleteProfileUser,
+            ImageStoragePort imageStoragePort,
+            UserRestDtoMapper mapper,
+            ImageValidator imageValidator
+    ) {
         this.getUserProfile = getUserProfile;
         this.updateProfileUser = updateProfileUser;
         this.updateProfileImage = updateProfileImage;
         this.deleteProfileUser = deleteProfileUser;
         this.imageStoragePort = imageStoragePort;
         this.mapper = mapper;
-    }
-
-    private Integer getUserIdFromDetails(UserDetails userDetails) {
-        if (userDetails instanceof CustomUserDetails customUserDetails) {
-            return customUserDetails.getId();
-        }
-        throw new IllegalStateException("UserDetails no es CustomUserDetails");
-    }
-
-    private String resolveImageUrl(User user) {
-        if (user == null || user.getUserImageKey() == null || user.getUserImageKey().isBlank()) return null;
-        return imageStoragePort.getImageUrl(user.getUserImageKey());
+        this.imageValidator = imageValidator;
     }
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(
             summary = "Obtener mi perfil",
-            description = "Retorna datos del usuario autenticado. imageStatus puede ser: NONE, PENDING o READY."
+            description = "Retorna datos del usuario autenticado. imageStatus puede ser: NONE, PENDING o UPLOADED."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Perfil retornado",
                     content = @Content(schema = @Schema(implementation = GetUserProfileResponseDTO.class))),
             @ApiResponse(responseCode = "401", description = "No autenticado")
     })
-    public ResponseEntity<GetUserProfileResponseDTO> getMyProfile() {
-        User user = getUserProfile.execute(new GetUserProfileQuery());
+    public ResponseEntity<GetUserProfileResponseDTO> getMyProfile(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Integer currentUserId = getUserIdFromDetails(userDetails);
+        User user = getUserProfile.execute(new GetUserProfileQuery(currentUserId));
 
         String imageUrl = resolveImageUrl(user);
-        String imageStatus = (imageUrl != null) ? "READY" : "NONE";
+        ImageStatus imageStatus = resolveImageStatus(false, user.getUserImageKey());
 
-        return ResponseEntity.ok(new GetUserProfileResponseDTO(
-                user.getIdUser(),
-                user.getUserName(),
-                user.getEmail(),
-                imageUrl,
-                imageStatus,
-                user.getRole().name(),
-                user.getPhone(),
-                user.getCreatedAt()
-        ));
+        return ResponseEntity.ok(mapper.toGetUserProfileResponseDTO(user, imageUrl, imageStatus));
     }
 
     @PatchMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("isAuthenticated()")
     @Operation(
             summary = "Actualizar perfil (solo datos)",
-            description = "Actualiza userName y/o phone. Para actualizar imagen usar PUT /api/profile/image."
+            description = "Actualiza userName, password y/o phone. Para actualizar imagen usar PUT /api/profile/image."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Perfil actualizado",
@@ -123,66 +113,52 @@ public class ProfileController {
         User updatedUser = updateProfileUser.handle(currentUserId, command);
 
         String imageUrl = resolveImageUrl(updatedUser);
-        String imageStatus = (imageUrl != null) ? "READY" : "NONE";
+        ImageStatus imageStatus = resolveImageStatus(false, updatedUser.getUserImageKey());
 
-        return ResponseEntity.ok(new UpdateProfileUserResponseDTO(
-                updatedUser.getIdUser(),
-                updatedUser.getUserName(),
-                updatedUser.getEmail(),
-                imageUrl,
-                imageStatus,
-                updatedUser.getPhone(),
-                updatedUser.getCreatedAt(),
-                updatedUser.getUpdatedAt(),
-                updatedUser.getCreatedBy(),
-                updatedUser.getUpdatedBy()
-        ));
+        return ResponseEntity.ok(mapper.toUpdateProfileUserResponseDTO(updatedUser, imageUrl, imageStatus));
     }
 
-    @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("isAuthenticated()")
-    @Operation(
-            summary = "Actualizar perfil (multipart)",
-            description = "Actualiza datos usando form-data. Opcionalmente puede incluir userImage como archivo."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Perfil actualizado",
-                    content = @Content(schema = @Schema(implementation = UpdateProfileUserResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-            @ApiResponse(responseCode = "401", description = "No autenticado")
-    })
-    public ResponseEntity<UpdateProfileUserResponseDTO> updateMyProfileMultipart(
-            @Parameter(description = "Datos del perfil (userName, phone, userImage opcional)")
-            @Valid @ModelAttribute UpdateProfileUserRequestDTO requestDTO,
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        Integer currentUserId = getUserIdFromDetails(userDetails);
-
-        UpdateProfileUserCommand command = mapper.toUpdateProfileUserCommand(currentUserId, requestDTO);
-        User updatedUser = updateProfileUser.handle(currentUserId, command);
-
-        String imageUrl = resolveImageUrl(updatedUser);
-        String imageStatus = (imageUrl != null) ? "READY" : "NONE";
-
-        return ResponseEntity.ok(new UpdateProfileUserResponseDTO(
-                updatedUser.getIdUser(),
-                updatedUser.getUserName(),
-                updatedUser.getEmail(),
-                imageUrl,
-                imageStatus,
-                updatedUser.getPhone(),
-                updatedUser.getCreatedAt(),
-                updatedUser.getUpdatedAt(),
-                updatedUser.getCreatedBy(),
-                updatedUser.getUpdatedBy()
-        ));
-    }
+//    @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PreAuthorize("isAuthenticated()")
+//    @Operation(
+//            summary = "Actualizar perfil (multipart)",
+//            description = "Actualiza datos usando form-data. Opcionalmente puede incluir userImage como archivo."
+//    )
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "200", description = "Perfil actualizado",
+//                    content = @Content(schema = @Schema(implementation = UpdateProfileUserResponseDTO.class))),
+//            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+//            @ApiResponse(responseCode = "401", description = "No autenticado")
+//    })
+//    public ResponseEntity<UpdateProfileUserResponseDTO> updateMyProfileMultipart(
+//            @Parameter(description = "Datos del perfil (userName, phone)")
+//            @Valid @ModelAttribute UpdateProfileUserRequestDTO requestDTO,
+//            @Parameter(description = "Imagen de perfil (opcional)")
+//            @RequestPart(value = "userImage", required = false) MultipartFile userImage,
+//            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+//    ) {
+//        Integer currentUserId = getUserIdFromDetails(userDetails);
+//        boolean imageWasSent = (userImage != null && !userImage.isEmpty());
+//
+//        // Validar imagen si se envió
+//        if (imageWasSent) {
+//            imageValidator.validate(userImage);
+//        }
+//
+//        UpdateProfileUserCommand command = mapper.toUpdateProfileUserCommand(currentUserId, requestDTO);
+//        User updatedUser = updateProfileUser.handle(currentUserId, command);
+//
+//        String imageUrl = resolveImageUrl(updatedUser);
+//        ImageStatus imageStatus = resolveImageStatus(imageWasSent, updatedUser.getUserImageKey());
+//
+//        return ResponseEntity.ok(mapper.toUpdateProfileUserResponseDTO(updatedUser, imageUrl, imageStatus));
+//    }
 
     @PutMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
     @Operation(
             summary = "Actualizar solo imagen",
-            description = "Actualiza únicamente la imagen de perfil. Responde con imageStatus PENDING (consulta GET /api/profile para verificar cuando esté READY)."
+            description = "Actualiza únicamente la imagen de perfil. Responde con imageStatus PENDING (consulta GET /api/profile para verificar cuando esté UPLOADED)."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Imagen aceptada (en proceso)",
@@ -197,25 +173,20 @@ public class ProfileController {
     ) {
         Integer currentUserId = getUserIdFromDetails(userDetails);
 
-        UpdateProfileImageCommand command =
-                mapper.toUpdateProfileImageCommand(currentUserId, userImage, currentUserId);
+        // Validar imagen
+        imageValidator.validate(userImage);
+
+        UpdateProfileImageCommand command = mapper.toUpdateProfileImageCommand(
+                currentUserId,
+                userImage
+        );
 
         User user = updateProfileImage.handle(currentUserId, command);
 
         String imageUrl = resolveImageUrl(user);
+        ImageStatus imageStatus = ImageStatus.PENDING;
 
-        return ResponseEntity.ok(new UpdateProfileUserResponseDTO(
-                user.getIdUser(),
-                user.getUserName(),
-                user.getEmail(),
-                imageUrl,
-                "PENDING",
-                user.getPhone(),
-                user.getCreatedAt(),
-                user.getUpdatedAt(),
-                user.getCreatedBy(),
-                user.getUpdatedBy()
-        ));
+        return ResponseEntity.ok(mapper.toUpdateProfileUserResponseDTO(user, imageUrl, imageStatus));
     }
 
     @DeleteMapping
@@ -237,5 +208,49 @@ public class ProfileController {
         deleteProfileUser.handle(new DeleteProfileUserCommand(currentUserId));
 
         return ResponseEntity.ok(mapper.toDeleteProfileUserDTO(currentUserId));
+    }
+
+    // ============================================
+    // MÉTODOS HELPER PRIVADOS
+    // ============================================
+
+    /**
+     * Extrae el ID del usuario autenticado desde UserDetails
+     */
+    private Integer getUserIdFromDetails(UserDetails userDetails) {
+        if (userDetails instanceof CustomUserDetails customUserDetails) {
+            return customUserDetails.getId();
+        }
+        throw new UnauthorizedException("Usuario no autenticado correctamente");
+    }
+
+    /**
+     * Convierte el imageKey almacenado en BD a URL completa de S3
+     */
+    private String resolveImageUrl(User user) {
+        if (user == null || user.getUserImageKey() == null || user.getUserImageKey().isBlank()) {
+            return null;
+        }
+        return imageStoragePort.getImageUrl(user.getUserImageKey());
+    }
+
+    /**
+     * Determina el ImageStatus según el flujo:
+     * - NONE: No hay imagen
+     * - PENDING: Imagen en procesamiento asíncrono
+     * - UPLOADED: Imagen disponible
+     */
+    private ImageStatus resolveImageStatus(boolean imageWasSent, String imageKey) {
+        if (!imageWasSent) {
+            // GET/PATCH sin imagen: Consulta de usuario existente
+            return (imageKey == null || imageKey.isBlank()) ? ImageStatus.NONE : ImageStatus.UPLOADED;
+        }
+
+        // PATCH/PUT con imagen: Actualización con nueva imagen
+        if (imageKey == null || imageKey.isBlank()) {
+            return ImageStatus.PENDING;
+        }
+
+        return ImageStatus.UPLOADED;
     }
 }
