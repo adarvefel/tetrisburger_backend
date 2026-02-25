@@ -57,7 +57,7 @@ public class ImageValidator {
             }
 
         } catch (IOException e) {
-            throw new ImageUploadException("Error al validar archivo: " + e.getMessage());
+            throw new ImageUploadException("Error al validar archivo: ");
         }
     }
 }

@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class GetUserByEmailUseCase implements GetUserByEmail {
 
-    private static final Logger logger = LoggerFactory.getLogger(GetUserByEmailUseCase.class);
     private final UserRepository userRepository;
 
     public GetUserByEmailUseCase(UserRepository userRepository) {
@@ -22,12 +21,8 @@ public class GetUserByEmailUseCase implements GetUserByEmail {
 
     @Override
     public User handle(String email) {
-        logger.debug("Buscando usuario con email: {}", email);
 
         return userRepository.findUserByEmail(email)
-                .orElseThrow(() -> {
-                    logger.warn("Usuario no encontrado: {}", email);
-                    return new UserNotFoundException("Usuario no encontrado");
-                });
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
     }
 }

@@ -2,10 +2,7 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.advice;
 
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.ErrorResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.ValidationErrorResponseDTO;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +23,6 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 @Order(1)
 public class ValidationExceptionHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(ValidationExceptionHandler.class);
 
     // ========================================
     // MÉTODOS AUXILIARES
@@ -80,13 +75,8 @@ public class ValidationExceptionHandler {
 
         String message = String.format(
                 "El parámetro '%s' debe ser de tipo %s. Valor recibido: '%s'",
-                paramName,
-                requiredType,
-                providedValue
+                paramName, requiredType, providedValue
         );
-
-        logger.warn("⚠️ Type mismatch - Parámetro: {} - Esperado: {} - Recibido: {} - Path: {}",
-                paramName, requiredType, providedValue, extractPath(request));
 
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
     }
@@ -95,9 +85,7 @@ public class ValidationExceptionHandler {
     @ExceptionHandler(MissingServletRequestPartException.class)
     public ResponseEntity<ErrorResponseDTO> handleMissingServletRequestPart(
             MissingServletRequestPartException ex, WebRequest request) {
-        String partName = ex.getRequestPartName();
-        String message = String.format("El campo '%s' es requerido", partName);
-        logger.warn("⚠️ Parte de request faltante: {} - Path: {}", partName, extractPath(request));
+        String message = String.format("El campo '%s' es requerido", ex.getRequestPartName());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 
@@ -105,7 +93,6 @@ public class ValidationExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponseDTO> handleValidationErrors(
             MethodArgumentNotValidException ex, WebRequest request) {
-        logger.warn("⚠️ Errores de validación - Path: {}", extractPath(request));
 
         Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .collect(Collectors.toMap(
@@ -126,7 +113,6 @@ public class ValidationExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ValidationErrorResponseDTO> handleConstraintViolation(
             ConstraintViolationException ex, WebRequest request) {
-        logger.warn("⚠️ Constraint violation - Path: {}", extractPath(request));
 
         Map<String, String> errors = ex.getConstraintViolations().stream()
                 .collect(Collectors.toMap(
@@ -147,7 +133,6 @@ public class ValidationExceptionHandler {
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ValidationErrorResponseDTO> handleBindException(
             BindException ex, WebRequest request) {
-        logger.warn("⚠️ BindException - Path: {}", extractPath(request));
 
         Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .collect(Collectors.toMap(
@@ -158,7 +143,7 @@ public class ValidationExceptionHandler {
 
         return buildValidationErrorResponse(
                 HttpStatus.BAD_REQUEST,
-                "Errores de validación en el binding",
+                "Los datos enviados no son válidos. Por favor revísalos.",
                 errors,
                 request
         );
@@ -168,11 +153,11 @@ public class ValidationExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponseDTO> handleMaxUploadSize(
             MaxUploadSizeExceededException ex, WebRequest request) {
-        logger.warn(" Archivo excede tamaño máximo - Path: {}", extractPath(request));
         return buildErrorResponse(
                 HttpStatus.PAYLOAD_TOO_LARGE,
                 "El archivo excede el tamaño máximo permitido (5MB)",
                 request
         );
     }
+
 }

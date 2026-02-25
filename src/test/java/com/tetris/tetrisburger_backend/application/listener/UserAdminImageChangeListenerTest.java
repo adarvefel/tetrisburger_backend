@@ -1,28 +1,21 @@
 package com.tetris.tetrisburger_backend.application.listener;
 
 import com.tetris.tetrisburger_backend.application.event.UserAdminImageChangeRequestedEvent;
-import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
 import com.tetris.tetrisburger_backend.domain.exception.ImageUploadException;
 import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
-import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
+import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,233 +31,235 @@ class UserAdminImageChangeListenerTest {
     @InjectMocks
     private UserAdminImageChangeListener listener;
 
-    @Captor
-    private ArgumentCaptor<User> userCaptor;
+    private static final Integer USER_ID     = 1;
+    private static final Integer UPDATED_BY  = 99;
+    private static final String CONTENT_TYPE = "image/png";
+    private static final String FILE_NAME    = "avatar.png";
+    private static final String OLD_KEY      = "old-admin-key-123";
+    private static final String NEW_KEY      = "new-admin-key-456";
+    private static final String IMAGE_URL    = "https://bucket.s3.amazonaws.com/new-admin-key-456";
+    private static final byte[] FILE_BYTES   = "fake-admin-bytes".getBytes();
 
-    private UserAdminImageChangeRequestedEvent event;
-    private User user;
-    private ImageUploadResult uploadResult;
+    // ── Helpers ───────────────────────────────────────────────────────────
 
-    @BeforeEach
-    void setUp() {
-        byte[] bytes = new byte[]{9, 8, 7};
-        event = new UserAdminImageChangeRequestedEvent(
-                20,
-                bytes,
-                "image/png",
-                "admin-new.png",
-                "users/old-admin.png",
-                999 // updatedBy (admin)
-        );
-
-        user = User.createByAdmin(
-                "Target User",
-                "target@example.com",
-                "$2a$10$hashed",
-                Role.CLIENT,
-                null,
-                "users/old-admin.png",
-                "old-admin.png",
-                1
-        );
-        user.setIdUser(20);
-
-        uploadResult = new ImageUploadResult(
-                "users/new-admin-key.png",
-                "admin-new.png"
-        );
+    private UserAdminImageChangeRequestedEvent buildEvent(String oldKey) {
+        UserAdminImageChangeRequestedEvent event = mock(UserAdminImageChangeRequestedEvent.class);
+        lenient().when(event.newFileBytes()).thenReturn(FILE_BYTES);
+        lenient().when(event.contentType()).thenReturn(CONTENT_TYPE);
+        lenient().when(event.originalFileName()).thenReturn(FILE_NAME);
+        lenient().when(event.idUser()).thenReturn(USER_ID);
+        lenient().when(event.oldImageKey()).thenReturn(oldKey);
+        lenient().when(event.updatedBy()).thenReturn(UPDATED_BY);
+        return event;
     }
 
-    @Nested
-    @DisplayName("Flujo exitoso")
-    class SuccessfulFlow {
+    private ImageUploadResult setupSuccessfulUploadAndUser() {
+        ImageUploadResult upload = mock(ImageUploadResult.class);
+        when(upload.imageKey()).thenReturn(NEW_KEY);
+        when(imageStoragePort.uploadUserImage(FILE_BYTES, CONTENT_TYPE, FILE_NAME)).thenReturn(upload);
 
-        @Test
-        @DisplayName("debería subir imagen, actualizar usuario con auditoría y borrar la anterior")
-        void shouldUploadUpdateWithAuditAndDeleteOldImage() {
-            // Given
-            when(imageStoragePort.uploadUserImage(any(byte[].class), anyString(), anyString()))
-                    .thenReturn(uploadResult);
-            when(userRepository.findUserById(20)).thenReturn(Optional.of(user));
-            when(userRepository.saveUser(any(User.class))).thenReturn(user);
-
-            // When
-            listener.handle(event);
-
-            // Then
-            verify(imageStoragePort).uploadUserImage(
-                    event.newFileBytes(),
-                    event.contentType(),
-                    event.originalFileName()
-            );
-            verify(userRepository).findUserById(20);
-            verify(userRepository).saveUser(userCaptor.capture());
-            verify(imageStoragePort).deleteImage("users/old-admin.png");
-
-            User saved = userCaptor.getValue();
-            assertThat(saved.getUserImageKey()).isEqualTo("users/new-admin-key.png");
-            assertThat(saved.getUserImage()).isEqualTo("admin-new.png");
-            assertThat(saved.getUpdatedBy()).isEqualTo(999);
-            assertThat(saved.getUpdatedAt()).isNotNull();
-        }
-
-        @Test
-        @DisplayName("no debería borrar imagen anterior si oldImageKey es null")
-        void shouldNotDeleteOldImageWhenOldKeyIsNull() {
-            // Given
-            UserAdminImageChangeRequestedEvent noOldKeyEvent =
-                    new UserAdminImageChangeRequestedEvent(
-                            20,
-                            event.newFileBytes(),
-                            event.contentType(),
-                            event.originalFileName(),
-                            null,
-                            event.updatedBy()
-                    );
-
-            when(imageStoragePort.uploadUserImage(any(byte[].class), anyString(), anyString()))
-                    .thenReturn(uploadResult);
-            when(userRepository.findUserById(20)).thenReturn(Optional.of(user));
-            when(userRepository.saveUser(any(User.class))).thenReturn(user);
-
-            // When
-            listener.handle(noOldKeyEvent);
-
-            // Then
-            verify(imageStoragePort, never()).deleteImage(anyString());
-        }
-
-        @Test
-        @DisplayName("no debería borrar imagen anterior si oldImageKey está en blanco")
-        void shouldNotDeleteOldImageWhenOldKeyIsBlank() {
-            // Given
-            UserAdminImageChangeRequestedEvent blankOldKeyEvent =
-                    new UserAdminImageChangeRequestedEvent(
-                            20,
-                            event.newFileBytes(),
-                            event.contentType(),
-                            event.originalFileName(),
-                            "   ",
-                            event.updatedBy()
-                    );
-
-            when(imageStoragePort.uploadUserImage(any(byte[].class), anyString(), anyString()))
-                    .thenReturn(uploadResult);
-            when(userRepository.findUserById(20)).thenReturn(Optional.of(user));
-            when(userRepository.saveUser(any(User.class))).thenReturn(user);
-
-            // When
-            listener.handle(blankOldKeyEvent);
-
-            // Then
-            verify(imageStoragePort, never()).deleteImage(anyString());
-        }
+        User user = mock(User.class);
+        when(userRepository.findUserById(USER_ID)).thenReturn(Optional.of(user));
+        when(imageStoragePort.getImageUrl(NEW_KEY)).thenReturn(IMAGE_URL);
+        return upload;
     }
 
+    // ── handle ────────────────────────────────────────────────────────────
+
     @Nested
-    @DisplayName("Upload result nulo")
-    class NullUploadResult {
+    @DisplayName("handle - flujo principal")
+    class Handle {
 
         @Test
-        @DisplayName("no debería persistir ni borrar nada si upload devuelve null")
-        void shouldNotPersistOrDeleteWhenUploadReturnsNull() {
-            // Given
-            when(imageStoragePort.uploadUserImage(any(byte[].class), anyString(), anyString()))
-                    .thenReturn(null);
+        @DisplayName("debería subir imagen, persistir y NO eliminar cuando no hay imagen anterior")
+        void shouldUploadPersistAndNotDeleteWhenNoOldKey() {
+            UserAdminImageChangeRequestedEvent event = buildEvent(null);
+            setupSuccessfulUploadAndUser();
 
-            // When
             listener.handle(event);
 
-            // Then
-            verify(userRepository, never()).findUserById(anyInt());
+            verify(imageStoragePort).uploadUserImage(FILE_BYTES, CONTENT_TYPE, FILE_NAME);
+            verify(userRepository).findUserById(USER_ID);
+            verify(imageStoragePort).getImageUrl(NEW_KEY);
+            verify(userRepository).saveUser(any(User.class));
+            verify(imageStoragePort, never()).deleteImage(any());
+        }
+
+        @Test
+        @DisplayName("debería eliminar imagen anterior cuando oldImageKey tiene valor")
+        void shouldDeleteOldImageWhenOldKeyIsPresent() {
+            UserAdminImageChangeRequestedEvent event = buildEvent(OLD_KEY);
+            setupSuccessfulUploadAndUser();
+
+            listener.handle(event);
+
+            verify(imageStoragePort).deleteImage(OLD_KEY);
+        }
+
+        @Test
+        @DisplayName("NO debería eliminar imagen anterior cuando oldImageKey es null")
+        void shouldNotDeleteWhenOldKeyIsNull() {
+            UserAdminImageChangeRequestedEvent event = buildEvent(null);
+            setupSuccessfulUploadAndUser();
+
+            listener.handle(event);
+
+            verify(imageStoragePort, never()).deleteImage(any());
+        }
+
+        @Test
+        @DisplayName("NO debería eliminar imagen anterior cuando oldImageKey está en blanco")
+        void shouldNotDeleteWhenOldKeyIsBlank() {
+            UserAdminImageChangeRequestedEvent event = buildEvent("  ");
+            setupSuccessfulUploadAndUser();
+
+            listener.handle(event);
+
+            verify(imageStoragePort, never()).deleteImage(any());
+        }
+
+        @Test
+        @DisplayName("debería retornar sin persistir cuando uploadUserImage retorna null")
+        void shouldReturnEarlyWhenUploadReturnsNull() {
+            UserAdminImageChangeRequestedEvent event = buildEvent(null);
+            when(imageStoragePort.uploadUserImage(FILE_BYTES, CONTENT_TYPE, FILE_NAME)).thenReturn(null);
+
+            listener.handle(event);
+
+            verify(userRepository, never()).findUserById(any());
             verify(userRepository, never()).saveUser(any());
-            verify(imageStoragePort, never()).deleteImage(anyString());
+        }
+
+        @Test
+        @DisplayName("debería lanzar ImageUploadException cuando uploadUserImage lanza excepción")
+        void shouldThrowImageUploadExceptionWhenUploadFails() {
+            UserAdminImageChangeRequestedEvent event = buildEvent(null);
+            when(imageStoragePort.uploadUserImage(any(), any(), any()))
+                    .thenThrow(new RuntimeException("Conexión S3 fallida"));
+
+            assertThrows(ImageUploadException.class,
+                    () -> listener.handle(event));
+        }
+
+        @Test
+        @DisplayName("debería lanzar ImageUploadException cuando persistencia falla")
+        void shouldThrowImageUploadExceptionWhenPersistFails() {
+            UserAdminImageChangeRequestedEvent event = buildEvent(null);
+
+            ImageUploadResult upload = mock(ImageUploadResult.class);
+            when(imageStoragePort.uploadUserImage(FILE_BYTES, CONTENT_TYPE, FILE_NAME)).thenReturn(upload);
+            when(userRepository.findUserById(USER_ID)).thenReturn(Optional.empty()); // user not found → UserNotFoundException → outer catch
+
+            assertThrows(ImageUploadException.class,
+                    () -> listener.handle(event));
+        }
+
+        @Test
+        @DisplayName("debería ignorar excepción de deleteImage (best-effort) sin lanzar ImageUploadException")
+        void shouldIgnoreDeleteImageExceptionAndNotThrow() {
+            UserAdminImageChangeRequestedEvent event = buildEvent(OLD_KEY);
+            setupSuccessfulUploadAndUser();
+            doThrow(new RuntimeException("S3 delete error")).when(imageStoragePort).deleteImage(OLD_KEY);
+
+            // El delete tiene try-catch interno — no debe propagarse al outer catch
+            assertDoesNotThrow(() -> listener.handle(event));
+            verify(userRepository).saveUser(any(User.class)); // la imagen fue guardada
+        }
+
+        @Test
+        @DisplayName("debería incluir la excepción original como causa en ImageUploadException")
+        void shouldWrapOriginalExceptionInImageUploadException() {
+            UserAdminImageChangeRequestedEvent event = buildEvent(null);
+            RuntimeException originalCause = new RuntimeException("Error original");
+            when(imageStoragePort.uploadUserImage(any(), any(), any()))
+                    .thenThrow(originalCause);
+
+            ImageUploadException ex = assertThrows(ImageUploadException.class,
+                    () -> listener.handle(event));
+            assertEquals(originalCause, ex.getCause());
+        }
+
+        @Test
+        @DisplayName("debería pasar updatedBy correcto a persistNewImageKey")
+        void shouldPassCorrectUpdatedByToPersist() {
+            UserAdminImageChangeRequestedEvent event = buildEvent(null);
+            ImageUploadResult upload = setupSuccessfulUploadAndUser();
+
+            User user = mock(User.class);
+            when(userRepository.findUserById(USER_ID)).thenReturn(Optional.of(user));
+
+            listener.handle(event);
+
+            verify(user).updateImage(NEW_KEY, IMAGE_URL, UPDATED_BY);
         }
     }
 
-    @Nested
-    @DisplayName("Excepciones")
-    class Exceptions {
-
-        @Test
-        @DisplayName("debería envolver excepciones de storage en ImageUploadException")
-        void shouldWrapStorageExceptions() {
-            // Given
-            when(imageStoragePort.uploadUserImage(any(byte[].class), anyString(), anyString()))
-                    .thenThrow(new RuntimeException("S3 error"));
-
-            // When / Then
-            assertThatThrownBy(() -> listener.handle(event))
-                    .isInstanceOf(ImageUploadException.class)
-                    .hasMessage("No se pudo subir la imagen del usuario")
-                    .hasCauseInstanceOf(RuntimeException.class);
-        }
-
-        @Test
-        @DisplayName("debería envolver UserNotFoundException desde persistNewImageKey")
-        void shouldWrapUserNotFoundExceptionFromPersistNewImageKey() {
-            // Given
-            when(imageStoragePort.uploadUserImage(any(byte[].class), anyString(), anyString()))
-                    .thenReturn(uploadResult);
-            when(userRepository.findUserById(20)).thenReturn(Optional.empty());
-
-            // When / Then
-            assertThatThrownBy(() -> listener.handle(event))
-                    .isInstanceOf(ImageUploadException.class)
-                    .hasCauseInstanceOf(UserNotFoundException.class);
-        }
-
-        @Test
-        @DisplayName("fallo al borrar imagen anterior no debe romper flujo")
-        void deleteOldImageFailureShouldNotBreakFlow() {
-            // Given
-            when(imageStoragePort.uploadUserImage(any(byte[].class), anyString(), anyString()))
-                    .thenReturn(uploadResult);
-            when(userRepository.findUserById(20)).thenReturn(Optional.of(user));
-            when(userRepository.saveUser(any(User.class))).thenReturn(user);
-            doThrow(new RuntimeException("S3 delete failed"))
-                    .when(imageStoragePort).deleteImage("users/old-admin.png");
-
-            // When / Then
-            assertThatCode(() -> listener.handle(event))
-                    .doesNotThrowAnyException();
-        }
-    }
+    // ── persistNewImageKey ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Método persistNewImageKey")
-    class PersistNewImageKeyTests {
+    @DisplayName("persistNewImageKey")
+    class PersistNewImageKey {
 
         @Test
-        @DisplayName("debería actualizar imagen y auditoría correctamente")
-        void shouldUpdateImageAndAuditCorrectly() {
-            // Given
-            when(userRepository.findUserById(20)).thenReturn(Optional.of(user));
-            when(userRepository.saveUser(any(User.class))).thenReturn(user);
+        @DisplayName("debería obtener URL, actualizar imagen y guardar usuario")
+        void shouldGetUrlUpdateImageAndSaveUser() {
+            ImageUploadResult upload = mock(ImageUploadResult.class);
+            when(upload.imageKey()).thenReturn(NEW_KEY);
 
-            // When
-            listener.persistNewImageKey(20, uploadResult, 999);
+            User user = mock(User.class);
+            when(userRepository.findUserById(USER_ID)).thenReturn(Optional.of(user));
+            when(imageStoragePort.getImageUrl(NEW_KEY)).thenReturn(IMAGE_URL);
 
-            // Then
-            verify(userRepository).findUserById(20);
-            verify(userRepository).saveUser(userCaptor.capture());
+            listener.persistNewImageKey(USER_ID, upload, UPDATED_BY);
 
-            User saved = userCaptor.getValue();
-            assertThat(saved.getUserImageKey()).isEqualTo("users/new-admin-key.png");
-            assertThat(saved.getUserImage()).isEqualTo("admin-new.png");
-            assertThat(saved.getUpdatedBy()).isEqualTo(999);
+            verify(imageStoragePort).getImageUrl(NEW_KEY);
+            verify(user).updateImage(NEW_KEY, IMAGE_URL, UPDATED_BY);
+            verify(userRepository).saveUser(user);
         }
 
         @Test
-        @DisplayName("debería lanzar UserNotFoundException cuando usuario no existe")
-        void shouldThrowUserNotFoundWhenUserDoesNotExist() {
-            // Given
-            when(userRepository.findUserById(999)).thenReturn(Optional.empty());
+        @DisplayName("debería lanzar UserNotFoundException cuando el usuario no existe")
+        void shouldThrowUserNotFoundExceptionWhenUserDoesNotExist() {
+            ImageUploadResult upload = mock(ImageUploadResult.class);
+            when(userRepository.findUserById(USER_ID)).thenReturn(Optional.empty());
 
-            // When / Then
-            assertThatThrownBy(() -> listener.persistNewImageKey(999, uploadResult, 1))
-                    .isInstanceOf(UserNotFoundException.class)
-                    .hasMessage("Usuario no encontrado");
+            assertThrows(UserNotFoundException.class,
+                    () -> listener.persistNewImageKey(USER_ID, upload, UPDATED_BY));
+
+            verify(userRepository, never()).saveUser(any());
+        }
+
+        @Test
+        @DisplayName("debería pasar el updatedBy correcto al modelo")
+        void shouldPassCorrectUpdatedByToModel() {
+            Integer specificUpdatedBy = 55;
+            ImageUploadResult upload = mock(ImageUploadResult.class);
+            when(upload.imageKey()).thenReturn(NEW_KEY);
+
+            User user = mock(User.class);
+            when(userRepository.findUserById(USER_ID)).thenReturn(Optional.of(user));
+            when(imageStoragePort.getImageUrl(NEW_KEY)).thenReturn(IMAGE_URL);
+
+            listener.persistNewImageKey(USER_ID, upload, specificUpdatedBy);
+
+            verify(user).updateImage(NEW_KEY, IMAGE_URL, specificUpdatedBy);
+        }
+
+        @Test
+        @DisplayName("debería usar el imageKey del upload para obtener la URL")
+        void shouldUseUploadImageKeyToGetUrl() {
+            String specificKey = "specific-admin-key-789";
+            ImageUploadResult upload = mock(ImageUploadResult.class);
+            when(upload.imageKey()).thenReturn(specificKey);
+
+            User user = mock(User.class);
+            when(userRepository.findUserById(USER_ID)).thenReturn(Optional.of(user));
+            when(imageStoragePort.getImageUrl(specificKey)).thenReturn(IMAGE_URL);
+
+            listener.persistNewImageKey(USER_ID, upload, UPDATED_BY);
+
+            verify(imageStoragePort).getImageUrl(specificKey);
+            verify(user).updateImage(specificKey, IMAGE_URL, UPDATED_BY);
         }
     }
 }

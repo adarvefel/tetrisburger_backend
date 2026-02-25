@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class RegisterUserUseCase implements RegisterUser {
 
-    private static final Logger logger = LoggerFactory.getLogger(RegisterUserUseCase.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -36,19 +35,15 @@ public class RegisterUserUseCase implements RegisterUser {
 
     @Override
     public User handle(RegisterUserCommand cmd) {
-        logger.info("Registrando usuario con email: {}", cmd.email());
 
         boolean isHuman = recaptchaPort.verifyToken(cmd.recaptchaToken(),"register");
         if(!isHuman){
-            logger.warn("reCAPTCHA fallo para :{}",cmd.email());
-            throw new InvalidRecaptchaException("  \"Verificación de seguridad falló. Por favor intenta de nuevo.");
+            throw new InvalidRecaptchaException(" Verificación de seguridad falló. Por favor intenta de nuevo.");
         }
-        logger.info(" reCAPTCHA verificado para: {}", cmd.email());
 
 
         // 1. Verificar que el email no existe
         if (userRepository.existsByEmail(cmd.email())) {
-            logger.warn("Intento de registrar email duplicado: {}", cmd.email());
             throw new UserAlreadyExistsException("El email ya está registrado");
         }
 
@@ -64,15 +59,12 @@ public class RegisterUserUseCase implements RegisterUser {
 
         // 4. Guardar usuario
         User savedUser = userRepository.saveUser(newUser);
-        logger.info("Usuario registrado exitosamente - ID: {}", savedUser.getIdUser());
 
         // 5. Enviar email de bienvenida (no debe romper el registro si falla)
         try {
             emailPort.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUserName());
-            logger.info("Email de bienvenida enviado a: {}", savedUser.getEmail());
         } catch (Exception e) {
-            logger.error("Error al enviar email de bienvenida a {}: {}",
-                    savedUser.getEmail(), e.getMessage());
+
         }
 
         return savedUser;

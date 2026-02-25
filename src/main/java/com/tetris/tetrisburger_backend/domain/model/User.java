@@ -56,7 +56,7 @@ public class User {
             Role role,
             String phone,
             String imageKey,
-            String imageName,
+            String imageUrl,
             Integer createdBy
     ) {
         validateUserName(userName);
@@ -70,7 +70,7 @@ public class User {
         user.role = role != null ? role : Role.CLIENT;
         user.phone = phone;
         user.userImageKey = imageKey;
-        user.userImage = imageName;
+        user.userImage = imageUrl;
         user.createdAt = LocalDateTime.now();
         user.createdBy = createdBy;
 
@@ -113,9 +113,9 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateImageProfile(String imageKey, String imageName) {
+    public void updateImageProfile(String imageKey, String imageUrl) {
         this.userImageKey = imageKey;
-        this.userImage = imageName;
+        this.userImage = imageUrl;
     }
 
 

@@ -44,10 +44,10 @@ public class UserProfileImageChangeListener {
             if (event.oldImageKey() != null && !event.oldImageKey().isBlank()) {
                 try {
                     imageStoragePort.deleteImage(event.oldImageKey());
-                } catch (Exception ignored) { }
+                } catch (Exception e) {
+                }
             }
         } catch (Exception e) {
-            throw new ImageUploadException("No se pudo subir la imagen del perfil", e);
         }
     }
 
@@ -56,7 +56,9 @@ public class UserProfileImageChangeListener {
         User user = userRepository.findUserById(idUser)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
-        user.updateImageProfile(upload.imageKey(), upload.originalFileName());
+        String imageUrl = imageStoragePort.getImageUrl(upload.imageKey());
+
+        user.updateImageProfile(upload.imageKey(),imageUrl);
         userRepository.saveUser(user);
     }
 }

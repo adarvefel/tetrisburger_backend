@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ResetPasswordUseCase implements ResetPassword {
 
-    private static final Logger logger = LoggerFactory.getLogger(ResetPasswordUseCase.class);
 
     private final UserRepository userRepository;
     private final TokenPort tokenPort;
@@ -34,13 +33,11 @@ public class ResetPasswordUseCase implements ResetPassword {
 
     @Override
     public void handle(ResetPasswordCommand command) {
-        logger.info("Reseteando contraseña con token");
 
 
 
         // 1. Validar token de PASSWORD RESET
         if (!tokenPort.validatePasswordResetToken(command.token())) {
-            logger.warn("Token inválido o expirado");
             throw new InvalidTokenException("Token inválido o expirado");
         }
 
@@ -49,10 +46,7 @@ public class ResetPasswordUseCase implements ResetPassword {
 
         // 3. Buscar usuario
         User user = userRepository.findUserByEmail(email)
-                .orElseThrow(() -> {
-                    logger.error("Usuario no encontrado: {}", email);
-                    return new UserNotFoundException("Usuario no encontrado");
-                });
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
         // 4. Actualizar contraseña
         User updatedUser = new User(
@@ -76,6 +70,5 @@ public class ResetPasswordUseCase implements ResetPassword {
 
         userRepository.saveUser(updatedUser);
 
-        logger.info("Contraseña actualizada exitosamente para: {}", email);
     }
 }

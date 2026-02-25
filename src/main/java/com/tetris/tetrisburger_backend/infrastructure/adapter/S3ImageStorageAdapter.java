@@ -3,8 +3,6 @@ package com.tetris.tetrisburger_backend.infrastructure.adapter;
 import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
 import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -13,12 +11,10 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.util.UUID;
+
 @Component
 public class S3ImageStorageAdapter implements ImageStoragePort {
 
-    private static final Logger logger = LoggerFactory.getLogger(S3ImageStorageAdapter.class);
-
-    // ====== CONSTANTES DE CARPETAS ======
     private static final String USERS_FOLDER = "users";
     private static final String PRODUCTS_FOLDER = "products";
     private static final String MENU_BURGERS_FOLDER = "burgers-menu";
@@ -35,20 +31,17 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
         this.region = region;
-        logger.info("S3ImageStorageAdapter initialized - Bucket: {}, Region: {}", bucketName, region);
     }
 
     // ====== USUARIOS ======
     @Override
-    public ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName)  {
-        logger.info("Uploading user image: {}", originalFileName);
+    public ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName) {
         return uploadImageInternal(bytes, contentType, originalFileName, USERS_FOLDER);
     }
 
     // ====== PRODUCTOS ======
     @Override
     public ImageUploadResult uploadProductImage(FileData fileData) {
-        logger.info("Uploading product image: {}", fileData.originalFilename());
         return uploadImageInternal(
                 fileData.bytes(),
                 fileData.contentType(),
@@ -60,8 +53,6 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
     // ====== BURGERS MENÚ ======
     @Override
     public ImageUploadResult uploadMenuBurgerImage(FileData fileData, Integer burgerId, Integer adminId) {
-        logger.info("Uploading menu burger image: burgerId={}, adminId={}", burgerId, adminId);
-
         return uploadImageInternal(
                 fileData.bytes(),
                 fileData.contentType(),
@@ -70,17 +61,12 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         );
     }
 
-    // ====== GENÉRICO (deprecado) ======
     @Override
     @Deprecated
     public ImageUploadResult uploadImage(FileData fileData, String folder) {
         if (fileData == null || fileData.bytes() == null || fileData.bytes().length == 0) {
-            logger.warn("FileData is null or empty, skipping upload");
             return null;
         }
-
-        logger.warn("Using deprecated uploadImage() method with folder: {}", folder);
-
         return uploadImageInternal(
                 fileData.bytes(),
                 fileData.contentType(),
@@ -89,7 +75,6 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         );
     }
 
-    // ====== MÉTODO INTERNO REUTILIZABLE (PRIVATE) ======
     private ImageUploadResult uploadImageInternal(
             byte[] bytes,
             String contentType,
@@ -97,18 +82,15 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
             String folder
     ) {
         if (bytes == null || bytes.length == 0) {
-            logger.warn("Bytes are null or empty, skipping upload");
             return null;
         }
 
-        // Validar tipo de archivo
         if (contentType == null || !contentType.startsWith("image/")) {
             throw new IllegalArgumentException(
                     "El archivo debe ser una imagen. ContentType: " + contentType
             );
         }
 
-        // Validar tamaño (máx 5MB)
         if (bytes.length > 5 * 1024 * 1024) {
             throw new IllegalArgumentException(
                     String.format("La imagen no puede superar 5MB. Tamaño: %.2f MB",
@@ -118,7 +100,6 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
 
         String normalizedFolder = normalizeFolder(folder);
 
-        // Obtener extensión
         String extension = "";
         String baseName = originalFileName;
 
@@ -131,15 +112,12 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         String sanitizedName = sanitizeFileName(baseName);
         String uniqueId = UUID.randomUUID().toString().substring(0, 8);
 
-        // Formato: folder/timestamp-uuid-filename.ext
         String key = String.format("%s%d-%s-%s%s",
                 normalizedFolder,
                 System.currentTimeMillis(),
                 uniqueId,
                 sanitizedName,
                 extension);
-
-        logger.info("Generated S3 key: {}", key);
 
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -150,12 +128,9 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
 
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
 
-            logger.info("Image uploaded successfully. Bucket: {}, Key: {}", bucketName, key);
-
             return new ImageUploadResult(key, originalFileName);
 
         } catch (Exception e) {
-            logger.error("Error uploading to S3. Bucket: {}, Key: {}", bucketName, key, e);
             throw new RuntimeException("Error al subir imagen a S3: " + e.getMessage(), e);
         }
     }
@@ -164,11 +139,8 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
     @Override
     public void deleteImage(String imageKey) {
         if (imageKey == null || imageKey.isEmpty()) {
-            logger.warn("ImageKey is null or empty, skipping deletion");
             return;
         }
-
-        logger.info("Deleting image: {}", imageKey);
 
         try {
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
@@ -177,10 +149,9 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
                     .build();
 
             s3Client.deleteObject(deleteObjectRequest);
-            logger.info("Image deleted successfully: {}", imageKey);
 
         } catch (Exception e) {
-            logger.error("Error deleting image: {}", imageKey, e);
+            // El fallo al eliminar la imagen no debe interrumpir el flujo principal
         }
     }
 
@@ -191,13 +162,10 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
             return null;
         }
 
-        String url = String.format("https://%s.s3.%s.amazonaws.com/%s",
+        return String.format("https://%s.s3.%s.amazonaws.com/%s",
                 bucketName,
                 region,
                 imageKey);
-
-        logger.debug("Generated image URL: {}", url);
-        return url;
     }
 
     // ====== HELPERS ======

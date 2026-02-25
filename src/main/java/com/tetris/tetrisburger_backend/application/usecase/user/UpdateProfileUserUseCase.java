@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class UpdateProfileUserUseCase implements UpdateProfileUser {
 
-    private static final Logger logger = LoggerFactory.getLogger(UpdateProfileUserUseCase.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -36,7 +35,6 @@ public class UpdateProfileUserUseCase implements UpdateProfileUser {
 
     @Override
     public User handle(Integer currentUserId, UpdateProfileUserCommand command) {
-        logger.debug("Usuario {} actualizando perfil", currentUserId);
 
         if (!currentUserId.equals(command.idUser())) {
             throw new IllegalArgumentException("No tienes permiso para modificar este perfil");

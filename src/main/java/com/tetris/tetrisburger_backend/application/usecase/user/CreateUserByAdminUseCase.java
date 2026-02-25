@@ -19,7 +19,6 @@ import java.io.IOException;
 @Transactional
 public class CreateUserByAdminUseCase implements CreateUserByAdmin {
 
-    private static final Logger logger = LoggerFactory.getLogger(CreateUserByAdminUseCase.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -37,7 +36,6 @@ public class CreateUserByAdminUseCase implements CreateUserByAdmin {
 
     @Override
     public User handle(CreateUserByAdminCommand cmd) {
-        logger.info("Admin {} creando usuario con email: {}", cmd.createdBy(), cmd.email());
 
         if (userRepository.existsByEmail(cmd.email())) {
             throw new UserAlreadyExistsException("El email ya está registrado");

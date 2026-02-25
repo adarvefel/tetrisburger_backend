@@ -6,8 +6,7 @@ import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.UpdateUserImageByAdmin;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.UpdateUserImageByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class UpdateUserImageByAdminUseCase implements UpdateUserImageByAdmin {
 
-    private static final Logger logger = LoggerFactory.getLogger(UpdateUserImageByAdminUseCase.class);
 
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -29,7 +27,6 @@ public class UpdateUserImageByAdminUseCase implements UpdateUserImageByAdmin {
 
     @Override
     public User handle(UpdateUserImageByAdminCommand command) {
-        logger.info("Admin {} actualizando imagen usuario {}", command.updatedBy(), command.idUser());
 
         if (command.fileBytes() == null || command.fileBytes().length == 0) {
             throw new IllegalArgumentException("fileBytes es requerido");
@@ -55,7 +52,6 @@ public class UpdateUserImageByAdminUseCase implements UpdateUserImageByAdmin {
                 command.updatedBy()
         ));
 
-        // Ojo: aquí todavía NO existe la imagen nueva en BD; por eso en REST debes responder PENDING.
         return user;
     }
 }

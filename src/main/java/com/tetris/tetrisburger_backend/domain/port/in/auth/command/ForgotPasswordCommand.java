@@ -11,8 +11,8 @@ public record ForgotPasswordCommand(
         if (!email.contains("@")) {
             throw new IllegalArgumentException("Formato de email inválido");
         }
-        if (recaptchaToken == null || recaptchaToken.isBlank()) {
-            throw new IllegalArgumentException("El token de reCAPTCHA es requerido");
-        }
+//        if (recaptchaToken == null || recaptchaToken.isBlank()) {
+//            throw new IllegalArgumentException("El token de reCAPTCHA es requerido");
+//        }
     }
 }

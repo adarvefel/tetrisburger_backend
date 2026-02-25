@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class DeleteUserByAdminUseCase implements DeleteUserByAdmin {
 
-    private static final Logger logger = LoggerFactory.getLogger(DeleteUserByAdminUseCase.class);
     private final UserRepository userRepository;
 
     public DeleteUserByAdminUseCase(UserRepository userRepository) {
@@ -23,15 +22,10 @@ public class DeleteUserByAdminUseCase implements DeleteUserByAdmin {
 
     @Override
     public void handle(DeleteUserByAdminCommand command) {
-        logger.info("Eliminando usuario con ID: {} por admin: {}",
-                command.idUser(), command.deletedBy());
 
         // 1. Buscar usuario
         User user = userRepository.findUserById(command.idUser())
-                .orElseThrow(() -> {
-                    logger.error("Usuario no encontrado - ID: {}", command.idUser());
-                    return new UserNotFoundException("Usuario no encontrado con ID: " + command.idUser());
-                });
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con ID: " + command.idUser()));
 
         // 2. Soft delete usando método de dominio
         user.markAsDeleted(command.deletedBy());
@@ -39,8 +33,5 @@ public class DeleteUserByAdminUseCase implements DeleteUserByAdmin {
 
         // 3. Guardar
         userRepository.saveUser(user);
-
-        logger.info("Usuario {} marcado como eliminado por admin {}",
-                command.idUser(), command.deletedBy());
     }
 }
