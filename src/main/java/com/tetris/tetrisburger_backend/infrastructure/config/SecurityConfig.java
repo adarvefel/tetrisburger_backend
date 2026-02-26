@@ -76,7 +76,7 @@ public class SecurityConfig {
                         // Protegidos
                         .requestMatchers("/api/profile/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT", "ROLE_EMPLOYEE")
 //                        .requestMatchers("/api/orders/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLOYEE")
-                        .requestMatchers("/api/users/**").authenticated()
+                        .requestMatchers("/api/admin/users/**").hasAnyAuthority("ROLE_ADMIN")
 
                         .anyRequest().authenticated()
                 )

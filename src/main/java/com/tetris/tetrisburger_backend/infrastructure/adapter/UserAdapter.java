@@ -1,7 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.adapter;
 
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
-import com.tetris.tetrisburger_backend.domain.model.Role;
+import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.query.ListUsersQuery;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
@@ -32,29 +32,47 @@ public class UserAdapter implements UserRepository {
 
     @Override
     public User saveUser(User user) {
-        try {
-            UserEntity entity = mapper.toEntity(user);
-            UserEntity saved = jpa.save(entity);
-            return mapper.toDomain(saved);
-        } catch (Exception e) {
-            throw e;
-        }
+        UserEntity entity = mapper.toEntity(user);
+        UserEntity saved = jpa.save(entity);
+        return mapper.toDomain(saved);
     }
 
     @Override
     public Optional<User> findUserById(Integer id) {
-        Optional<User> userOptional = jpa.findById(id).map(mapper::toDomain);
+        return jpa.findById(id).map(mapper::toDomain);
 
-        if (userOptional.isPresent()) {
-        } else {
-        }
-        return userOptional;
+
     }
+
+
 
     @Override
     public Optional<User> findUserByEmail(String email) {
         return jpa.findByEmailAndDeletedAtIsNull(email)
                 .map(mapper::toDomain);
+    }
+
+    @Override
+    public PageResponse<User> findUserByEmail(String email, PaginationRequest request) {
+
+        PageRequest pageRequest = PageRequest.of(
+                request.getPage(),
+                request.getSize(),
+                Sort.by(request.getSortBy()).ascending()
+        );
+
+        Page<UserEntity> page = jpa.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(email,pageRequest);
+
+        List<User> users = page.getContent().stream()
+                .map(mapper::toDomain)
+                .toList();
+                return  new PageResponse<>(
+                        users,
+                        page.getNumber(),
+                        page.getSize(),
+                        page.getTotalElements(),
+                        page.getTotalPages()
+                );
     }
 
 
@@ -112,34 +130,8 @@ public class UserAdapter implements UserRepository {
         return jpa.existsByIdUserAndDeletedAtIsNull(id);
     }
 
-    @Override
-    public List<User> searchUsersByEmail(String emailPart) {
-        String term = (emailPart == null) ? "" : emailPart.trim();
-
-        return jpa.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(term)
-                .stream()
-                .map(mapper::toDomain)
-                .toList();
-    }
-
-    @Override
-    public PageResponse<User> findByRole(Role role, Pageable pageable) {
-
-        Page<UserEntity> page = jpa.findByRoleAndDeletedAtIsNull(role, pageable);
-
-        List<User> users = page.getContent().stream()
-                .map(mapper::toDomain)
-                .toList();
 
 
-        return new PageResponse<>(
-                users,
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages()
-        );
-    }
 
 
 

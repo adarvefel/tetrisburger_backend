@@ -1,8 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.advice;
 
 import com.tetris.tetrisburger_backend.domain.exception.*;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.ErrorResponseDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,33 +8,119 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
-import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.bind.annotation.*;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import java.util.List;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Pruebas de GlobalExceptionHandler")
 class GlobalExceptionHandlerTest {
 
-    @Mock
-    private WebRequest webRequest; // solo para handlers con ErrorResponseDTO
-
     @InjectMocks
-    private GlobalExceptionHandler handler;
+    private GlobalExceptionHandler exceptionHandler;
+
+    private MockMvc mockMvc;
+
+    // ── Controlador de prueba interno ─────────────────────────────────────
+
+    @RestController
+    @RequestMapping("/test")
+    static class TestController {
+
+        @GetMapping("/user-exists")
+        public void userExists() { throw new UserAlreadyExistsException("ya existe"); }
+
+        @GetMapping("/user-not-found")
+        public void userNotFound() { throw new UserNotFoundException("no encontrado"); }
+
+        @GetMapping("/invalid-credentials")
+        public void invalidCredentials() { throw new InvalidCredentialsException("credenciales"); }
+
+        @GetMapping("/invalid-token")
+        public void invalidToken() { throw new InvalidTokenException("token"); }
+
+        @GetMapping("/invalid-recaptcha")
+        public void invalidRecaptcha() { throw new InvalidRecaptchaException("recaptcha"); }
+
+        @GetMapping("/image-upload")
+        public void imageUpload() { throw new ImageUploadException("imagen", new RuntimeException()); }
+
+        @GetMapping("/pqrs-deleted")
+        public void pqrsDeleted() { throw new PqrsAlreadyDeletedException("pqrs"); }
+
+        @GetMapping("/data-integrity-unique")
+        public void dataIntegrityUnique() {
+            throw new DataIntegrityViolationException("error",
+                    new RuntimeException("UNIQUE constraint failed / duplicate entry uq_email"));
+        }
+
+        @GetMapping("/data-integrity-fk")
+        public void dataIntegrityFk() {
+            throw new DataIntegrityViolationException("error",
+                    new RuntimeException("foreign key constraint fails fk_user"));
+        }
+
+        @GetMapping("/data-integrity-generic")
+        public void dataIntegrityGeneric() {
+            throw new DataIntegrityViolationException("Conflicto genérico");
+        }
+
+        @GetMapping("/illegal-argument")
+        public void illegalArgument() { throw new IllegalArgumentException("argumento inválido"); }
+
+        @GetMapping("/missing-param")
+        public void missingParam(@RequestParam String requiredParam) { }
+
+        // Lanza la excepción directamente para evitar problemas con standaloneSetup
+        @PostMapping("/media-type-not-supported")
+        public void mediaTypeNotSupported() throws HttpMediaTypeNotSupportedException {
+            throw new HttpMediaTypeNotSupportedException(
+                    new org.springframework.http.MediaType("application", "xml"),
+                    List.of(MediaType.APPLICATION_JSON, MediaType.MULTIPART_FORM_DATA)
+            );
+        }
+
+        @GetMapping("/access-denied")
+        public void accessDenied() { throw new AccessDeniedException("denegado"); }
+
+        @GetMapping("/category-not-found")
+        public void categoryNotFound() { throw new ProductCategoryNotFoundException("categoría"); }
+
+        @GetMapping("/entity-not-found-category")
+        public void entityNotFoundCategory() {
+            throw new EntityNotFoundException("Unable to find ProductCategoryEntity with id 5");
+        }
+
+        @GetMapping("/entity-not-found-product")
+        public void entityNotFoundProduct() {
+            throw new EntityNotFoundException("Unable to find ProductEntity with id 10");
+        }
+
+        @GetMapping("/entity-not-found-generic")
+        public void entityNotFoundGeneric() {
+            throw new EntityNotFoundException("some entity not found");
+        }
+
+        @GetMapping("/generic-exception")
+        public void genericException() { throw new RuntimeException("error inesperado"); }
+    }
 
     @BeforeEach
     void setUp() {
-        lenient().when(webRequest.getDescription(false)).thenReturn("uri=/api/test");
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(new TestController())
+                .setControllerAdvice(exceptionHandler)
+                .build();
     }
 
     // ── User Exceptions ───────────────────────────────────────────────────
@@ -46,55 +130,56 @@ class GlobalExceptionHandlerTest {
     class UserExceptions {
 
         @Test
-        @DisplayName("debería manejar UserAlreadyExistsException con 409 CONFLICT")
-        void shouldHandleUserAlreadyExistsException() {
-            UserAlreadyExistsException ex = new UserAlreadyExistsException("El email ya está registrado");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleUserExists(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("Usuario ya existe"); // ← mensaje fijo del handler
-            assertThat(response.getBody().success()).isFalse();
+        @DisplayName("UserAlreadyExistsException → 409 CONFLICT")
+        void shouldReturn409WhenUserAlreadyExists() throws Exception {
+            mockMvc.perform(get("/test/user-exists"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message").value("Usuario ya existe"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
 
         @Test
-        @DisplayName("debería manejar UserNotFoundException con 404 NOT FOUND")
-        void shouldHandleUserNotFoundException() {
-            UserNotFoundException ex = new UserNotFoundException("Usuario no encontrado con ID: 123");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleUserNotFound(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("Usuario no encontrado"); // ← mensaje fijo del handler
-            assertThat(response.getBody().success()).isFalse();
+        @DisplayName("UserNotFoundException → 404 NOT FOUND")
+        void shouldReturn404WhenUserNotFound() throws Exception {
+            mockMvc.perform(get("/test/user-not-found"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message").value("Usuario no encontrado"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
 
         @Test
-        @DisplayName("debería manejar InvalidCredentialsException con 401 UNAUTHORIZED")
-        void shouldHandleInvalidCredentialsException() {
-            InvalidCredentialsException ex = new InvalidCredentialsException("Credenciales incorrectas");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleInvalidCredentials(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("Credenciales inválidas");
-            assertThat(response.getBody().success()).isFalse();
+        @DisplayName("InvalidCredentialsException → 401 UNAUTHORIZED")
+        void shouldReturn401WhenInvalidCredentials() throws Exception {
+            mockMvc.perform(get("/test/invalid-credentials"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.message").value("Credenciales inválidas"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
 
         @Test
-        @DisplayName("debería manejar InvalidTokenException con 400 BAD REQUEST")
-        void shouldHandleInvalidTokenException() {
-            InvalidTokenException ex = new InvalidTokenException("Token expirado");
+        @DisplayName("InvalidTokenException → 400 BAD REQUEST")
+        void shouldReturn400WhenInvalidToken() throws Exception {
+            mockMvc.perform(get("/test/invalid-token"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("Token inválido"))
+                    .andExpect(jsonPath("$.success").value(false));
+        }
+    }
 
-            ResponseEntity<MessageResponseDTO> response = handler.handleInvalidToken(ex);
+    // ── Recaptcha Exceptions ──────────────────────────────────────────────
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("Token inválido"); // ← mensaje fijo del handler
-            assertThat(response.getBody().success()).isFalse();
+    @Nested
+    @DisplayName("Recaptcha Exceptions")
+    class RecaptchaExceptions {
+
+        @Test
+        @DisplayName("InvalidRecaptchaException → 400 BAD REQUEST")
+        void shouldReturn400WhenInvalidRecaptcha() throws Exception {
+            mockMvc.perform(get("/test/invalid-recaptcha"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value(
+                            "Verificación de seguridad falló. Por favor intenta de nuevo."))
+                    .andExpect(jsonPath("$.success").value(false));
         }
     }
 
@@ -105,27 +190,13 @@ class GlobalExceptionHandlerTest {
     class ImageExceptions {
 
         @Test
-        @DisplayName("debería manejar ImageUploadException con 500 INTERNAL SERVER ERROR")
-        void shouldHandleImageUploadException() {
-            ImageUploadException ex = new ImageUploadException("Error al subir a S3");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleImageUpload(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("No se pudo subir la imagen. Intenta de nuevo.");
-            assertThat(response.getBody().success()).isFalse();
-        }
-
-        @Test
-        @DisplayName("debería usar mensaje genérico para ImageUploadException sin exponer detalles internos")
-        void shouldUseGenericMessageForImageUploadException() {
-            ImageUploadException ex = new ImageUploadException("AWS Access Key invalid");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleImageUpload(ex);
-
-            assertThat(response.getBody().message()).doesNotContain("AWS");
-            assertThat(response.getBody().message()).isEqualTo("No se pudo subir la imagen. Intenta de nuevo.");
+        @DisplayName("ImageUploadException → 500 INTERNAL SERVER ERROR")
+        void shouldReturn500WhenImageUploadFails() throws Exception {
+            mockMvc.perform(get("/test/image-upload"))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(jsonPath("$.message").value(
+                            "No se pudo subir la imagen. Intenta de nuevo."))
+                    .andExpect(jsonPath("$.success").value(false));
         }
     }
 
@@ -136,16 +207,12 @@ class GlobalExceptionHandlerTest {
     class PqrsExceptions {
 
         @Test
-        @DisplayName("debería manejar PqrsAlreadyDeletedException con 400 BAD REQUEST")
-        void shouldHandlePqrsAlreadyDeletedException() {
-            PqrsAlreadyDeletedException ex = new PqrsAlreadyDeletedException("PQRS ya eliminada");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handlePqrsAlreadyDeleted(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("PQRS ya eliminada");
-            assertThat(response.getBody().success()).isFalse();
+        @DisplayName("PqrsAlreadyDeletedException → 400 BAD REQUEST")
+        void shouldReturn400WhenPqrsAlreadyDeleted() throws Exception {
+            mockMvc.perform(get("/test/pqrs-deleted"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("PQRS ya eliminada"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
     }
 
@@ -156,68 +223,32 @@ class GlobalExceptionHandlerTest {
     class DatabaseExceptions {
 
         @Test
-        @DisplayName("debería manejar DataIntegrityViolationException con mensaje de duplicado")
-        void shouldHandleDataIntegrityViolationWithDuplicateMessage() {
-            DataIntegrityViolationException ex = mock(DataIntegrityViolationException.class);
-            Throwable cause = new RuntimeException("Duplicate entry 'test@example.com' for key 'uq_email'");
-            when(ex.getMostSpecificCause()).thenReturn(cause);
-            when(ex.getMessage()).thenReturn("could not execute statement");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleDataIntegrityViolation(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("Registro duplicado: ya existe un recurso con esos datos");
-            assertThat(response.getBody().success()).isFalse();
+        @DisplayName("DataIntegrityViolationException con UNIQUE → 409 con mensaje duplicado")
+        void shouldReturn409WithDuplicateMessageWhenUniqueViolation() throws Exception {
+            mockMvc.perform(get("/test/data-integrity-unique"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message").value(
+                            "Registro duplicado: ya existe un recurso con esos datos"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
 
         @Test
-        @DisplayName("debería manejar DataIntegrityViolationException con unique constraint")
-        void shouldHandleDataIntegrityViolationWithUniqueConstraint() {
-            DataIntegrityViolationException ex = mock(DataIntegrityViolationException.class);
-            when(ex.getMostSpecificCause()).thenReturn(new RuntimeException("unique constraint violated"));
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleDataIntegrityViolation(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-            assertThat(response.getBody().message()).isEqualTo("Registro duplicado: ya existe un recurso con esos datos");
+        @DisplayName("DataIntegrityViolationException con FOREIGN KEY → 409 con mensaje FK")
+        void shouldReturn409WithFkMessageWhenFkViolation() throws Exception {
+            mockMvc.perform(get("/test/data-integrity-fk"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message").value(
+                            "Referencia inválida a datos relacionados"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
 
         @Test
-        @DisplayName("debería manejar DataIntegrityViolationException con foreign key")
-        void shouldHandleDataIntegrityViolationWithForeignKey() {
-            DataIntegrityViolationException ex = mock(DataIntegrityViolationException.class);
-            when(ex.getMostSpecificCause()).thenReturn(new RuntimeException("foreign key constraint fails"));
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleDataIntegrityViolation(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-            assertThat(response.getBody().message()).isEqualTo("Referencia inválida a datos relacionados");
-        }
-
-        @Test
-        @DisplayName("debería manejar DataIntegrityViolationException con mensaje genérico")
-        void shouldHandleDataIntegrityViolationWithGenericMessage() {
-            DataIntegrityViolationException ex = mock(DataIntegrityViolationException.class);
-            when(ex.getMostSpecificCause()).thenReturn(new RuntimeException("Some other integrity error"));
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleDataIntegrityViolation(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-            assertThat(response.getBody().message()).isEqualTo("Conflicto de integridad de datos");
-        }
-
-        @Test
-        @DisplayName("debería manejar DataIntegrityViolationException con cause null")
-        void shouldHandleDataIntegrityViolationWithNullCause() {
-            DataIntegrityViolationException ex = mock(DataIntegrityViolationException.class);
-            when(ex.getMostSpecificCause()).thenReturn(null);
-            when(ex.getMessage()).thenReturn("unique violation");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleDataIntegrityViolation(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-            assertThat(response.getBody().message()).isEqualTo("Registro duplicado: ya existe un recurso con esos datos");
+        @DisplayName("DataIntegrityViolationException genérica → 409 con mensaje genérico")
+        void shouldReturn409WithGenericMessageWhenGenericViolation() throws Exception {
+            mockMvc.perform(get("/test/data-integrity-generic"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message").value("Conflicto de integridad de datos"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
     }
 
@@ -228,44 +259,34 @@ class GlobalExceptionHandlerTest {
     class ValidationExceptions {
 
         @Test
-        @DisplayName("debería manejar IllegalArgumentException con 400 BAD REQUEST")
-        void shouldHandleIllegalArgumentException() {
-            IllegalArgumentException ex = new IllegalArgumentException("El ID debe ser positivo");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleIllegalArgument(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("Argumento inválido"); // ← mensaje fijo del handler
-            assertThat(response.getBody().success()).isFalse();
+        @DisplayName("IllegalArgumentException → 400 BAD REQUEST con mensaje de la excepción")
+        void shouldReturn400WithExceptionMessageWhenIllegalArgument() throws Exception {
+            mockMvc.perform(get("/test/illegal-argument"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("argumento inválido"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
 
         @Test
-        @DisplayName("debería manejar MissingServletRequestParameterException con 400 BAD REQUEST")
-        void shouldHandleMissingServletRequestParameterException() {
-            MissingServletRequestParameterException ex =
-                    new MissingServletRequestParameterException("page", "int");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleBadRequest(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("Mala solicitud de los datos");
-            assertThat(response.getBody().success()).isFalse();
+        @DisplayName("MissingServletRequestParameterException → 400 BAD REQUEST con nombre del parámetro")
+        void shouldReturn400WithParamNameWhenMissingParam() throws Exception {
+            mockMvc.perform(get("/test/missing-param"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value(
+                            "El parámetro 'requiredParam' es requerido"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
 
         @Test
-        @DisplayName("debería manejar HttpMediaTypeNotSupportedException con 400 BAD REQUEST")
-        void shouldHandleHttpMediaTypeNotSupportedException() {
-            HttpMediaTypeNotSupportedException ex =
-                    new HttpMediaTypeNotSupportedException("Content-Type not supported");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleBadRequest(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("Mala solicitud de los datos");
-            assertThat(response.getBody().success()).isFalse();
+        @DisplayName("HttpMediaTypeNotSupportedException → 400 BAD REQUEST")
+        void shouldReturn400WhenMediaTypeNotSupported() throws Exception {
+            mockMvc.perform(post("/test/media-type-not-supported")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value(
+                            "Tipo de contenido no soportado. Usa multipart/form-data o application/json"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
     }
 
@@ -276,27 +297,13 @@ class GlobalExceptionHandlerTest {
     class SecurityExceptions {
 
         @Test
-        @DisplayName("debería manejar AccessDeniedException con 403 FORBIDDEN")
-        void shouldHandleAccessDeniedException() {
-            AccessDeniedException ex = new AccessDeniedException("Access is denied");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleAccessDenied(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("Acceso denegado");
-            assertThat(response.getBody().success()).isFalse();
-        }
-
-        @Test
-        @DisplayName("debería usar mensaje genérico para AccessDeniedException sin exponer detalles")
-        void shouldUseGenericMessageForAccessDeniedException() {
-            AccessDeniedException ex = new AccessDeniedException("User 'john' lacks ADMIN role");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleAccessDenied(ex);
-
-            assertThat(response.getBody().message()).doesNotContain("john");
-            assertThat(response.getBody().message()).isEqualTo("Acceso denegado");
+        @DisplayName("AccessDeniedException → 403 FORBIDDEN")
+        void shouldReturn403WhenAccessDenied() throws Exception {
+            mockMvc.perform(get("/test/access-denied"))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.message").value(
+                            "No tienes permisos para realizar esta acción"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
     }
 
@@ -307,335 +314,78 @@ class GlobalExceptionHandlerTest {
     class HttpExceptions {
 
         @Test
-        @DisplayName("debería manejar HttpRequestMethodNotSupportedException con 405 METHOD NOT ALLOWED")
-        void shouldHandleHttpRequestMethodNotSupportedException() {
-            HttpRequestMethodNotSupportedException ex =
-                    new HttpRequestMethodNotSupportedException("POST");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleMethodNotSupported(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("Método no permitido");
-            assertThat(response.getBody().success()).isFalse();
+        @DisplayName("HttpRequestMethodNotSupportedException → 405 METHOD NOT ALLOWED")
+        void shouldReturn405WhenMethodNotSupported() throws Exception {
+            mockMvc.perform(delete("/test/user-exists"))
+                    .andExpect(status().isMethodNotAllowed())
+                    .andExpect(jsonPath("$.message").value(
+                            "Método 'DELETE' no permitido para esta ruta"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
     }
 
-    // ── Product Category Exceptions ───────────────────────────────────────
+    // ── Product Exceptions ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Product Category Exceptions")
-    class ProductCategoryExceptions {
+    @DisplayName("Product Exceptions")
+    class ProductExceptions {
 
         @Test
-        @DisplayName("debería manejar ProductCategoryNotFoundException con 404 NOT FOUND")
-        void shouldHandleProductCategoryNotFoundException() {
-            ProductCategoryNotFoundException ex =
-                    new ProductCategoryNotFoundException("Categoría no encontrada con ID: 5");
-
-            ResponseEntity<ErrorResponseDTO> response =
-                    handler.handleProductCategoryNotFound(ex, webRequest);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().status()).isEqualTo(404);
-            assertThat(response.getBody().error()).isEqualTo("Not Found");
-            assertThat(response.getBody().message()).isEqualTo("Categoría no encontrada"); // ← mensaje fijo del handler
-            assertThat(response.getBody().timestamp()).isNotNull();
-            assertThat(response.getBody().path()).isEqualTo("/api/test");
+        @DisplayName("ProductCategoryNotFoundException → 404 con ErrorResponseDTO")
+        void shouldReturn404WhenCategoryNotFound() throws Exception {
+            mockMvc.perform(get("/test/category-not-found"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.error").value("Not Found"))
+                    .andExpect(jsonPath("$.message").value("Categoría no encontrada"))
+                    .andExpect(jsonPath("$.path").value("/test/category-not-found"))
+                    .andExpect(jsonPath("$.timestamp").isNotEmpty());
         }
 
         @Test
-        @DisplayName("debería usar ErrorResponseDTO para ProductCategoryNotFoundException")
-        void shouldUseErrorResponseDtoForProductCategoryNotFoundException() {
-            ProductCategoryNotFoundException ex =
-                    new ProductCategoryNotFoundException("Test message");
-
-            ResponseEntity<ErrorResponseDTO> response =
-                    handler.handleProductCategoryNotFound(ex, webRequest);
-
-            assertThat(response.getBody()).isInstanceOf(ErrorResponseDTO.class);
+        @DisplayName("EntityNotFoundException con ProductCategoryEntity → 404 con mensaje de categoría")
+        void shouldReturn404WithCategoryMessageWhenEntityNotFoundForCategory() throws Exception {
+            mockMvc.perform(get("/test/entity-not-found-category"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.message").value(
+                            "Error: El producto tiene una categoría inexistente en la base de datos"))
+                    .andExpect(jsonPath("$.path").value("/test/entity-not-found-category"));
         }
 
         @Test
-        @DisplayName("debería incluir path en ErrorResponseDTO")
-        void shouldIncludePathInErrorResponseDto() {
-            ProductCategoryNotFoundException ex =
-                    new ProductCategoryNotFoundException("Category not found");
-
-            ResponseEntity<ErrorResponseDTO> response =
-                    handler.handleProductCategoryNotFound(ex, webRequest);
-
-            assertThat(response.getBody().path()).isNotNull();
-            assertThat(response.getBody().path()).isEqualTo("/api/test");
-        }
-    }
-
-    // ── JPA Entity Not Found ──────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("JPA Entity Not Found Exceptions")
-    class JpaEntityNotFoundExceptions {
-
-        @Test
-        @DisplayName("debería manejar EntityNotFoundException con mensaje de ProductCategoryEntity")
-        void shouldHandleEntityNotFoundWithProductCategoryMessage() {
-            EntityNotFoundException ex =
-                    new EntityNotFoundException("Unable to find ProductCategoryEntity with id 5");
-
-            ResponseEntity<ErrorResponseDTO> response =
-                    handler.handleJpaEntityNotFound(ex, webRequest);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-            assertThat(response.getBody().status()).isEqualTo(404);
-            assertThat(response.getBody().error()).isEqualTo("Not Found");
-            assertThat(response.getBody().message())
-                    .isEqualTo("Error: El producto tiene una categoría inexistente en la base de datos");
-            assertThat(response.getBody().path()).isEqualTo("/api/test");
+        @DisplayName("EntityNotFoundException con ProductEntity → 404 con mensaje de producto")
+        void shouldReturn404WithProductMessageWhenEntityNotFoundForProduct() throws Exception {
+            mockMvc.perform(get("/test/entity-not-found-product"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.message").value("Producto no encontrado"))
+                    .andExpect(jsonPath("$.path").value("/test/entity-not-found-product"));
         }
 
         @Test
-        @DisplayName("debería manejar EntityNotFoundException con mensaje de ProductEntity")
-        void shouldHandleEntityNotFoundWithProductEntityMessage() {
-            EntityNotFoundException ex =
-                    new EntityNotFoundException("Unable to find ProductEntity with id 10");
-
-            ResponseEntity<ErrorResponseDTO> response =
-                    handler.handleJpaEntityNotFound(ex, webRequest);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-            assertThat(response.getBody().message()).isEqualTo("Producto no encontrado");
-            assertThat(response.getBody().path()).isEqualTo("/api/test");
-        }
-
-        @Test
-        @DisplayName("debería manejar EntityNotFoundException con mensaje genérico")
-        void shouldHandleEntityNotFoundWithGenericMessage() {
-            EntityNotFoundException ex = new EntityNotFoundException("Entity not found");
-
-            ResponseEntity<ErrorResponseDTO> response =
-                    handler.handleJpaEntityNotFound(ex, webRequest);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-            assertThat(response.getBody().message()).isEqualTo("Recurso no encontrado");
-        }
-
-        @Test
-        @DisplayName("debería manejar EntityNotFoundException con mensaje null")
-        void shouldHandleEntityNotFoundWithNullMessage() {
-            EntityNotFoundException ex = new EntityNotFoundException();
-
-            ResponseEntity<ErrorResponseDTO> response =
-                    handler.handleJpaEntityNotFound(ex, webRequest);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-            assertThat(response.getBody().message()).isEqualTo("Recurso no encontrado");
+        @DisplayName("EntityNotFoundException genérica → 404 con mensaje genérico")
+        void shouldReturn404WithGenericMessageWhenEntityNotFoundGeneric() throws Exception {
+            mockMvc.perform(get("/test/entity-not-found-generic"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.status").value(404))
+                    .andExpect(jsonPath("$.message").value("Recurso no encontrado"));
         }
     }
 
     // ── Fallback ──────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Fallback Exception Handler")
-    class FallbackExceptionHandler {
+    @DisplayName("Fallback Exception")
+    class FallbackException {
 
         @Test
-        @DisplayName("debería manejar Exception genérica con 500 INTERNAL SERVER ERROR")
-        void shouldHandleGenericException() {
-            Exception ex = new RuntimeException("Unexpected error");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleGenericException(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().message()).isEqualTo("Error interno del servidor");
-            assertThat(response.getBody().success()).isFalse();
-        }
-
-        @Test
-        @DisplayName("debería usar mensaje genérico sin exponer detalles internos")
-        void shouldUseGenericMessageWithoutExposingInternalDetails() {
-            Exception ex = new NullPointerException("Cannot invoke method on null object at line 42");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleGenericException(ex);
-
-            assertThat(response.getBody().message()).doesNotContain("null object");
-            assertThat(response.getBody().message()).isEqualTo("Error interno del servidor");
-        }
-
-        @Test
-        @DisplayName("debería capturar cualquier excepción no manejada específicamente")
-        void shouldCatchAnyUnhandledException() {
-            Exception ex = new UnsupportedOperationException("Not implemented yet");
-
-            ResponseEntity<MessageResponseDTO> response = handler.handleGenericException(ex);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-            assertThat(response.getBody().message()).isEqualTo("Error interno del servidor");
-        }
-    }
-
-    // ── HTTP Status Codes ─────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("HTTP Status Codes")
-    class HttpStatusCodes {
-
-        @Test
-        @DisplayName("debería retornar 400 BAD REQUEST para errores de validación")
-        void shouldReturn400ForValidationErrors() {
-            assertThat(handler.handleIllegalArgument(
-                    new IllegalArgumentException("Invalid input")).getStatusCode())
-                    .isEqualTo(HttpStatus.BAD_REQUEST);
-
-            assertThat(handler.handleInvalidToken(
-                    new InvalidTokenException("Invalid token")).getStatusCode())
-                    .isEqualTo(HttpStatus.BAD_REQUEST);
-
-            assertThat(handler.handlePqrsAlreadyDeleted(
-                    new PqrsAlreadyDeletedException("Already deleted")).getStatusCode())
-                    .isEqualTo(HttpStatus.BAD_REQUEST);
-        }
-
-        @Test
-        @DisplayName("debería retornar 401 UNAUTHORIZED para credenciales inválidas")
-        void shouldReturn401ForInvalidCredentials() {
-            assertThat(handler.handleInvalidCredentials(
-                    new InvalidCredentialsException("Bad credentials")).getStatusCode())
-                    .isEqualTo(HttpStatus.UNAUTHORIZED);
-        }
-
-        @Test
-        @DisplayName("debería retornar 403 FORBIDDEN para acceso denegado")
-        void shouldReturn403ForAccessDenied() {
-            assertThat(handler.handleAccessDenied(
-                    new AccessDeniedException("Access denied")).getStatusCode())
-                    .isEqualTo(HttpStatus.FORBIDDEN);
-        }
-
-        @Test
-        @DisplayName("debería retornar 404 NOT FOUND para recursos no encontrados")
-        void shouldReturn404ForNotFound() {
-            assertThat(handler.handleUserNotFound(
-                    new UserNotFoundException("User not found")).getStatusCode())
-                    .isEqualTo(HttpStatus.NOT_FOUND);
-
-            assertThat(handler.handleProductCategoryNotFound(
-                    new ProductCategoryNotFoundException("Category not found"), webRequest).getStatusCode())
-                    .isEqualTo(HttpStatus.NOT_FOUND);
-
-            assertThat(handler.handleJpaEntityNotFound(
-                    new EntityNotFoundException("Entity not found"), webRequest).getStatusCode())
-                    .isEqualTo(HttpStatus.NOT_FOUND);
-        }
-
-        @Test
-        @DisplayName("debería retornar 405 METHOD NOT ALLOWED")
-        void shouldReturn405ForMethodNotAllowed() {
-            assertThat(handler.handleMethodNotSupported(
-                    new HttpRequestMethodNotSupportedException("POST")).getStatusCode())
-                    .isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
-        }
-
-        @Test
-        @DisplayName("debería retornar 409 CONFLICT para violaciones de integridad")
-        void shouldReturn409ForConflict() {
-            assertThat(handler.handleUserExists(
-                    new UserAlreadyExistsException("User exists")).getStatusCode())
-                    .isEqualTo(HttpStatus.CONFLICT);
-
-            DataIntegrityViolationException ex = mock(DataIntegrityViolationException.class);
-            when(ex.getMostSpecificCause()).thenReturn(new RuntimeException("duplicate"));
-            assertThat(handler.handleDataIntegrityViolation(ex).getStatusCode())
-                    .isEqualTo(HttpStatus.CONFLICT);
-        }
-
-        @Test
-        @DisplayName("debería retornar 500 INTERNAL SERVER ERROR para errores internos")
-        void shouldReturn500ForInternalErrors() {
-            assertThat(handler.handleImageUpload(
-                    new ImageUploadException("Upload failed")).getStatusCode())
-                    .isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-
-            assertThat(handler.handleGenericException(
-                    new RuntimeException("Unexpected")).getStatusCode())
-                    .isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // ── Response DTO Types ────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("Response DTO Types")
-    class ResponseDtoTypes {
-
-        @Test
-        @DisplayName("debería usar MessageResponseDTO para la mayoría de excepciones")
-        void shouldUseMessageResponseDtoForMostExceptions() {
-            ResponseEntity<?> response = handler.handleUserNotFound(
-                    new UserNotFoundException("Not found"));
-            assertThat(response.getBody()).isInstanceOf(MessageResponseDTO.class);
-        }
-
-        @Test
-        @DisplayName("debería usar ErrorResponseDTO para ProductCategoryNotFoundException")
-        void shouldUseErrorResponseDtoForProductCategoryNotFound() {
-            ResponseEntity<?> response = handler.handleProductCategoryNotFound(
-                    new ProductCategoryNotFoundException("Not found"), webRequest);
-            assertThat(response.getBody()).isInstanceOf(ErrorResponseDTO.class);
-        }
-
-        @Test
-        @DisplayName("debería usar ErrorResponseDTO para EntityNotFoundException")
-        void shouldUseErrorResponseDtoForEntityNotFound() {
-            ResponseEntity<?> response = handler.handleJpaEntityNotFound(
-                    new EntityNotFoundException("Not found"), webRequest);
-            assertThat(response.getBody()).isInstanceOf(ErrorResponseDTO.class);
-        }
-    }
-
-    // ── Success Field ─────────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("Success Field")
-    class SuccessField {
-
-        @Test
-        @DisplayName("todos los MessageResponseDTO deberían tener success=false")
-        void allMessageResponsesShouldHaveSuccessFalse() {
-            assertThat(handler.handleUserNotFound(
-                    new UserNotFoundException("Not found")).getBody().success()).isFalse();
-            assertThat(handler.handleIllegalArgument(
-                    new IllegalArgumentException("Invalid")).getBody().success()).isFalse();
-            assertThat(handler.handleGenericException(
-                    new RuntimeException("Error")).getBody().success()).isFalse();
-        }
-    }
-
-    // ── Path Extraction ───────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("Path Extraction")
-    class PathExtraction {
-
-        @Test
-        @DisplayName("debería extraer path desde WebRequest")
-        void shouldExtractPathFromWebRequest() {
-            when(webRequest.getDescription(false)).thenReturn("uri=/api/products/123");
-
-            ResponseEntity<ErrorResponseDTO> response = handler.handleProductCategoryNotFound(
-                    new ProductCategoryNotFoundException("Not found"), webRequest);
-
-            assertThat(response.getBody().path()).isEqualTo("/api/products/123");
-        }
-
-        @Test
-        @DisplayName("debería incluir path en todas las respuestas ErrorResponseDTO")
-        void shouldIncludePathInAllErrorResponseDto() {
-            ResponseEntity<ErrorResponseDTO> response = handler.handleProductCategoryNotFound(
-                    new ProductCategoryNotFoundException("Not found"), webRequest);
-
-            assertThat(response.getBody().path()).isNotNull();
+        @DisplayName("Exception genérica → 500 INTERNAL SERVER ERROR")
+        void shouldReturn500WhenGenericException() throws Exception {
+            mockMvc.perform(get("/test/generic-exception"))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(jsonPath("$.message").value("Error interno del servidor"))
+                    .andExpect(jsonPath("$.success").value(false));
         }
     }
 }

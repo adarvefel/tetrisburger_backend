@@ -2,11 +2,13 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
 
 import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
+import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.exception.UnauthorizedException;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.*;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.*;
 import com.tetris.tetrisburger_backend.domain.port.in.user.query.ListUsersQuery;
+import com.tetris.tetrisburger_backend.domain.port.in.user.query.SearchUsersByEmailQuery;
 import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.UserRestDtoMapper;
@@ -36,9 +38,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/users")
 @Tag(name = "User Management", description = "Gestión de usuarios por administradores")
-public class UserController {
+public class AdminController {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
     private final CreateUserByAdmin createUserByAdmin;
     private final ListUser listUser;
@@ -51,7 +53,7 @@ public class UserController {
     private final ImageStoragePort imageStoragePort;
     private final ImageValidator imageValidator;
 
-    public UserController(
+    public AdminController(
             CreateUserByAdmin createUserByAdmin,
             ListUser listUser,
             GetUserById getUserById,
@@ -269,12 +271,18 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = "No autenticado"),
             @ApiResponse(responseCode = "403", description = "No tienes rol ADMIN")
     })
-    public ResponseEntity<List<UserResponseDTO>> getUsersByEmail(
-            @Parameter(description = "Texto a buscar en el email") @RequestParam String email
+    public ResponseEntity<PageResponse<UserResponseDTO>> getUsersByEmail(
+            @Parameter(description = "Texto a buscar en el email") @RequestParam String email,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "idUser") String sortBy
     ) {
-        List<User> users = searchUsersByEmail.handle(email);
+        SearchUsersByEmailQuery query = new SearchUsersByEmailQuery(email);
+        PaginationRequest request = new PaginationRequest(page, size, sortBy);
 
-        List<UserResponseDTO> dtoList = users.stream()
+        PageResponse<User> result = searchUsersByEmail.handle(query, request);
+
+        List<UserResponseDTO> dtoList = result.content().stream()
                 .map(u -> {
                     String imageUrl = resolveImageUrlFromUser(u);
                     ImageStatus imageStatus = resolveImageStatus(false, u.getUserImageKey());
@@ -282,7 +290,13 @@ public class UserController {
                 })
                 .toList();
 
-        return ResponseEntity.ok(dtoList);
+        return ResponseEntity.ok(new PageResponse<>(
+                dtoList,
+                result.page(),
+                result.size(),
+                result.totalPages(),
+                result.totalPages()
+        ));
     }
 
     // ============================================

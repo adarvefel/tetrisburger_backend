@@ -95,7 +95,7 @@ public class ProductAdapter implements ProductRepository {
     @Override
     public boolean existsByNameIgnoreCase(String name) {
         boolean exists = jpa.existsByNameIgnoreCaseAndDeletedAtIsNull(name);
-        log.info("✅ Verificando si existe producto con nombre '{}': {}", name, exists);
+        log.info(" Verificando si existe producto con nombre '{}': {}", name, exists);
         return exists;
     }
 
@@ -105,7 +105,7 @@ public class ProductAdapter implements ProductRepository {
         return (root, query, cb) -> cb.isNull(root.get("deletedAt"));
     }
 
-    // ✅ NUEVO: JOIN FETCH para productCategory
+    // NUEVO: JOIN FETCH para productCategory
     private Specification<ProductEntity> withCategory() {
         return (root, query, cb) -> {
             if (query.getResultType() != Long.class && query.getResultType() != long.class) {

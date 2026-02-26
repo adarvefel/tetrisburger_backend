@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.ErrorResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
@@ -16,22 +17,40 @@ import java.util.Map;
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
+    private final ObjectMapper objectMapper;
+
+    public JwtAuthenticationEntryPoint(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
     @Override
     public void commence(HttpServletRequest request,
                          HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+        response.setCharacterEncoding("UTF-8");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", 401);
-        body.put("error", "Unauthorized");
-        body.put("message", "Token inválido, expirado o no proporcionado");
-        body.put("path", request.getServletPath());
-        body.put("timestamp", LocalDateTime.now().toString());
+        String authHeader = request.getHeader("Authorization");
 
-        final ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(response.getOutputStream(), body);
+        String message;
+        if (authHeader == null || authHeader.isBlank()) {
+            message = "No se proporcionó token de autenticación.";
+        } else if (!authHeader.startsWith("Bearer ")) {
+            message = "Formato de token inválido.'.";
+        } else {
+            message = "No tienes permisos para acceder a este recurso.";
+        }
+
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+                401,
+                "Unauthorized",
+                message,
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
+
+        objectMapper.writeValue(response.getOutputStream(), errorResponse);
     }
 }
