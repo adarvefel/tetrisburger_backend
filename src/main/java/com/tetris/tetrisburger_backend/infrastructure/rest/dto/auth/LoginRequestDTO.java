@@ -26,7 +26,6 @@ public record LoginRequestDTO(
         @NotBlank(message = "La contraseña es requerida")
         String password,
 
-        @NotBlank(message = "El token de reCAPTCHA es obligatorio")
         String recaptchaToken
 
 ) {}

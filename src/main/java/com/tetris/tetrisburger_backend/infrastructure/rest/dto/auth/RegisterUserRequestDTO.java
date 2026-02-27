@@ -17,7 +17,6 @@ public record RegisterUserRequestDTO(
         @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres.")
         String password,
 
-        @NotBlank(message = "El token de reCAPTCHA es obligatorio")
         String recaptchaToken
 ) {
 }

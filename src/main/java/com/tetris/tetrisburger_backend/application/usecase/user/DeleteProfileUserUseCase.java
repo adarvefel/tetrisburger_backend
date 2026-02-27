@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class DeleteProfileUserUseCase implements DeleteProfileUser {
 
-    private final Logger logger = LoggerFactory.getLogger(DeleteProfileUserUseCase.class);
     private final UserRepository userRepository;
 
 
@@ -26,17 +25,12 @@ public class DeleteProfileUserUseCase implements DeleteProfileUser {
     @Override
     public void handle(DeleteProfileUserCommand command) {
 
-            logger.warn("Solicitando  eliminacion del usuario con el ID:{}",command.idUser());
 
             //PRIMERO VALIDAR DE QUE EL USUARIO EXISTA
             userRepository.findUserById(command.idUser())
-                    .orElseThrow(()->{
-                        logger.error("Intentando eliminar usario inexistente - ID {}",command.idUser());
-                        return new UserNotFoundException("Usurio no encontrado con ID: " + command.idUser());
-                    });
+                    .orElseThrow(()-> new UserNotFoundException("Usurio no encontrado con ID: " + command.idUser()));
             //Respuesta
             userRepository.deleteUserById(command.idUser());
-            logger.warn("Eliminando al usuario con el ID:{}",command.idUser());
 
     }
 }

@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.security;
 import com.tetris.tetrisburger_backend.domain.exception.InvalidTokenException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -46,8 +47,12 @@ public class JwtUtil {
 
     // Validates if the token is valid for the given user
     public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        try {
+            final String username = extractUsername(token);
+            return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        } catch (ExpiredJwtException e) {
+            return false;
+        }
     }
 
     private Boolean isTokenExpired(String token) {

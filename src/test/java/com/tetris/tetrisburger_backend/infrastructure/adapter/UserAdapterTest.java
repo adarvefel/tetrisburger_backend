@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.adapter;
 
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
+import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.query.ListUsersQuery;
@@ -12,695 +13,423 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Pruebas Unitarias de UserAdapter")
+@DisplayName("Pruebas de UserAdapter")
 class UserAdapterTest {
 
     @Mock
-    private UserJpaRepository jpaRepository;
+    private UserJpaRepository jpa;
 
     @Mock
     private UserEntityMapper mapper;
 
     @InjectMocks
-    private UserAdapter userAdapter;
+    private UserAdapter adapter;
 
-    private User testUser;
-    private UserEntity testUserEntity;
+    @Captor
+    private ArgumentCaptor<Pageable> pageableCaptor;
+
+    private User domainUser;
+    private UserEntity userEntity;
 
     @BeforeEach
     void setUp() {
-        testUser = User.createClient("Test User", "test@example.com", "hashedPassword123");
-        testUser.setIdUser(1);
-
-        testUserEntity = new UserEntity();
-        testUserEntity.setIdUser(1);
-        testUserEntity.setEmail("test@example.com");
-        testUserEntity.setUserName("Test User");
-        testUserEntity.setPassword("hashedPassword123");
-        testUserEntity.setRole(Role.CLIENT);
-        testUserEntity.setCreatedAt(LocalDateTime.now());
+        domainUser = mock(User.class);
+        userEntity = mock(UserEntity.class);
     }
 
+    // ── saveUser ──────────────────────────────────────────────────────────
+
     @Nested
-    @DisplayName("Pruebas de Guardar Usuario")
-    class SaveUserTests {
+    @DisplayName("saveUser")
+    class SaveUser {
 
         @Test
-        @DisplayName("Debería guardar el usuario exitosamente")
-        void shouldSaveUserSuccessfully() {
-            // Given
-            when(mapper.toEntity(testUser)).thenReturn(testUserEntity);
-            when(jpaRepository.save(testUserEntity)).thenReturn(testUserEntity);
-            when(mapper.toDomain(testUserEntity)).thenReturn(testUser);
+        @DisplayName("debería mapear a entidad, guardar y retornar dominio")
+        void shouldMapSaveAndReturnDomain() {
+            UserEntity saved = mock(UserEntity.class);
+            when(mapper.toEntity(domainUser)).thenReturn(userEntity);
+            when(jpa.save(userEntity)).thenReturn(saved);
+            when(mapper.toDomain(saved)).thenReturn(domainUser);
 
-            // When
-            User savedUser = userAdapter.saveUser(testUser);
+            User result = adapter.saveUser(domainUser);
 
-            // Then
-            assertThat(savedUser).isNotNull();
-            assertThat(savedUser.getEmail()).isEqualTo("test@example.com");
-            assertThat(savedUser.getUserName()).isEqualTo("Test User");
-            verify(mapper).toEntity(testUser);
-            verify(jpaRepository).save(testUserEntity);
-            verify(mapper).toDomain(testUserEntity);
+            assertThat(result).isEqualTo(domainUser);
+            verify(mapper).toEntity(domainUser);
+            verify(jpa).save(userEntity);
+            verify(mapper).toDomain(saved);
         }
 
         @Test
-        @DisplayName("Debería lanzar excepción cuando falla al guardar usuario")
-        void shouldThrowExceptionWhenSaveUserFails() {
-            // Given
-            when(mapper.toEntity(testUser)).thenReturn(testUserEntity);
-            when(jpaRepository.save(testUserEntity))
-                    .thenThrow(new RuntimeException("Database connection error"));
+        @DisplayName("debería propagar excepción cuando jpa.save falla")
+        void shouldPropagateExceptionWhenSaveFails() {
+            when(mapper.toEntity(domainUser)).thenReturn(userEntity);
+            when(jpa.save(userEntity)).thenThrow(new RuntimeException("DB error"));
 
-            // When & Then
-            assertThatThrownBy(() -> userAdapter.saveUser(testUser))
+            assertThatThrownBy(() -> adapter.saveUser(domainUser))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessage("Database connection error");
+                    .hasMessage("DB error");
+        }
+    }
 
-            verify(mapper).toEntity(testUser);
-            verify(jpaRepository).save(testUserEntity);
+    // ── findUserById ──────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("findUserById")
+    class FindUserById {
+
+        @Test
+        @DisplayName("debería retornar usuario mapeado cuando existe")
+        void shouldReturnMappedUserWhenExists() {
+            when(jpa.findById(1)).thenReturn(Optional.of(userEntity));
+            when(mapper.toDomain(userEntity)).thenReturn(domainUser);
+
+            Optional<User> result = adapter.findUserById(1);
+
+            assertThat(result).isPresent().contains(domainUser);
+        }
+
+        @Test
+        @DisplayName("debería retornar vacío cuando el ID no existe")
+        void shouldReturnEmptyWhenIdNotFound() {
+            when(jpa.findById(999)).thenReturn(Optional.empty());
+
+            Optional<User> result = adapter.findUserById(999);
+
+            assertThat(result).isEmpty();
             verify(mapper, never()).toDomain(any());
         }
 
         @Test
-        @DisplayName("Debería guardar usuario con todos los campos poblados")
-        void shouldSaveUserWithAllFieldsPopulated() {
-            // Given
-            User adminUser = User.createByAdmin(
-                    "Admin User", "admin@example.com", "hashedPass",
-                    Role.ADMIN, "+573001234567", "img-key", "img.jpg", 1
+        @DisplayName("debería usar findById sin filtro de deletedAt")
+        void shouldUseFindByIdWithoutDeletedAtFilter() {
+            when(jpa.findById(anyInt())).thenReturn(Optional.empty());
+
+            adapter.findUserById(1);
+
+            verify(jpa).findById(1);
+            verify(jpa, never()).findByIdUserAndDeletedAtIsNull(any());
+        }
+    }
+
+    // ── findUserByEmail (simple) ──────────────────────────────────────────
+
+    @Nested
+    @DisplayName("findUserByEmail (Optional)")
+    class FindUserByEmail {
+
+        @Test
+        @DisplayName("debería retornar usuario cuando email existe y está activo")
+        void shouldReturnUserWhenEmailExistsAndActive() {
+            when(jpa.findByEmailAndDeletedAtIsNull("user@test.com"))
+                    .thenReturn(Optional.of(userEntity));
+            when(mapper.toDomain(userEntity)).thenReturn(domainUser);
+
+            Optional<User> result = adapter.findUserByEmail("user@test.com");
+
+            assertThat(result).isPresent().contains(domainUser);
+        }
+
+        @Test
+        @DisplayName("debería retornar vacío cuando email no existe")
+        void shouldReturnEmptyWhenEmailNotFound() {
+            when(jpa.findByEmailAndDeletedAtIsNull("ghost@test.com"))
+                    .thenReturn(Optional.empty());
+
+            Optional<User> result = adapter.findUserByEmail("ghost@test.com");
+
+            assertThat(result).isEmpty();
+            verify(mapper, never()).toDomain(any());
+        }
+    }
+
+    // ── findUserByEmail (paginado) ────────────────────────────────────────
+
+    @Nested
+    @DisplayName("findUserByEmail (PageResponse)")
+    class FindUserByEmailPaged {
+
+        @Test
+        @DisplayName("debería retornar PageResponse con usuarios mapeados")
+        void shouldReturnPageResponseWithMappedUsers() {
+            PaginationRequest request = mock(PaginationRequest.class);
+            when(request.getPage()).thenReturn(0);
+            when(request.getSize()).thenReturn(10);
+            when(request.getSortBy()).thenReturn("email");
+
+            Page<UserEntity> page = new PageImpl<>(
+                    List.of(userEntity),
+                    PageRequest.of(0, 10, Sort.by("email").ascending()),
+                    1
             );
-            adminUser.setIdUser(2);
 
-            UserEntity adminEntity = new UserEntity();
-            adminEntity.setIdUser(2);
-            adminEntity.setEmail("admin@example.com");
-            adminEntity.setUserName("Admin User");
-            adminEntity.setRole(Role.ADMIN);
+            when(jpa.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(
+                    eq("test"), any(Pageable.class))).thenReturn(page);
+            when(mapper.toDomain(userEntity)).thenReturn(domainUser);
 
-            when(mapper.toEntity(adminUser)).thenReturn(adminEntity);
-            when(jpaRepository.save(adminEntity)).thenReturn(adminEntity);
-            when(mapper.toDomain(adminEntity)).thenReturn(adminUser);
+            PageResponse<User> result = adapter.findUserByEmail("test", request);
 
-            // When
-            User savedUser = userAdapter.saveUser(adminUser);
-
-            // Then
-            assertThat(savedUser).isNotNull();
-            assertThat(savedUser.getRole()).isEqualTo(Role.ADMIN);
-            verify(jpaRepository).save(adminEntity);
-        }
-    }
-
-    @Nested
-    @DisplayName("Pruebas de Buscar Usuario")
-    class FindUserTests {
-
-        @Test
-        @DisplayName("Debería encontrar usuario por ID exitosamente")
-        void shouldFindUserByIdSuccessfully() {
-            // Given
-            Integer userId = 1;
-            when(jpaRepository.findById(userId)).thenReturn(Optional.of(testUserEntity));
-            when(mapper.toDomain(testUserEntity)).thenReturn(testUser);
-
-            // When
-            Optional<User> foundUser = userAdapter.findUserById(userId);
-
-            // Then
-            assertThat(foundUser).isPresent();
-            assertThat(foundUser.get().getIdUser()).isEqualTo(userId);
-            assertThat(foundUser.get().getEmail()).isEqualTo("test@example.com");
-            verify(jpaRepository).findById(userId);
-            verify(mapper).toDomain(testUserEntity);
-        }
-
-        @Test
-        @DisplayName("Debería retornar vacío cuando no se encuentra usuario por ID")
-        void shouldReturnEmptyWhenUserNotFoundById() {
-            // Given
-            Integer userId = 999;
-            when(jpaRepository.findById(userId)).thenReturn(Optional.empty());
-
-            // When
-            Optional<User> foundUser = userAdapter.findUserById(userId);
-
-            // Then
-            assertThat(foundUser).isEmpty();
-            verify(jpaRepository).findById(userId);
-            verify(mapper, never()).toDomain(any());
-        }
-
-        @Test
-        @DisplayName("Debería encontrar usuario por email exitosamente")
-        void shouldFindUserByEmailSuccessfully() {
-            // Given
-            String email = "test@example.com";
-            when(jpaRepository.findByEmailAndDeletedAtIsNull(email))
-                    .thenReturn(Optional.of(testUserEntity));
-            when(mapper.toDomain(testUserEntity)).thenReturn(testUser);
-
-            // When
-            Optional<User> foundUser = userAdapter.findUserByEmail(email);
-
-            // Then
-            assertThat(foundUser).isPresent();
-            assertThat(foundUser.get().getEmail()).isEqualTo(email);
-            verify(jpaRepository).findByEmailAndDeletedAtIsNull(email);
-            verify(mapper).toDomain(testUserEntity);
-        }
-
-        @Test
-        @DisplayName("Debería retornar vacío cuando no se encuentra usuario por email")
-        void shouldReturnEmptyWhenUserNotFoundByEmail() {
-            // Given
-            String email = "nonexistent@example.com";
-            when(jpaRepository.findByEmailAndDeletedAtIsNull(email))
-                    .thenReturn(Optional.empty());
-
-            // When
-            Optional<User> foundUser = userAdapter.findUserByEmail(email);
-
-            // Then
-            assertThat(foundUser).isEmpty();
-            verify(jpaRepository).findByEmailAndDeletedAtIsNull(email);
-            verify(mapper, never()).toDomain(any());
-        }
-
-        @Test
-        @DisplayName("No debería encontrar usuario eliminado lógicamente por email")
-        void shouldNotFindSoftDeletedUserByEmail() {
-            // Given
-            String email = "deleted@example.com";
-            when(jpaRepository.findByEmailAndDeletedAtIsNull(email))
-                    .thenReturn(Optional.empty());
-
-            // When
-            Optional<User> foundUser = userAdapter.findUserByEmail(email);
-
-            // Then
-            assertThat(foundUser).isEmpty();
-            verify(jpaRepository).findByEmailAndDeletedAtIsNull(email);
-        }
-    }
-
-    @Nested
-    @DisplayName("Pruebas de Buscar Todos los Usuarios")
-    class FindAllUsersTests {
-
-        @Test
-        @DisplayName("Debería encontrar todos los usuarios con paginación")
-        void shouldFindAllUsersWithPagination() {
-            // Given
-            ListUsersQuery query = new ListUsersQuery(0, 10, "email");
-            Pageable pageable = PageRequest.of(0, 10, Sort.by("email").ascending());
-
-            List<UserEntity> entities = List.of(testUserEntity);
-            Page<UserEntity> page = new PageImpl<>(entities, pageable, 1);
-
-            when(jpaRepository.findAllByDeletedAtIsNull(pageable)).thenReturn(page);
-            when(mapper.toDomain(testUserEntity)).thenReturn(testUser);
-
-            // When
-            PageResponse<User> result = userAdapter.findAllUsers(query);
-
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result.content()).hasSize(1);
-            assertThat(result.totalElements()).isEqualTo(1);
-            assertThat(result.totalPages()).isEqualTo(1);
-            assertThat(result.page()).isEqualTo(0);
+            assertThat(result.content()).hasSize(1).contains(domainUser);
+            assertThat(result.page()).isZero();
             assertThat(result.size()).isEqualTo(10);
-            verify(jpaRepository).findAllByDeletedAtIsNull(pageable);
-            verify(mapper).toDomain(testUserEntity);
+            assertThat(result.totalPages()).isEqualTo(1);
+            assertThat(result.totalPages()).isEqualTo(1);
         }
 
         @Test
-        @DisplayName("Debería retornar página vacía cuando no se encuentran usuarios")
-        void shouldReturnEmptyPageWhenNoUsersFound() {
-            // Given
-            ListUsersQuery query = new ListUsersQuery(0, 10, "email");
-            Pageable pageable = PageRequest.of(0, 10, Sort.by("email").ascending());
-            Page<UserEntity> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+        @DisplayName("debería construir Pageable con los parámetros del request")
+        void shouldBuildPageableFromRequest() {
+            PaginationRequest request = mock(PaginationRequest.class);
+            when(request.getPage()).thenReturn(2);
+            when(request.getSize()).thenReturn(5);
+            when(request.getSortBy()).thenReturn("email");
 
-            when(jpaRepository.findAllByDeletedAtIsNull(pageable)).thenReturn(emptyPage);
+            Page<UserEntity> emptyPage = new PageImpl<>(
+                    List.of(),
+                    PageRequest.of(2, 5, Sort.by("email").ascending()),
+                    0
+            );
 
-            // When
-            PageResponse<User> result = userAdapter.findAllUsers(query);
+            when(jpa.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(
+                    anyString(), pageableCaptor.capture())).thenReturn(emptyPage);
 
-            // Then
-            assertThat(result).isNotNull();
+            adapter.findUserByEmail("any", request);
+
+            Pageable captured = pageableCaptor.getValue();
+            assertThat(captured.getPageNumber()).isEqualTo(2);
+            assertThat(captured.getPageSize()).isEqualTo(5);
+            assertThat(captured.getSort()).isEqualTo(Sort.by("email").ascending());
+        }
+
+        @Test
+        @DisplayName("debería retornar PageResponse vacío cuando no hay coincidencias")
+        void shouldReturnEmptyPageResponseWhenNoMatches() {
+            PaginationRequest request = mock(PaginationRequest.class);
+            when(request.getPage()).thenReturn(0);
+            when(request.getSize()).thenReturn(10);
+            when(request.getSortBy()).thenReturn("email");
+
+            Page<UserEntity> emptyPage = new PageImpl<>(List.of());
+            when(jpa.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(
+                    anyString(), any(Pageable.class))).thenReturn(emptyPage);
+
+            PageResponse<User> result = adapter.findUserByEmail("xyz", request);
+
             assertThat(result.content()).isEmpty();
-            assertThat(result.totalElements()).isZero();
             assertThat(result.totalPages()).isZero();
-            verify(jpaRepository).findAllByDeletedAtIsNull(pageable);
-            verify(mapper, never()).toDomain(any());
-        }
-
-        @Test
-        @DisplayName("Debería encontrar usuarios en la segunda página")
-        void shouldFindUsersOnSecondPage() {
-            // Given
-            ListUsersQuery query = new ListUsersQuery(1, 5, "userName");
-            Pageable pageable = PageRequest.of(1, 5, Sort.by("userName").ascending());
-
-            List<UserEntity> entities = List.of(testUserEntity);
-            Page<UserEntity> page = new PageImpl<>(entities, pageable, 10);
-
-            when(jpaRepository.findAllByDeletedAtIsNull(pageable)).thenReturn(page);
-            when(mapper.toDomain(testUserEntity)).thenReturn(testUser);
-
-            // When
-            PageResponse<User> result = userAdapter.findAllUsers(query);
-
-            // Then
-            assertThat(result.page()).isEqualTo(1);
-            assertThat(result.size()).isEqualTo(5);
-            assertThat(result.totalElements()).isEqualTo(10);
-            assertThat(result.totalPages()).isEqualTo(2);
-            verify(jpaRepository).findAllByDeletedAtIsNull(pageable);
-        }
-
-        @Test
-        @DisplayName("Debería retornar solo usuarios activos excluyendo los eliminados lógicamente")
-        void shouldOnlyReturnActiveUsersExcludingSoftDeleted() {
-            // Given
-            ListUsersQuery query = new ListUsersQuery(0, 10, "email");
-            Pageable pageable = PageRequest.of(0, 10, Sort.by("email").ascending());
-
-            List<UserEntity> activeEntities = List.of(testUserEntity);
-            Page<UserEntity> page = new PageImpl<>(activeEntities, pageable, 1);
-
-            when(jpaRepository.findAllByDeletedAtIsNull(pageable)).thenReturn(page);
-            when(mapper.toDomain(testUserEntity)).thenReturn(testUser);
-
-            // When
-            PageResponse<User> result = userAdapter.findAllUsers(query);
-
-            // Then
-            assertThat(result.content()).hasSize(1);
-            assertThat(result.content().get(0).isActive()).isTrue();
-            verify(jpaRepository).findAllByDeletedAtIsNull(pageable);
         }
     }
 
+    // ── findAllUsers ──────────────────────────────────────────────────────
+
     @Nested
-    @DisplayName("Pruebas de Eliminar Usuario")
-    class DeleteUserTests {
+    @DisplayName("findAllUsers")
+    class FindAllUsers {
 
         @Test
-        @DisplayName("Debería eliminar usuario por ID exitosamente")
-        void shouldDeleteUserByIdSuccessfully() {
-            // Given
-            Integer userId = 1;
-            doNothing().when(jpaRepository).deleteById(userId);
+        @DisplayName("debería retornar PageResponse con todos los usuarios activos")
+        void shouldReturnPageResponseWithAllActiveUsers() {
+            ListUsersQuery query = mock(ListUsersQuery.class);
+            when(query.page()).thenReturn(0);
+            when(query.size()).thenReturn(10);
+            when(query.sortBy()).thenReturn("email");
 
-            // When
-            userAdapter.deleteUserById(userId);
+            Page<UserEntity> page = new PageImpl<>(
+                    List.of(userEntity),
+                    PageRequest.of(0, 10, Sort.by("email").ascending()),
+                    1
+            );
 
-            // Then
-            verify(jpaRepository).deleteById(userId);
+            when(jpa.findAllByDeletedAtIsNull(any(Pageable.class))).thenReturn(page);
+            when(mapper.toDomain(userEntity)).thenReturn(domainUser);
+
+            PageResponse<User> result = adapter.findAllUsers(query);
+
+            assertThat(result.content()).hasSize(1).contains(domainUser);
+            assertThat(result.totalPages()).isEqualTo(1);
         }
 
         @Test
-        @DisplayName("Debería lanzar excepción cuando falla al eliminar usuario")
-        void shouldThrowExceptionWhenDeleteUserFails() {
-            // Given
-            Integer userId = 1;
-            doThrow(new RuntimeException("Cannot delete user"))
-                    .when(jpaRepository).deleteById(userId);
+        @DisplayName("debería construir Pageable con los parámetros del query")
+        void shouldBuildPageableFromQuery() {
+            ListUsersQuery query = mock(ListUsersQuery.class);
+            when(query.page()).thenReturn(1);
+            when(query.size()).thenReturn(5);
+            when(query.sortBy()).thenReturn("email");
 
-            // When & Then
-            assertThatThrownBy(() -> userAdapter.deleteUserById(userId))
+            Page<UserEntity> emptyPage = new PageImpl<>(
+                    List.of(),
+                    PageRequest.of(1, 5, Sort.by("email").ascending()),
+                    0
+            );
+
+            when(jpa.findAllByDeletedAtIsNull(pageableCaptor.capture()))
+                    .thenReturn(emptyPage);
+
+            adapter.findAllUsers(query);
+
+            Pageable captured = pageableCaptor.getValue();
+            assertThat(captured.getPageNumber()).isEqualTo(1);
+            assertThat(captured.getPageSize()).isEqualTo(5);
+            assertThat(captured.getSort()).isEqualTo(Sort.by("email").ascending());
+        }
+
+        @Test
+        @DisplayName("debería retornar PageResponse vacío cuando no hay usuarios activos")
+        void shouldReturnEmptyPageResponseWhenNoActiveUsers() {
+            ListUsersQuery query = mock(ListUsersQuery.class);
+            when(query.page()).thenReturn(0);
+            when(query.size()).thenReturn(10);
+            when(query.sortBy()).thenReturn("email");
+
+            when(jpa.findAllByDeletedAtIsNull(any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            PageResponse<User> result = adapter.findAllUsers(query);
+
+            assertThat(result.content()).isEmpty();
+            assertThat(result.totalPages()).isZero();
+        }
+    }
+
+    // ── deleteUserById ────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("deleteUserById")
+    class DeleteUserById {
+
+        @Test
+        @DisplayName("debería llamar a jpa.deleteById con el ID correcto")
+        void shouldCallDeleteByIdWithCorrectId() {
+            adapter.deleteUserById(1);
+
+            verify(jpa).deleteById(1);
+        }
+
+        @Test
+        @DisplayName("debería propagar excepción cuando jpa.deleteById falla")
+        void shouldPropagateExceptionWhenDeleteFails() {
+            doThrow(new RuntimeException("Delete failed")).when(jpa).deleteById(1);
+
+            assertThatThrownBy(() -> adapter.deleteUserById(1))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessage("Cannot delete user");
-
-            verify(jpaRepository).deleteById(userId);
+                    .hasMessage("Delete failed");
         }
     }
 
+    // ── softDeleteUser ────────────────────────────────────────────────────
+
     @Nested
-    @DisplayName("Pruebas de Eliminación Lógica de Usuario")
-    class SoftDeleteUserTests {
+    @DisplayName("softDeleteUser")
+    class SoftDeleteUser {
 
         @Test
-        @DisplayName("Debería eliminar usuario lógicamente exitosamente")
-        void shouldSoftDeleteUserSuccessfully() {
-            // Given
-            Integer userId = 1;
-            Integer deletedBy = 2;
-            when(jpaRepository.existsById(userId)).thenReturn(true);
-            doNothing().when(jpaRepository)
-                    .softDeleteUser(eq(userId), any(LocalDateTime.class), eq(deletedBy));
+        @DisplayName("debería llamar a softDeleteUser cuando el usuario existe")
+        void shouldCallSoftDeleteWhenUserExists() {
+            when(jpa.existsById(1)).thenReturn(true);
 
-            // When
-            userAdapter.softDeleteUser(userId, deletedBy);
+            adapter.softDeleteUser(1, 99);
 
-            // Then
-            verify(jpaRepository).existsById(userId);
-            verify(jpaRepository).softDeleteUser(eq(userId), any(LocalDateTime.class), eq(deletedBy));
+            verify(jpa).softDeleteUser(eq(1), any(LocalDateTime.class), eq(99));
         }
 
         @Test
-        @DisplayName("Debería lanzar excepción cuando usuario no existe para eliminación lógica")
-        void shouldThrowExceptionWhenSoftDeleteUserNotFound() {
-            // Given
-            Integer userId = 999;
-            Integer deletedBy = 2;
-            when(jpaRepository.existsById(userId)).thenReturn(false);
+        @DisplayName("debería lanzar IllegalArgumentException cuando el usuario no existe")
+        void shouldThrowIllegalArgumentExceptionWhenUserNotFound() {
+            when(jpa.existsById(999)).thenReturn(false);
 
-            // When & Then
-            assertThatThrownBy(() -> userAdapter.softDeleteUser(userId, deletedBy))
+            assertThatThrownBy(() -> adapter.softDeleteUser(999, 1))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Usuario no encontrado");
 
-            verify(jpaRepository).existsById(userId);
-            verify(jpaRepository, never()).softDeleteUser(anyInt(), any(), anyInt());
+            verify(jpa, never()).softDeleteUser(any(), any(), any());
         }
 
         @Test
-        @DisplayName("Debería lanzar excepción cuando falla la eliminación lógica")
-        void shouldThrowExceptionWhenSoftDeleteFails() {
-            // Given
-            Integer userId = 1;
-            Integer deletedBy = 2;
-            when(jpaRepository.existsById(userId)).thenReturn(true);
-            doThrow(new RuntimeException("Database error"))
-                    .when(jpaRepository).softDeleteUser(eq(userId), any(LocalDateTime.class), eq(deletedBy));
+        @DisplayName("debería pasar LocalDateTime.now() como deletedAt")
+        void shouldPassCurrentTimeAsDeletedAt() {
+            when(jpa.existsById(1)).thenReturn(true);
 
-            // When & Then
-            assertThatThrownBy(() -> userAdapter.softDeleteUser(userId, deletedBy))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessage("Database error");
+            LocalDateTime before = LocalDateTime.now().minusSeconds(1);
+            adapter.softDeleteUser(1, 5);
+            LocalDateTime after = LocalDateTime.now().plusSeconds(1);
 
-            verify(jpaRepository).existsById(userId);
-            verify(jpaRepository).softDeleteUser(eq(userId), any(LocalDateTime.class), eq(deletedBy));
-        }
-    }
+            ArgumentCaptor<LocalDateTime> captor = ArgumentCaptor.forClass(LocalDateTime.class);
+            verify(jpa).softDeleteUser(eq(1), captor.capture(), eq(5));
 
-    @Nested
-    @DisplayName("Pruebas de Existencia")
-    class ExistsTests {
-
-        @Test
-        @DisplayName("Debería retornar verdadero cuando usuario existe por email")
-        void shouldReturnTrueWhenUserExistsByEmail() {
-            // Given
-            String email = "test@example.com";
-            when(jpaRepository.existsByEmailAndDeletedAtIsNull(email)).thenReturn(true);
-
-            // When
-            boolean exists = userAdapter.existsByEmail(email);
-
-            // Then
-            assertThat(exists).isTrue();
-            verify(jpaRepository).existsByEmailAndDeletedAtIsNull(email);
+            LocalDateTime captured = captor.getValue();
+            assertThat(captured).isAfter(before).isBefore(after);
         }
 
         @Test
-        @DisplayName("Debería retornar falso cuando usuario no existe por email")
-        void shouldReturnFalseWhenUserDoesNotExistByEmail() {
-            // Given
-            String email = "nonexistent@example.com";
-            when(jpaRepository.existsByEmailAndDeletedAtIsNull(email)).thenReturn(false);
+        @DisplayName("debería pasar el deletedBy correcto")
+        void shouldPassCorrectDeletedBy() {
+            when(jpa.existsById(1)).thenReturn(true);
 
-            // When
-            boolean exists = userAdapter.existsByEmail(email);
+            adapter.softDeleteUser(1, 42);
 
-            // Then
-            assertThat(exists).isFalse();
-            verify(jpaRepository).existsByEmailAndDeletedAtIsNull(email);
-        }
-
-        @Test
-        @DisplayName("Debería retornar falso cuando usuario existe pero está eliminado lógicamente")
-        void shouldReturnFalseWhenUserExistsButIsSoftDeleted() {
-            // Given
-            String email = "deleted@example.com";
-            when(jpaRepository.existsByEmailAndDeletedAtIsNull(email)).thenReturn(false);
-
-            // When
-            boolean exists = userAdapter.existsByEmail(email);
-
-            // Then
-            assertThat(exists).isFalse();
-            verify(jpaRepository).existsByEmailAndDeletedAtIsNull(email);
-        }
-
-        @Test
-        @DisplayName("Debería retornar verdadero cuando usuario existe por ID")
-        void shouldReturnTrueWhenUserExistsById() {
-            // Given
-            Integer userId = 1;
-            when(jpaRepository.existsByIdUserAndDeletedAtIsNull(userId)).thenReturn(true);
-
-            // When
-            boolean exists = userAdapter.existsById(userId);
-
-            // Then
-            assertThat(exists).isTrue();
-            verify(jpaRepository).existsByIdUserAndDeletedAtIsNull(userId);
-        }
-
-        @Test
-        @DisplayName("Debería retornar falso cuando usuario no existe por ID")
-        void shouldReturnFalseWhenUserDoesNotExistById() {
-            // Given
-            Integer userId = 999;
-            when(jpaRepository.existsByIdUserAndDeletedAtIsNull(userId)).thenReturn(false);
-
-            // When
-            boolean exists = userAdapter.existsById(userId);
-
-            // Then
-            assertThat(exists).isFalse();
-            verify(jpaRepository).existsByIdUserAndDeletedAtIsNull(userId);
+            verify(jpa).softDeleteUser(eq(1), any(LocalDateTime.class), eq(42));
         }
     }
 
+    // ── existsByEmail ─────────────────────────────────────────────────────
+
     @Nested
-    @DisplayName("Pruebas de Búsqueda de Usuarios")
-    class SearchUsersTests {
+    @DisplayName("existsByEmail")
+    class ExistsByEmail {
 
         @Test
-        @DisplayName("Debería buscar usuarios por parte del email exitosamente")
-        void shouldSearchUsersByEmailPartSuccessfully() {
-            // Given
-            String emailPart = "test";
-            List<UserEntity> entities = List.of(testUserEntity);
-            when(jpaRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(emailPart))
-                    .thenReturn(entities);
-            when(mapper.toDomain(testUserEntity)).thenReturn(testUser);
+        @DisplayName("debería retornar true cuando el email existe y está activo")
+        void shouldReturnTrueWhenEmailExistsAndActive() {
+            when(jpa.existsByEmailAndDeletedAtIsNull("user@test.com")).thenReturn(true);
 
-            // When
-            List<User> users = userAdapter.searchUsersByEmail(emailPart);
-
-            // Then
-            assertThat(users).hasSize(1);
-            assertThat(users.get(0).getEmail()).contains("test");
-            verify(jpaRepository).findByEmailContainingIgnoreCaseAndDeletedAtIsNull(emailPart);
-            verify(mapper).toDomain(testUserEntity);
+            assertThat(adapter.existsByEmail("user@test.com")).isTrue();
         }
 
         @Test
-        @DisplayName("Debería buscar usuarios con cadena vacía cuando parte del email es null")
-        void shouldSearchUsersWithEmptyStringWhenEmailPartIsNull() {
-            // Given
-            when(jpaRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(""))
-                    .thenReturn(List.of());
+        @DisplayName("debería retornar false cuando el email no existe")
+        void shouldReturnFalseWhenEmailNotExists() {
+            when(jpa.existsByEmailAndDeletedAtIsNull("ghost@test.com")).thenReturn(false);
 
-            // When
-            List<User> users = userAdapter.searchUsersByEmail(null);
-
-            // Then
-            assertThat(users).isEmpty();
-            verify(jpaRepository).findByEmailContainingIgnoreCaseAndDeletedAtIsNull("");
-        }
-
-        @Test
-        @DisplayName("Debería recortar espacios de la parte del email antes de buscar")
-        void shouldTrimEmailPartBeforeSearching() {
-            // Given
-            String emailPart = "  test  ";
-            when(jpaRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNull("test"))
-                    .thenReturn(List.of(testUserEntity));
-            when(mapper.toDomain(testUserEntity)).thenReturn(testUser);
-
-            // When
-            List<User> users = userAdapter.searchUsersByEmail(emailPart);
-
-            // Then
-            assertThat(users).hasSize(1);
-            verify(jpaRepository).findByEmailContainingIgnoreCaseAndDeletedAtIsNull("test");
-        }
-
-        @Test
-        @DisplayName("Debería retornar lista vacía cuando ningún usuario coincide con la búsqueda")
-        void shouldReturnEmptyListWhenNoUsersMatchSearch() {
-            // Given
-            String emailPart = "nonexistent";
-            when(jpaRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(emailPart))
-                    .thenReturn(List.of());
-
-            // When
-            List<User> users = userAdapter.searchUsersByEmail(emailPart);
-
-            // Then
-            assertThat(users).isEmpty();
-            verify(jpaRepository).findByEmailContainingIgnoreCaseAndDeletedAtIsNull(emailPart);
-        }
-
-        @Test
-        @DisplayName("Debería retornar solo usuarios activos en resultados de búsqueda")
-        void shouldOnlyReturnActiveUsersInSearchResults() {
-            // Given
-            String emailPart = "test";
-            List<UserEntity> activeEntities = List.of(testUserEntity);
-            when(jpaRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(emailPart))
-                    .thenReturn(activeEntities);
-            when(mapper.toDomain(testUserEntity)).thenReturn(testUser);
-
-            // When
-            List<User> users = userAdapter.searchUsersByEmail(emailPart);
-
-            // Then
-            assertThat(users).hasSize(1);
-            assertThat(users.get(0).isActive()).isTrue();
-            verify(jpaRepository).findByEmailContainingIgnoreCaseAndDeletedAtIsNull(emailPart);
+            assertThat(adapter.existsByEmail("ghost@test.com")).isFalse();
         }
     }
 
+    // ── existsById ────────────────────────────────────────────────────────
+
     @Nested
-    @DisplayName("Pruebas de Buscar por Rol")
-    class FindByRoleTests {
+    @DisplayName("existsById")
+    class ExistsById {
 
         @Test
-        @DisplayName("Debería encontrar usuarios por rol con paginación")
-        void shouldFindUsersByRoleWithPagination() {
-            // Given
-            Role role = Role.CLIENT;
-            Pageable pageable = PageRequest.of(0, 10);
-            List<UserEntity> entities = List.of(testUserEntity);
-            Page<UserEntity> page = new PageImpl<>(entities, pageable, 1);
+        @DisplayName("debería retornar true cuando el ID existe y el usuario está activo")
+        void shouldReturnTrueWhenIdExistsAndActive() {
+            when(jpa.existsByIdUserAndDeletedAtIsNull(1)).thenReturn(true);
 
-            when(jpaRepository.findByRoleAndDeletedAtIsNull(role, pageable)).thenReturn(page);
-            when(mapper.toDomain(testUserEntity)).thenReturn(testUser);
-
-            // When
-            PageResponse<User> result = userAdapter.findByRole(role, pageable);
-
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result.content()).hasSize(1);
-            assertThat(result.content().get(0).getRole()).isEqualTo(Role.CLIENT);
-            assertThat(result.totalElements()).isEqualTo(1);
-            verify(jpaRepository).findByRoleAndDeletedAtIsNull(role, pageable);
-            verify(mapper).toDomain(testUserEntity);
+            assertThat(adapter.existsById(1)).isTrue();
         }
 
         @Test
-        @DisplayName("Debería retornar página vacía cuando no se encuentran usuarios por rol")
-        void shouldReturnEmptyPageWhenNoUsersFoundByRole() {
-            // Given
-            Role role = Role.ADMIN;
-            Pageable pageable = PageRequest.of(0, 10);
-            Page<UserEntity> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+        @DisplayName("debería retornar false cuando el ID no existe o está eliminado")
+        void shouldReturnFalseWhenIdNotExistsOrDeleted() {
+            when(jpa.existsByIdUserAndDeletedAtIsNull(999)).thenReturn(false);
 
-            when(jpaRepository.findByRoleAndDeletedAtIsNull(role, pageable)).thenReturn(emptyPage);
-
-            // When
-            PageResponse<User> result = userAdapter.findByRole(role, pageable);
-
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result.content()).isEmpty();
-            assertThat(result.totalElements()).isZero();
-            verify(jpaRepository).findByRoleAndDeletedAtIsNull(role, pageable);
-            verify(mapper, never()).toDomain(any());
-        }
-
-        @Test
-        @DisplayName("Debería encontrar múltiples usuarios con el mismo rol")
-        void shouldFindMultipleUsersWithSameRole() {
-            // Given
-            Role role = Role.EMPLOYEE;
-            Pageable pageable = PageRequest.of(0, 10);
-
-            UserEntity entity1 = new UserEntity();
-            entity1.setIdUser(1);
-            entity1.setRole(Role.EMPLOYEE);
-
-            UserEntity entity2 = new UserEntity();
-            entity2.setIdUser(2);
-            entity2.setRole(Role.EMPLOYEE);
-
-            List<UserEntity> entities = List.of(entity1, entity2);
-            Page<UserEntity> page = new PageImpl<>(entities, pageable, 2);
-
-            User user1 = User.createByAdmin("Employee 1", "emp1@example.com", "hash",
-                    Role.EMPLOYEE, null, null, null, 1);
-            user1.setIdUser(1);
-
-            User user2 = User.createByAdmin("Employee 2", "emp2@example.com", "hash",
-                    Role.EMPLOYEE, null, null, null, 1);
-            user2.setIdUser(2);
-
-            when(jpaRepository.findByRoleAndDeletedAtIsNull(role, pageable)).thenReturn(page);
-            when(mapper.toDomain(entity1)).thenReturn(user1);
-            when(mapper.toDomain(entity2)).thenReturn(user2);
-
-            // When
-            PageResponse<User> result = userAdapter.findByRole(role, pageable);
-
-            // Then
-            assertThat(result.content()).hasSize(2);
-            assertThat(result.totalElements()).isEqualTo(2);
-            assertThat(result.content()).allMatch(user -> user.getRole() == Role.EMPLOYEE);
-            verify(jpaRepository).findByRoleAndDeletedAtIsNull(role, pageable);
-        }
-
-        @Test
-        @DisplayName("Debería retornar solo usuarios activos al buscar por rol")
-        void shouldOnlyReturnActiveUsersWhenFindingByRole() {
-            // Given
-            Role role = Role.CLIENT;
-            Pageable pageable = PageRequest.of(0, 10);
-            List<UserEntity> activeEntities = List.of(testUserEntity);
-            Page<UserEntity> page = new PageImpl<>(activeEntities, pageable, 1);
-
-            when(jpaRepository.findByRoleAndDeletedAtIsNull(role, pageable)).thenReturn(page);
-            when(mapper.toDomain(testUserEntity)).thenReturn(testUser);
-
-            // When
-            PageResponse<User> result = userAdapter.findByRole(role, pageable);
-
-            // Then
-            assertThat(result.content()).hasSize(1);
-            assertThat(result.content().get(0).isActive()).isTrue();
-            verify(jpaRepository).findByRoleAndDeletedAtIsNull(role, pageable);
+            assertThat(adapter.existsById(999)).isFalse();
         }
     }
 }

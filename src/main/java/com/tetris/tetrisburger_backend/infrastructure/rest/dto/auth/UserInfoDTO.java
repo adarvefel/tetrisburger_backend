@@ -8,6 +8,5 @@ public record UserInfoDTO(
         Integer idUser,
         String userName,
         String email,
-        String userImage,
         String role
 ) {}

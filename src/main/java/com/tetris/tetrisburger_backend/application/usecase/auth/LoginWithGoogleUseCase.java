@@ -23,7 +23,6 @@ import java.util.UUID;
 @Transactional
 public class LoginWithGoogleUseCase implements LoginWithGoogle {
 
-    private static final Logger logger = LoggerFactory.getLogger(LoginWithGoogleUseCase.class);
 
     private final UserRepository userRepository;
     private final GoogleAuthPort googleAuthPort;
@@ -46,14 +45,12 @@ public class LoginWithGoogleUseCase implements LoginWithGoogle {
 
     @Override
     public LoginResponse handle(LoginWithGoogleCommand command) {
-        logger.info("Intento de autenticación con Google");
 
         // 1. Validar token de Google
         Map<String, String> userInfo;
         try {
             userInfo = googleAuthPort.validateAndExtractUserInfo(command.googleToken());
         } catch (InvalidTokenException e) {
-            logger.error("Error validando token de Google: {}", e.getMessage());
             throw new InvalidCredentialsException("Autenticación con Google fallida");
         }
 
@@ -72,7 +69,6 @@ public class LoginWithGoogleUseCase implements LoginWithGoogle {
         // 5. Crear LoginResponse directamente (record)
         LoginResponse response = new LoginResponse(token, user, expirationTime);
 
-        logger.info("Autenticación con Google exitosa para: {}", email);
         return response;
     }
 
@@ -80,7 +76,6 @@ public class LoginWithGoogleUseCase implements LoginWithGoogle {
      * Crear nuevo usuario desde información de Google
      */
     private User createNewGoogleUser(String email, String userName) {
-        logger.info("Creando nuevo usuario desde Google: {}", email);
 
         // Generar contraseña aleatoria (no será usada en Google OAuth)
         String randomPassword = passwordEncoder.encode(UUID.randomUUID().toString());
@@ -99,13 +94,10 @@ public class LoginWithGoogleUseCase implements LoginWithGoogle {
         // Enviar email de bienvenida (no debe romper el registro si falla)
         try {
             emailPort.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUserName());
-            logger.info("Email de bienvenida enviado a: {}", savedUser.getEmail());
         } catch (Exception e) {
-            logger.error("Error al enviar email de bienvenida a {}: {}",
-                    savedUser.getEmail(), e.getMessage());
+
         }
 
-        logger.info("Usuario creado desde Google con ID: {}", savedUser.getIdUser());
         return savedUser;
     }
 }

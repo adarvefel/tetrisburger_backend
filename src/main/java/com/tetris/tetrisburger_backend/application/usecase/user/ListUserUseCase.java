@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class ListUserUseCase implements ListUser {
 
-    private static final Logger logger = LoggerFactory.getLogger(ListUserUseCase.class);
     private final UserRepository userRepository;
 
     public ListUserUseCase(UserRepository userRepository) {
@@ -23,17 +22,8 @@ public class ListUserUseCase implements ListUser {
 
     @Override
     public PageResponse<User> execute(ListUsersQuery query) {
-        logger.debug("Listando usuarios - página: {}, tamaño: {}, ordenado por: {}",
-                query.page(),
-                query.size(),
-                query.sortBy());
 
         PageResponse<User> users = userRepository.findAllUsers(query);
-
-        logger.debug("Se encontraron {} usuario(s) en total, mostrando página {}/{}",
-                users.totalElements(),
-                users.page() + 1,
-                users.totalPages());
 
         return users;
     }

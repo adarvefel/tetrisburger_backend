@@ -1,9 +1,11 @@
 package com.tetris.tetrisburger_backend.domain.port.out;
 
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
+import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.query.ListUsersQuery;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -27,17 +29,17 @@ public interface UserRepository {
 
     /**
      * Buscar usuario por email
-     * IMPORTANTE: AuthServiceImpl usa este método con este nombre exacto
      */
-    Optional<User> findUserByEmail(String email);
+    PageResponse<User> findUserByEmail(String email, PaginationRequest request);
 
     boolean existsByEmail(String email);
+
     boolean existsById(Integer id);
 
-    List<User> searchUsersByEmail(String emailPart);
 
 
 
+    Optional<User> findUserByEmail(String email);
 
     /**
      * Buscar todos los usuarios con paginación
@@ -52,7 +54,6 @@ public interface UserRepository {
 
     void deleteUserById(Integer idUser);
 
-    //Filtrar por Rol (Admin)
-    PageResponse<User> findByRole(Role role, Pageable pageable);
+
 
 }

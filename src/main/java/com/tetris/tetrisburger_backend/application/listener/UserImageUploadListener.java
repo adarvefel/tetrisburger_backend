@@ -19,7 +19,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class UserImageUploadListener {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserImageUploadListener.class);
 
     private final UserRepository userRepository;
     private final ImageStoragePort imageStoragePort;
@@ -42,7 +41,6 @@ public class UserImageUploadListener {
 
             persistUserImage(event.idUser(), upload, event.performedBy());
 
-            logger.info("Imagen subida y usuario actualizado: userId={}", event.idUser());
         } catch (Exception e) {
             throw new ImageUploadException("No se pudo subir la imagen del usuario", e);
         }
@@ -53,7 +51,8 @@ public class UserImageUploadListener {
         User user = userRepository.findUserById(idUser)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
-        user.updateImage(upload.imageKey(), upload.originalFileName(), updatedBy);
+        String imageUrl = imageStoragePort.getImageUrl(upload.imageKey());
+        user.updateImage(upload.imageKey(),imageUrl, updatedBy);
         userRepository.saveUser(user);
     }
 }

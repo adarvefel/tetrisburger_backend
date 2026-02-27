@@ -56,7 +56,7 @@ public class User {
             Role role,
             String phone,
             String imageKey,
-            String imageName,
+            String imageUrl,
             Integer createdBy
     ) {
         validateUserName(userName);
@@ -70,7 +70,7 @@ public class User {
         user.role = role != null ? role : Role.CLIENT;
         user.phone = phone;
         user.userImageKey = imageKey;
-        user.userImage = imageName;
+        user.userImage = imageUrl;
         user.createdAt = LocalDateTime.now();
         user.createdBy = createdBy;
 
@@ -113,9 +113,9 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateImageProfile(String imageKey, String imageName) {
+    public void updateImageProfile(String imageKey, String imageUrl) {
         this.userImageKey = imageKey;
-        this.userImage = imageName;
+        this.userImage = imageUrl;
     }
 
 
@@ -279,4 +279,57 @@ private static void validateHashedPassword(String hashedPassword) {
 
     // Solo para reconstitución desde BD (JPA/MyBatis necesita esto)
     public void setIdUser(Integer idUser) { this.idUser = idUser; }
+
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setUserImage(String userImage) {
+        this.userImage = userImage;
+    }
+
+    public void setUserImageKey(String userImageKey) {
+        this.userImageKey = userImageKey;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public void setCreatedBy(Integer createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public void setUpdatedBy(Integer updatedBy) {
+        this.updatedBy = updatedBy;
+    }
+
+    public void setDeletedBy(Integer deletedBy) {
+        this.deletedBy = deletedBy;
+    }
 }

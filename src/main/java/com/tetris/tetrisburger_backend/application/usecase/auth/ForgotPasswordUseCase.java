@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class ForgotPasswordUseCase implements ForgotPassword {
 
-    private static final Logger logger = LoggerFactory.getLogger(ForgotPasswordUseCase.class);
     private static final long ONE_HOUR_IN_MILLIS = 3600000L;
 
     private final UserRepository userRepository;
@@ -49,16 +48,11 @@ public class ForgotPasswordUseCase implements ForgotPassword {
 
         boolean isHuman = recaptchaPort.verifyToken(command.recaptchaToken(),"forgotPassword");
         if(!isHuman){
-            logger.warn("reCAPTCHA fallo para :{}",command.email());
             throw new InvalidRecaptchaException("  \"Verificación de seguridad falló. Por favor intenta de nuevo.");
         }
-        logger.info(" reCAPTCHA verificado para: {}", command.email());
 
         User user = userRepository.findUserByEmail(command.email())
-                .orElseThrow(() -> {
-                    logger.warn("Usuario no encontrado para reset: {}", command.email());
-                    return new UserNotFoundException("Usuario no encontrado");
-                });
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
         // Generar token de reset
         String resetToken = tokenPort.generatePasswordResetToken(
@@ -86,7 +80,6 @@ public class ForgotPasswordUseCase implements ForgotPassword {
                 emailBody
         );
 
-        logger.info("Email de recuperación enviado a: {}", command.email());
 
         // Retornar el email para que el controller pueda usarlo en el response
         return command.email();

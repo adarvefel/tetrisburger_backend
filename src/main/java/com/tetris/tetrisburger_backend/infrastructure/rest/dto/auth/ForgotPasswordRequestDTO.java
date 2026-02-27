@@ -18,7 +18,6 @@ public record ForgotPasswordRequestDTO(
         @NotBlank(message = "El email es requerido")
         @Email(message = "Escribe tu correo para recuperar tu contraseña")
         String email,
-        @NotBlank(message = "El token de reCAPTCHA es obligatorio")
         String recaptchaToken
 
 ) {}

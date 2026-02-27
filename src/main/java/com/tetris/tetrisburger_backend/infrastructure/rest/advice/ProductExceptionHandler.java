@@ -76,14 +76,14 @@ public class ProductExceptionHandler {
     @ExceptionHandler(ProductNotAvailableException.class)
     public ResponseEntity<ErrorResponseDTO> handleProductNotAvailable(
             ProductNotAvailableException ex, WebRequest request) {
-        logger.warn("⚠️ Producto no disponible: {} - Path: {}", ex.getMessage(), extractPath(request));
+        logger.warn(" Producto no disponible: {} - Path: {}", ex.getMessage(), extractPath(request));
         return buildErrorResponseDTO(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler(ProductCategoryNotFoundException.class)
     public ResponseEntity<ErrorResponseDTO> handleProductCategoryNotFound(
             ProductCategoryNotFoundException ex, WebRequest request) {
-        logger.warn("⚠️ Categoría no encontrada: {} - Path: {}", ex.getMessage(), extractPath(request));
+        logger.warn(" Categoría no encontrada: {} - Path: {}", ex.getMessage(), extractPath(request));
         return buildErrorResponseDTO(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 }

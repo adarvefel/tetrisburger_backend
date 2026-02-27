@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 @Service
 @Transactional
 public class GetUserByIdUseCase implements GetUserById {
-    private static final Logger logger = LoggerFactory.getLogger(GetUserByIdUseCase.class);
 
     private final UserRepository userRepository;
 
@@ -26,10 +25,8 @@ public class GetUserByIdUseCase implements GetUserById {
 
     @Override
     public User handle(Integer idUser) {
-        logger.debug("Buscando usuario por ID:{}",idUser);
         return userRepository.findUserById(idUser)
                 .orElseThrow(() ->{
-                    logger.warn("Usuario no encontrado con ID:{}",idUser);
                     return new UserNotFoundException("Usuario no encontrado con ID:"+ idUser);
 
 

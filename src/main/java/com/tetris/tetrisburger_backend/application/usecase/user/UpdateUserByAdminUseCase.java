@@ -1,14 +1,12 @@
 package com.tetris.tetrisburger_backend.application.usecase.user;
 
-import com.tetris.tetrisburger_backend.application.event.UserAdminImageChangeRequestedEvent;
-import com.tetris.tetrisburger_backend.domain.common.FileData;
+
 import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.UpdateUserByAdmin;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.UpdateUserByAdminCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class UpdateUserByAdminUseCase implements UpdateUserByAdmin {
 
-    private static final Logger logger = LoggerFactory.getLogger(UpdateUserByAdminUseCase.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -36,7 +33,6 @@ public class UpdateUserByAdminUseCase implements UpdateUserByAdmin {
 
     @Override
     public User handle(UpdateUserByAdminCommand command) {
-        logger.info("Admin {} actualizando usuario ID: {}", command.updatedBy(), command.idUser());
 
         User user = userRepository.findUserById(command.idUser())
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));

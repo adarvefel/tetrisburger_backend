@@ -1,8 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.adapter;
 
 import com.tetris.tetrisburger_backend.domain.port.out.EmailPort;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
@@ -20,7 +19,6 @@ import java.util.Map;
 @Component
 public class EmailAdapter implements EmailPort {
 
-    private static final Logger logger = LoggerFactory.getLogger(EmailAdapter.class);
 
     private final JavaMailSender mailSender;
 
@@ -34,7 +32,6 @@ public class EmailAdapter implements EmailPort {
     @Override
     @Async  // Envío asíncrono (no bloquea el registro)
     public void sendEmail(String to, String subject, String body) {
-        logger.info("Enviando email a {} con asunto: {}", to, subject);
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -44,10 +41,7 @@ public class EmailAdapter implements EmailPort {
             message.setText(body);
 
             mailSender.send(message);
-            logger.info("Email enviado exitosamente a: {}", to);
         } catch (MailException e) {
-            logger.error(" Error enviando email a {}: {}", to, e.getMessage());
-            // No rethrow: Continúa el flujo (fail-safe)
         }
     }
 
@@ -61,9 +55,8 @@ public class EmailAdapter implements EmailPort {
     @Override
     @Async
     public void sendWelcomeEmail(String to, String userName) {
-        logger.info("Preparando email de bienvenida para: {}", to);
 
-        String subject = "¡Bienvenido a TetrisBurger! 🍔kw0";
+        String subject = "¡Bienvenido a TetrisBurger!🍔";
         String body = String.format(
                 "Hola %s,\n\n" +
                         "¡Gracias por registrarte en TetrisBurger!\n\n" +
@@ -81,7 +74,6 @@ public class EmailAdapter implements EmailPort {
     @Override
     @Async
     public void sendPasswordResetEmail(String to, String userName, String resetLink) {
-        logger.info("Preparando email de recuperación para: {}", to);
 
         String subject = "Recuperación de Contraseña - TetrisBurger";
         String body = String.format(
