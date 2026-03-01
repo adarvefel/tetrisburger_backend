@@ -19,7 +19,7 @@ public class UpdateSupplierUseCase implements UpdateSupplier {
     @Override
     public Supplier update(UpdateSupplierCommand cmd) {
         Supplier current = repo.findById(cmd.id())
-                .orElseThrow(() -> new IllegalArgumentException("Supplier not found: " + cmd.id()));
+                .orElseThrow(() -> new IllegalArgumentException("Proveedor no encontrado: " + cmd.id()));
         current.update(cmd.name(), cmd.phone(), cmd.email(), cmd.address(), cmd.registrationDate());
         return repo.save(current);
     }

@@ -2,6 +2,7 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.dto.product;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.model.Supplier;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.productcategory.ProductCategoryResponseDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -49,7 +50,7 @@ public class ProductResponseDTO {
     private ProductCategoryResponseDTO productCategory;
 
     @Schema(description = "ID del proveedor", example = "1")
-    private Integer supplierId;
+    private Supplier supplier;
 
     @Schema(description = "URL de la imagen", example = "https://tetrisburger-images.s3.us-east-1.amazonaws.com/products/123-carne.jpg")
     private String imageUrl;

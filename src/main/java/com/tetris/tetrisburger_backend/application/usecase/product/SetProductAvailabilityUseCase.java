@@ -22,17 +22,13 @@ public class SetProductAvailabilityUseCase implements SetProductAvailability {
 
     @Override
     public Product setAvailability(Integer productId, boolean availability, Integer updatedBy) {
-        logger.info(" Admin {} cambiando disponibilidad del producto ID {} a: {}",
-                updatedBy, productId, availability);
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductAlreadyDeletedException(productId));
 
-        // USAR EL MÉTODO DEL DOMAIN MODEL
         product.updateAvailability(availability, updatedBy);
 
         Product updated = productRepository.save(product);
-        logger.info("Disponibilidad del producto ID {} actualizada a: {}", productId, availability);
 
         return updated;
     }

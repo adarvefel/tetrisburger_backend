@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.product;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.tetris.tetrisburger_backend.domain.model.Supplier;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.productcategory.ProductCategoryResponseDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -45,8 +46,7 @@ public class DeleteProductResponseDTO {
     @Schema(description = "Categoría del producto")
     private ProductCategoryResponseDTO productCategory;
 
-    @Schema(description = "ID del proveedor", example = "3")
-    private Integer supplierId;
+    private Supplier supplier;
 
     @Schema(description = "URL de la imagen")
     private String imageUrl;

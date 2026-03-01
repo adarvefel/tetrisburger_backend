@@ -1,11 +1,11 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.entity;
 
 import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.model.Supplier;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -56,8 +56,9 @@ public class ProductEntity {
     @Column(name = "image_key", length = 255)
     private String imageKey;
 
-    @Column(name = "supplier_id")
-    private Integer supplierId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_supplier", nullable = false)
+    private SupplierEntity supplier;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -158,6 +159,14 @@ public class ProductEntity {
         return productCategory;
     }
 
+    public SupplierEntity getSupplier() {
+        return supplier;
+    }
+
+    public void setSupplier(SupplierEntity supplier) {
+        this.supplier = supplier;
+    }
+
     public void setProductCategory(ProductCategoryEntity productCategory) {
         this.productCategory = productCategory;
     }
@@ -178,18 +187,10 @@ public class ProductEntity {
         this.imageKey = imageKey;
     }
 
-    public Integer getSupplierId() {
-        return supplierId;
-    }
-
-    public void setSupplierId(Integer supplierId) {
-        this.supplierId = supplierId;
-    }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
-
 
 
     public void setCreatedAt(LocalDateTime createdAt) {
@@ -235,4 +236,6 @@ public class ProductEntity {
     public void setDeletedBy(Integer deletedBy) {
         this.deletedBy = deletedBy;
     }
+
+
 }
