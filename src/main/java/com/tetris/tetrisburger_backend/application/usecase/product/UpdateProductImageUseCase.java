@@ -5,8 +5,7 @@ import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.in.product.UpdateProductImage;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class UpdateProductImageUseCase implements UpdateProductImage {
 
-    private static final Logger logger = LoggerFactory.getLogger(UpdateProductImageUseCase.class);
 
     private final ProductRepository productRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -30,7 +28,6 @@ public class UpdateProductImageUseCase implements UpdateProductImage {
     @Override
     @Transactional
     public Product update(Integer productId, FileData productImage, Integer updatedBy) {
-        logger.info("Iniciando actualización de imagen para producto ID: {}", productId);
 
         // 1. Validar que la imagen no esté vacía
         if (productImage == null) {
@@ -63,8 +60,7 @@ public class UpdateProductImageUseCase implements UpdateProductImage {
                 updatedBy
         ));
 
-        logger.info("Evento ProductImageUploadRequestedEvent publicado para producto ID: {}", productId);
-        logger.info("La imagen se procesará de manera asíncrona");
+
 
         // 6. Retornar producto actual
         return product;

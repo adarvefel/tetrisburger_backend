@@ -118,7 +118,7 @@ public class ProductController {
                     content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Datos o imagen inválidos",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Categoría no encontrada",  // ✅ NUEVO
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
             @ApiResponse(responseCode = "409", description = "Producto duplicado",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))

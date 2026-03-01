@@ -12,12 +12,10 @@ public class Product {
     private Boolean availability;
     private ProductType productType;
     private Boolean isBurgerIngredient;
-
     private ProductCategory productCategory;
-
     private String imageUrl;
     private String imageKey;
-    private Integer supplierId;
+    private Supplier supplier;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
@@ -31,7 +29,7 @@ public class Product {
 
     private Product(Integer id, String name, String description, Integer quantity, BigDecimal price,
                     Boolean availability, ProductType productType, Boolean isBurgerIngredient,
-                    ProductCategory productCategory, String imageUrl, String imageKey, Integer supplierId,
+                    ProductCategory productCategory, String imageUrl, String imageKey, Supplier supplier,
                     LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt,
                     Integer createdBy, Integer updatedBy, Integer deletedBy) {
         this.id = id;
@@ -45,7 +43,7 @@ public class Product {
         this.productCategory = productCategory;
         this.imageUrl = imageUrl;
         this.imageKey = imageKey;
-        this.supplierId = supplierId;
+        this.supplier = supplier;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
@@ -56,22 +54,14 @@ public class Product {
 
     // ==================== FACTORY METHODS ====================
 
-    public static Product ofNew(String name, String description, Integer quantity, BigDecimal price,
-                                Boolean availability, ProductType productType, Boolean isIngredientBurger,
-                                ProductCategory productCategory, String imageUrl, String imageKey,
-                                Integer supplierId, Integer createdBy) {
-        return new Product(null, name, description, quantity, price, availability, productType,
-                isIngredientBurger, productCategory, imageUrl, imageKey, supplierId,
-                null, null, null, createdBy, null, null);
-    }
 
     public static Product of(Integer id, String name, String description, Integer quantity, BigDecimal price,
-                             Boolean availability, ProductType productType, Boolean isIngredientBurger,
-                             ProductCategory productCategory, String imageUrl, String imageKey, Integer supplierId,
+                             Boolean availability, ProductType productType, Boolean isBurgerIngredient, // 🔧 FIX: nombre unificado
+                             ProductCategory productCategory, String imageUrl, String imageKey, Supplier supplier,
                              LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt,
                              Integer createdBy, Integer updatedBy, Integer deletedBy) {
         return new Product(id, name, description, quantity, price, availability, productType,
-                isIngredientBurger, productCategory, imageUrl, imageKey, supplierId,
+                isBurgerIngredient, productCategory, imageUrl, imageKey, supplier,
                 createdAt, updatedAt, deletedAt, createdBy, updatedBy, deletedBy);
     }
 
@@ -82,11 +72,11 @@ public class Product {
             BigDecimal price,
             Boolean availability,
             ProductType productType,
-            Boolean isIngredientBurger,
+            Boolean isBurgerIngredient,
             ProductCategory productCategory,
             String imageUrl,
             String imageKey,
-            Integer supplierId,
+            Supplier supplier,
             Integer createdBy
     ) {
         validateName(name);
@@ -94,7 +84,7 @@ public class Product {
         validatePrice(price);
         validateProductType(productType);
         validateProductCategory(productCategory);
-        validateSupplierId(supplierId);
+        validateSupplier(supplier);
 
         Product product = new Product();
         product.name = name;
@@ -103,11 +93,11 @@ public class Product {
         product.price = price;
         product.availability = availability != null ? availability : true;
         product.productType = productType;
-        product.isBurgerIngredient = isIngredientBurger != null ? isIngredientBurger : false;
+        product.isBurgerIngredient = isBurgerIngredient != null ? isBurgerIngredient : false;
         product.productCategory = productCategory;
         product.imageUrl = imageUrl;
         product.imageKey = imageKey;
-        product.supplierId = supplierId;
+        product.supplier = supplier;
         product.createdAt = LocalDateTime.now();
         product.createdBy = createdBy;
 
@@ -155,8 +145,8 @@ public class Product {
         }
     }
 
-    private static void validateSupplierId(Integer supplierId) {
-        if (supplierId == null) {
+    private static void validateSupplier(Supplier supplier) {
+        if (supplier == null) {
             throw new IllegalArgumentException("El proveedor es requerido");
         }
     }
@@ -170,9 +160,9 @@ public class Product {
             BigDecimal price,
             Boolean availability,
             ProductType productType,
-            Boolean isIngredientBurger,
+            Boolean isBurgerIngredient,
             ProductCategory productCategory,
-            Integer supplierId,
+            Supplier supplier,
             Integer updatedBy
     ) {
         validateName(name);
@@ -180,7 +170,7 @@ public class Product {
         validatePrice(price);
         validateProductType(productType);
         validateProductCategory(productCategory);
-        validateSupplierId(supplierId);
+        validateSupplier(supplier);
 
         this.name = name;
         this.description = description;
@@ -188,9 +178,9 @@ public class Product {
         this.price = price;
         this.availability = availability != null ? availability : this.availability;
         this.productType = productType;
-        this.isBurgerIngredient = isIngredientBurger != null ? isIngredientBurger : this.isBurgerIngredient;
+        this.isBurgerIngredient = isBurgerIngredient != null ? isBurgerIngredient : this.isBurgerIngredient;
         this.productCategory = productCategory;
-        this.supplierId = supplierId;
+        this.supplier = supplier;
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
     }
@@ -231,7 +221,7 @@ public class Product {
 
     public void adjustStock(int delta, Integer updatedBy) {
         int newQuantity = this.quantity + delta;
-        if (newQuantity < 0) {
+        if (newQuantity <= 0) {
             throw new IllegalArgumentException("Stock insuficiente. Stock actual: " + this.quantity);
         }
         this.quantity = newQuantity;
@@ -239,28 +229,8 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    public void reduceStock(int amount, Integer updatedBy) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("La cantidad a reducir debe ser positiva");
-        }
-        if (this.quantity < amount) {
-            throw new IllegalArgumentException(
-                    String.format("Stock insuficiente. Disponible: %d, Solicitado: %d", this.quantity, amount)
-            );
-        }
-        this.quantity -= amount;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
 
-    public void increaseStock(int amount, Integer updatedBy) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("La cantidad a aumentar debe ser positiva");
-        }
-        this.quantity += amount;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
+
 
     public void updateAvailability(Boolean availability, Integer updatedBy) {
         this.availability = availability;
@@ -268,56 +238,7 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-    public void enable(Integer updatedBy) {
-        this.availability = true;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
 
-    public void disable(Integer updatedBy) {
-        this.availability = false;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
-
-    public void updateCategory(ProductCategory productCategory, Integer updatedBy) {
-        validateProductCategory(productCategory);
-        this.productCategory = productCategory;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
-
-    public void updateSupplier(Integer supplierId, Integer updatedBy) {
-        validateSupplierId(supplierId);
-        this.supplierId = supplierId;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
-
-    public void updateProductType(ProductType productType, Integer updatedBy) {
-        validateProductType(productType);
-        this.productType = productType;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
-
-    public void updateIsIngredientBurger(Boolean isIngredientBurger, Integer updatedBy) {
-        this.isBurgerIngredient = isIngredientBurger;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
-
-    public void markAsDeleted(Integer deletedBy) {
-        this.deletedAt = LocalDateTime.now();
-        this.deletedBy = deletedBy;
-    }
-
-    public void restore(Integer updatedBy) {
-        this.deletedAt = null;
-        this.deletedBy = null;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
 
     // ==================== MÉTODOS DE CONSULTA ====================
 
@@ -357,7 +278,7 @@ public class Product {
         return ProductType.SIDE.equals(this.productType);
     }
 
-    public boolean isIngredientBurger() {  // ✅ NUEVO MÉTODO
+    public boolean isIngredientBurger() {
         return Boolean.TRUE.equals(this.isBurgerIngredient);
     }
 
@@ -382,9 +303,9 @@ public class Product {
     public ProductType getProductType() { return productType; }
     public Boolean getIsBurgerIngredient() { return isBurgerIngredient; }
     public ProductCategory getProductCategory() { return productCategory; }
+    public Supplier getSupplier() { return supplier; }
     public String getImageUrl() { return imageUrl; }
     public String getImageKey() { return imageKey; }
-    public Integer getSupplierId() { return supplierId; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public LocalDateTime getDeletedAt() { return deletedAt; }
@@ -392,24 +313,22 @@ public class Product {
     public Integer getUpdatedBy() { return updatedBy; }
     public Integer getDeletedBy() { return deletedBy; }
 
-    // ==================== SETTERS ====================
 
-    public void setId(Integer id) { this.id = id; }
-    public void setName(String name) { this.name = name; }
-    public void setDescription(String description) { this.description = description; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
-    public void setPrice(BigDecimal price) { this.price = price; }
-    public void setAvailability(Boolean availability) { this.availability = availability; }
-    public void setProductType(ProductType productType) { this.productType = productType; }
-    public void setIsBurgerIngredient(Boolean isBurgerIngredient) { this.isBurgerIngredient = isBurgerIngredient; }  // ✅ AGREGADO
-    public void setProductCategory(ProductCategory productCategory) { this.productCategory = productCategory; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-    public void setImageKey(String imageKey) { this.imageKey = imageKey; }
-    public void setSupplierId(Integer supplierId) { this.supplierId = supplierId; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    void setId(Integer id) { this.id = id; }
+    void setName(String name) { this.name = name; }
+    void setDescription(String description) { this.description = description; }
+    void setQuantity(Integer quantity) { this.quantity = quantity; }
+    void setPrice(BigDecimal price) { this.price = price; }
+    void setAvailability(Boolean availability) { this.availability = availability; }
+    void setProductType(ProductType productType) { this.productType = productType; }
+    void setIsBurgerIngredient(Boolean isBurgerIngredient) { this.isBurgerIngredient = isBurgerIngredient; }
+    void setProductCategory(ProductCategory productCategory) { this.productCategory = productCategory; }
+    void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    void setImageKey(String imageKey) { this.imageKey = imageKey; }
+    void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
-    public void setCreatedBy(Integer createdBy) { this.createdBy = createdBy; }
-    public void setUpdatedBy(Integer updatedBy) { this.updatedBy = updatedBy; }
+    void setCreatedBy(Integer createdBy) { this.createdBy = createdBy; }
+    void setUpdatedBy(Integer updatedBy) { this.updatedBy = updatedBy; }
     public void setDeletedBy(Integer deletedBy) { this.deletedBy = deletedBy; }
 }

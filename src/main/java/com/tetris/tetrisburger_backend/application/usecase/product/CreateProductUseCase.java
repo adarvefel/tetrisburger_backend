@@ -3,15 +3,17 @@ package com.tetris.tetrisburger_backend.application.usecase.product;
 import com.tetris.tetrisburger_backend.application.event.ProductImageUploadRequestedEvent;
 import com.tetris.tetrisburger_backend.domain.exception.ProductAlreadyExistsException;
 import com.tetris.tetrisburger_backend.domain.exception.ProductCategoryNotFoundException;
+import com.tetris.tetrisburger_backend.domain.exception.SupplierNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.model.ProductCategory;
+import com.tetris.tetrisburger_backend.domain.model.Supplier;
 import com.tetris.tetrisburger_backend.domain.port.in.product.CreateProduct;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.CreateProductCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductCategoryRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
+import com.tetris.tetrisburger_backend.domain.port.out.SupplierRepository;
 import jakarta.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -19,18 +21,15 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class CreateProductUseCase implements CreateProduct {
 
-    private static final Logger logger = LoggerFactory.getLogger(CreateProductUseCase.class);
 
     private final ProductRepository productRepository;
+    private  final SupplierRepository supplierRepository;
     private final ProductCategoryRepository productCategoryRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    public CreateProductUseCase(
-            ProductRepository productRepository,
-            ProductCategoryRepository productCategoryRepository,
-            ApplicationEventPublisher eventPublisher
-    ) {
+    public CreateProductUseCase(ProductRepository productRepository, SupplierRepository supplierRepository, ProductCategoryRepository productCategoryRepository, ApplicationEventPublisher eventPublisher) {
         this.productRepository = productRepository;
+        this.supplierRepository = supplierRepository;
         this.productCategoryRepository = productCategoryRepository;
         this.eventPublisher = eventPublisher;
     }
@@ -39,30 +38,32 @@ public class CreateProductUseCase implements CreateProduct {
     public Product create(CreateProductCommand cmd) {
         String productName = cmd.name() != null ? cmd.name().trim() : "";
 
-        logger.info(" Admin {} creando producto: '{}'", cmd.createdBy(), productName);
 
         // Validar duplicado
         boolean exists = productRepository.existsByNameIgnoreCase(productName);
-        logger.info("¿Existe '{}' en BD? → {}", productName, exists);
 
         if (exists) {
-            logger.warn(" RECHAZADO - Producto duplicado: '{}'", productName);
             throw new ProductAlreadyExistsException(productName);
         }
 
-        logger.info(" Validación OK - Procediendo a crear producto '{}'", productName);
 
         ProductCategory category = null;
         if (cmd.productCategoryId() != null) {
             category = productCategoryRepository.findById(cmd.productCategoryId())
-                    .orElseThrow(() -> {
-                        logger.error(" Categoría no encontrada: ID {}", cmd.productCategoryId());
-                        return new ProductCategoryNotFoundException(
-                                "Categoría no encontrada con ID: " + cmd.productCategoryId()
-                        );
-                    });
-            logger.info(" Categoría cargada: '{}' (ID: {})", category.getName(), category.getId());
+                    .orElseThrow(() -> new ProductCategoryNotFoundException(
+                            "Categoría no encontrada con ID: " + cmd.productCategoryId()
+                    ));
         }
+
+
+        if (cmd.supplierId() == null) {
+            throw new SupplierNotFoundException("El proveedor es requerido");
+        }
+
+        Supplier supplier = supplierRepository.findById(cmd.supplierId())
+                .orElseThrow(() -> new SupplierNotFoundException(
+                        "Proveedor no encontrado con ID: " + cmd.supplierId()
+                ));
 
         Product product = Product.create(
                 productName,
@@ -75,15 +76,11 @@ public class CreateProductUseCase implements CreateProduct {
                 category,
                 null,                      // imageUrl
                 null,                      // imageKey
-                cmd.supplierId(),
+                supplier,
                 cmd.createdBy()
         );
 
         Product savedProduct = productRepository.save(product);
-        logger.info(" Producto creado con ID: {} | Categoría: '{}' | Es ingrediente burger: {}",
-                savedProduct.getId(),
-                savedProduct.getCategoryName(),
-                savedProduct.getIsBurgerIngredient());
 
         // Publicar evento de imagen si viene
         if (cmd.productImageData() != null) {
@@ -94,7 +91,6 @@ public class CreateProductUseCase implements CreateProduct {
                     cmd.productImageData().originalFilename(),
                     cmd.createdBy()
             ));
-            logger.info(" Evento de imagen publicado para ID: {}", savedProduct.getId());
         }
 
         return savedProduct;

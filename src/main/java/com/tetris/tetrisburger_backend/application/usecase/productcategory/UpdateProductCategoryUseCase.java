@@ -20,7 +20,7 @@ public class UpdateProductCategoryUseCase implements UpdateProductCategory {
     @Override
     public ProductCategory update(UpdateProductCategoryCommand cmd) {
         ProductCategory current = repo.findById(cmd.id())
-                .orElseThrow(() -> new IllegalArgumentException("Category not found: " + cmd.id()));
+                .orElseThrow(() -> new IllegalArgumentException("Categoria no encontrada: " + cmd.id()));
         current.update(cmd.name().trim(), cmd.description(), cmd.available());
         return repo.save(current);
     }

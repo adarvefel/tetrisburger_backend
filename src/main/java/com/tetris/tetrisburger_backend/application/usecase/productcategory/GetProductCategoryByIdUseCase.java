@@ -17,6 +17,6 @@ public class GetProductCategoryByIdUseCase implements GetProductCategoryById {
     @Override
     public ProductCategory get(GetProductCategoryByIdQuery query) {
         return repo.findById(query.id())
-                .orElseThrow(() -> new IllegalArgumentException("Category not found: " + query.id()));
+                .orElseThrow(() -> new IllegalArgumentException("Categoria no encontrada: " + query.id()));
     }
 }

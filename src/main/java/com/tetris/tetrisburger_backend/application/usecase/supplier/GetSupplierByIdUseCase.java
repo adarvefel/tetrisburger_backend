@@ -16,6 +16,6 @@ public class GetSupplierByIdUseCase implements GetSupplierById {
 
     @Override
     public Supplier get(GetSupplierByIdQuery query) {
-        return repo.findById(query.id()).orElseThrow(() -> new IllegalArgumentException("Supplier not found: " + query.id()));
+        return repo.findById(query.id()).orElseThrow(() -> new IllegalArgumentException("Proveedor no encontrado: " + query.id()));
     }
 }

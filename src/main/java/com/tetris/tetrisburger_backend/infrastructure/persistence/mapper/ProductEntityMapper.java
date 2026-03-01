@@ -3,8 +3,10 @@ package com.tetris.tetrisburger_backend.infrastructure.persistence.mapper;
 
 import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.model.ProductCategory;
+import com.tetris.tetrisburger_backend.domain.model.Supplier;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.ProductEntity;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.ProductCategoryEntity;
+import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.SupplierEntity;
 import org.mapstruct.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +36,20 @@ public interface ProductEntityMapper {
                 );
             }
         } catch (jakarta.persistence.EntityNotFoundException ex) {
-            logger.warn("⚠️ Categoría no encontrada para producto ID: {}", e.getId());
+            logger.warn(" Categoría no encontrada para producto ID: {}", e.getId());
+        }
+
+        Supplier supplier = null;
+        if (e.getSupplier() != null){
+            SupplierEntity supplEntity = e.getSupplier();
+            supplier = Supplier.of(
+                    supplEntity.getId(),
+                    supplEntity.getName(),
+                    supplEntity.getPhone(),
+                    supplEntity.getEmail(),
+                    supplEntity.getAddress(),
+                    supplEntity.getRegistrationDate()
+            );
         }
 
         return Product.of(
@@ -45,11 +60,11 @@ public interface ProductEntityMapper {
                 e.getPrice(),
                 e.getAvailability(),
                 e.getProductType(),
-                e.getIngredientBurger(),  // ✅ Usar getIngredientBurger() no isBurgerIngredient()
+                e.getIngredientBurger(),
                 category,
                 trim(e.getImageUrl()),
                 trim(e.getImageKey()),
-                e.getSupplierId(),
+                supplier,
                 e.getCreatedAt(),
                 e.getUpdatedAt(),
                 e.getDeletedAt(),
@@ -72,7 +87,7 @@ public interface ProductEntityMapper {
         e.setPrice(d.getPrice());
         e.setAvailability(d.getAvailability());
         e.setProductType(d.getProductType());
-        e.setIngredientBurger(d.getIsBurgerIngredient());  // ✅ Usar setIngredientBurger()
+        e.setIngredientBurger(d.getIsBurgerIngredient());
 
         if (d.getProductCategory() != null) {
             ProductCategoryEntity catEntity = new ProductCategoryEntity();
@@ -85,7 +100,14 @@ public interface ProductEntityMapper {
 
         e.setImageUrl(trim(d.getImageUrl()));
         e.setImageKey(trim(d.getImageKey()));
-        e.setSupplierId(d.getSupplierId());
+
+        if (d.getSupplier() != null && d.getSupplier().getId() != null) {
+            SupplierEntity sup = new SupplierEntity();
+            sup.setId(d.getSupplier().getId());
+            e.setSupplier(sup);
+        } else {
+            e.setSupplier(null);
+        }
         e.setCreatedAt(d.getCreatedAt());
         e.setUpdatedAt(d.getUpdatedAt());
         e.setDeletedAt(d.getDeletedAt());
