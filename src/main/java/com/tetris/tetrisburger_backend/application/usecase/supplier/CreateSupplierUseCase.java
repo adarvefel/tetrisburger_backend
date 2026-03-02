@@ -18,8 +18,9 @@ public class CreateSupplierUseCase implements CreateSupplier {
 
     @Override
     public Supplier create(CreateSupplierCommand cmd) {
-        if (repo.existsByEmailIgnoreCase(cmd.email().trim())) {
-            throw new IllegalArgumentException("Supplier email already exists: " + cmd.email());
+        if (repo.existsByName(cmd.name().trim())){
+            throw  new IllegalArgumentException("Este proveedor ya existe:"+ cmd.name());
+
         }
         Supplier s = Supplier.ofNew(
                 cmd.name(), cmd.phone(), cmd.email().trim(), cmd.address(), cmd.registrationDate());

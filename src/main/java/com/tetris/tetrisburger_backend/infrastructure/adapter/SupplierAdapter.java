@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.JpaContext;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -25,6 +26,7 @@ public class SupplierAdapter implements SupplierRepository {
     public SupplierAdapter(SupplierJpaRepository jpa, SupplierEntityMapper mapper) {
         this.jpa = jpa;
         this.mapper = mapper;
+
     }
 
     @Override
@@ -46,6 +48,11 @@ public class SupplierAdapter implements SupplierRepository {
     @Override
     public boolean existsByEmailIgnoreCase(String email) {
         return jpa.existsByEmailIgnoreCase(email);
+    }
+
+    @Override
+    public boolean existsByName(String name) {
+        return jpa.existsByName(name);
     }
 
     @Override
