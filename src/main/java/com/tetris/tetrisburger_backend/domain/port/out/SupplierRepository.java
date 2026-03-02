@@ -3,6 +3,7 @@ package com.tetris.tetrisburger_backend.domain.port.out;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Supplier;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 
 import java.util.Optional;
 
@@ -14,6 +15,8 @@ public interface SupplierRepository {
     void deleteById(Integer id);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByName(String name);
 
     PageResponse<Supplier> findAll(String q, PaginationRequest page);
 }
