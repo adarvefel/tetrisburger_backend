@@ -12,7 +12,7 @@ public class CreateSupplierRequestDTO {
     @NotBlank
     @Size(max = 255)
     private String name;
-    @Size(max = 255)
+    @Size(max = 20)
     private String phone;
     @Email
     @Size(max = 255)
