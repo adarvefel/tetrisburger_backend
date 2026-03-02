@@ -19,6 +19,9 @@ public interface ImageStoragePort {
     @Deprecated  // Usar métodos específicos
     ImageUploadResult uploadImage(FileData fileData, String folder);
 
+    ImageUploadResult uploadAdditionImage(FileData fileData);
+
+
     // ====== UTILIDADES ======
     void deleteImage(String imageKey);
 

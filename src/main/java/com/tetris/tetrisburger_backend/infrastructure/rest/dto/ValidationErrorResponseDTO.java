@@ -1,4 +1,3 @@
-// Para errores de validación con múltiples campos
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto;
 
 import java.time.LocalDateTime;
