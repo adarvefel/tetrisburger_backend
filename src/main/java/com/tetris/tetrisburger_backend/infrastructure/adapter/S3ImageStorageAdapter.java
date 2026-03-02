@@ -17,7 +17,10 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
 
     private static final String USERS_FOLDER = "users";
     private static final String PRODUCTS_FOLDER = "products";
-    private static final String MENU_BURGERS_FOLDER = "burgers-menu";
+    private static final String MENU_BURGERS_FOLDER = "burgers";
+
+    @Value("${s3.folder.addition:addition}")
+    private String additionFolder;
 
     private final S3Client s3Client;
     private final String bucketName;
@@ -72,6 +75,16 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
                 fileData.contentType(),
                 fileData.originalFilename(),
                 folder
+        );
+    }
+
+    @Override
+    public ImageUploadResult uploadAdditionImage(FileData fileData) {
+        return uploadImageInternal(
+                fileData.bytes(),
+                fileData.contentType(),
+                fileData.originalFilename(),
+                additionFolder
         );
     }
 

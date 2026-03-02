@@ -7,7 +7,5 @@ public record DeleteResponseDTO(
 ) {
     public record DeletedResourceDTO(
             Integer id,
-            String name,
-            String resourceType
-    ) {}
+            String name) {}
 }
