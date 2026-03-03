@@ -12,8 +12,6 @@ public class BurgerIngredient {
     private BigDecimal priceAtTime;
     private int quantity;
     private BigDecimal subtotal;
-    private boolean isOptional;
-
     // Constructor privado
     private BurgerIngredient() {}
 
@@ -28,8 +26,7 @@ public class BurgerIngredient {
             String productName,
             BigDecimal priceAtTime,
             Integer quantity,
-            BigDecimal subtotal,
-            Boolean isOptional
+            BigDecimal subtotal
     ) {
         BurgerIngredient ingredient = new BurgerIngredient();
         ingredient.idBurgerIngredient = idBurgerIngredient;
@@ -38,7 +35,6 @@ public class BurgerIngredient {
         ingredient.priceAtTime = priceAtTime;
         ingredient.quantity = quantity;
         ingredient.subtotal = subtotal != null ? subtotal : BigDecimal.ZERO;
-        ingredient.isOptional = isOptional != null ? isOptional : false;
         return ingredient;
     }
 
@@ -58,7 +54,6 @@ public class BurgerIngredient {
         ingredient.priceAtTime = snapshot.price();
         ingredient.quantity = snapshot.quantity();
         ingredient.subtotal = snapshot.price().multiply(new BigDecimal(snapshot.quantity()));
-        ingredient.isOptional = snapshot.isOptional();
         return ingredient;
     }
 
@@ -104,9 +99,7 @@ public class BurgerIngredient {
         return subtotal;
     }
 
-    public boolean isOptional() {
-        return isOptional;
-    }
+
 
     // ==================== Setters (solo para infraestructura) ====================
 
@@ -134,12 +127,6 @@ public class BurgerIngredient {
         this.subtotal = subtotal;
     }
 
-    public void setOptional(boolean optional) {
-        this.isOptional = optional;
-    }
 
     // Para compatibilidad con mappers
-    public Boolean getIsOptional() {
-        return isOptional;
-    }
 }

@@ -32,9 +32,12 @@ public abstract class BurgerEntityMapper {
                 safeTrim(entity.getDescription()),
                 entity.getBasePrice(),
                 entity.getFinalPrice(),
+                entity.getMargin(),              // ← agregar
+                entity.getMarginPercentage(),    // ← agregar
+                entity.getSellingAtLoss(),       // ← agregar
                 bool(entity.getIsOnMenu()),
-                bool(entity.getIsFavorite()),
-                bool(entity.getIsCustom()),
+                bool(entity.getIsSaved()),    // ← corregir typo (isFavorite en domain)
+                bool(entity.getIsFeatured()),      // ← is_saved en DB
                 bool(entity.getAvailability()),
                 safeTrim(entity.getImageKey()),
                 safeTrim(entity.getImageUrl()),
@@ -64,8 +67,8 @@ public abstract class BurgerEntityMapper {
         entity.setBasePrice(domain.getBasePrice());
         entity.setFinalPrice(domain.getFinalPrice());
         entity.setIsOnMenu(domain.isOnMenu());
-        entity.setIsCustom(domain.isCustom());
-        entity.setIsFavorite(domain.isFavorite());
+        entity.setIsSaved(domain.isSaved());
+        entity.setIsFeatured(domain.isFeatured());
         entity.setAvailability(domain.isAvailability());
         entity.setImageKey(domain.getImageKey());
         entity.setImageUrl(domain.getImageUrl());

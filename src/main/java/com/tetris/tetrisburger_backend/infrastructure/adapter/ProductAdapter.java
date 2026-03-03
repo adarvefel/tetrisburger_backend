@@ -57,7 +57,6 @@ public class ProductAdapter implements ProductRepository {
                 .and(byCategory(productCategoryId))
                 .and(byAvailability(availability));
 
-        // ✅ SOLUCIÓN: Usar toPageable() en lugar de crear Sort directamente
         Pageable pageable = toPageable(page);
         Page<ProductEntity> productPage = jpa.findAll(spec, pageable);
 
@@ -120,7 +119,6 @@ public class ProductAdapter implements ProductRepository {
             if (categoryId == null) {
                 return cb.conjunction();
             }
-            // ✅ Usa join en lugar de get directo
             return cb.equal(root.join("productCategory", JoinType.LEFT).get("id"), categoryId);
         };
     }

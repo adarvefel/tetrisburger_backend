@@ -36,8 +36,6 @@ public class BurgerIngredientEntity {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    @Column(name = "is_optional", nullable = false)
-    private Boolean isOptional;
 
     @Column(name = "price_at_time", nullable = false)
     private BigDecimal priceAtTime;
@@ -98,17 +96,6 @@ public class BurgerIngredientEntity {
         this.quantity = quantity;
     }
 
-    public Boolean getIsOptional() {
-        return isOptional;
-    }
-
-    public Boolean getOptional() {
-        return isOptional;
-    }
-
-    public void setIsOptional(Boolean optional) {
-        isOptional = optional;
-    }
 
     public BigDecimal getPriceAtTime() {
         return priceAtTime;
@@ -124,9 +111,5 @@ public class BurgerIngredientEntity {
 
     public void setSubtotal(BigDecimal subtotal) {
         this.subtotal = subtotal;
-    }
-
-    public void setOptional(Boolean optional) {
-        isOptional = optional;
     }
 }

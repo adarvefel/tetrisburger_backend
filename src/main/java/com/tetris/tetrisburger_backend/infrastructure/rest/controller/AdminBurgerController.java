@@ -109,7 +109,7 @@ public class AdminBurgerController {
         Burger burger = createMenuBurger.handle(command);
 
         logger.info(" Hamburguesa de menú creada: ID={}, isFavorite={}",
-                burger.getIdBurger(), burger.isFavorite());
+                burger.getIdBurger(), burger.isFeatured());
 
         MenuBurgerResponseDTO response = mapper.toMenuBurgerResponseDTO(burger);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -202,7 +202,7 @@ public class AdminBurgerController {
     // ==================== TOGGLE FAVORITA ====================
 
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
-    @PatchMapping("/menu/{idBurger}/isFavorite")
+    @PatchMapping("/menu/{idBurger}")
     @Operation(
             summary = "Marcar/desmarcar como destacada",
             description = "Cambia el estado de favorita de la hamburguesa " +
@@ -228,7 +228,7 @@ public class AdminBurgerController {
         Burger burger = toggleMenuBurgerFavorite.handle(idBurger, isFavorite, adminUserId);
 
         logger.info(" Estado de favorita actualizado: ID={}, isFavorite={}",
-                idBurger, burger.isFavorite());
+                idBurger, burger.isFeatured());
 
         MenuBurgerResponseDTO response = mapper.toMenuBurgerResponseDTO(burger);
         return ResponseEntity.ok(response);

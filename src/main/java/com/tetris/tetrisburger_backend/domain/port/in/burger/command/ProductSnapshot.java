@@ -10,11 +10,10 @@ public record ProductSnapshot(
         String name,
         BigDecimal price,
         String categoryName,
-        Integer quantity,
-        Boolean isOptional
+        Integer quantity
 ) {
 
-    public static ProductSnapshot fromProduct(Product product, Integer quantity, Boolean isOptional) {
+    public static ProductSnapshot fromProduct(Product product, Integer quantity) {
         if (product == null) {
             throw new IllegalArgumentException("El producto no puede ser null");
         }
@@ -44,8 +43,7 @@ public record ProductSnapshot(
                 product.getName(),
                 product.getPrice(),
                 product.getProductCategory() != null ? product.getProductCategory().getName() : "Sin categoría",
-                quantity,
-                isOptional != null ? isOptional : false
+                quantity
         );
     }
 

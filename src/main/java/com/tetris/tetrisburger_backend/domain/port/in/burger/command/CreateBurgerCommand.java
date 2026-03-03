@@ -10,9 +10,8 @@ public record CreateBurgerCommand(
         String name,
         String description,
         FileData  imageData,
-        ImageStatus imageStatus,
         List<IngredientRequest> ingredients,
-        Boolean isFavorite,
+        Boolean isFeatured,
         BigDecimal finalPrice,
         Integer createdBy
 ) {
@@ -33,8 +32,7 @@ public record CreateBurgerCommand(
 
     public record IngredientRequest(
             Integer idProduct,
-            Integer quantity,
-            Boolean isOptional
+            Integer quantity
     ) {
         public IngredientRequest {
             if (idProduct == null || idProduct <= 0) {

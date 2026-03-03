@@ -20,6 +20,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;  // ✅ FIX 1: Importar RoundingMode
 import java.util.List;
 import java.util.Set;
 
@@ -59,58 +60,50 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                     .map(ing -> {
                         Product product = productRepository.findById(ing.idProduct())
                                 .orElseThrow(() -> new ProductNotFoundException(ing.idProduct()));
-
                         validateProductForBurger(product);
-
                         return ProductSnapshot.fromProduct(
                                 product,
-                                ing.quantity(),
-                                ing.isOptional()
+                                ing.quantity()
+
                         );
                     })
                     .toList();
 
+            // Domain factory: calcula basePrice y llama syncMetrics() internamente
             Burger burger = Burger.menuBurger(
                     command.name(),
                     command.description(),
                     null,
                     snapshots,
-                    command.isFavorite() != null ? command.isFavorite() : false
+                    command.isFeatured() != null ? command.isFeatured() : false
             );
 
-            if (command.createdBy() != null) {
-                burger.setCreatedBy(command.createdBy());
-                burger.setUpdatedBy(command.createdBy());
-            }
+            burger.setCreatedBy(command.createdBy());
+            burger.setUpdatedBy(command.createdBy());
+
 
             if (command.finalPrice() != null &&
                     command.finalPrice().compareTo(BigDecimal.ZERO) > 0) {
 
-                BigDecimal basePrice = burger.getBasePrice();
-                BigDecimal customPrice = command.finalPrice();
+                validateFinalPrice(command.finalPrice(), burger.getBasePrice());
+                burger.updateFinalPrice(command.finalPrice(), command.createdBy());
 
-                validateFinalPrice(customPrice, basePrice);
 
-                BigDecimal margin = customPrice.subtract(basePrice);
-                BigDecimal marginPercent = basePrice.compareTo(BigDecimal.ZERO) > 0
-                        ? margin.divide(basePrice, 4, BigDecimal.ROUND_HALF_UP)
-                        .multiply(BigDecimal.valueOf(100))
-                        : BigDecimal.ZERO;
-
-                logger.info("Aplicando precio personalizado:");
-                logger.info("Costo base: ${}", basePrice);
-                logger.info("Precio final: ${}", customPrice);
-                logger.info("Margen: ${} ({}%)", margin, marginPercent);
-
-                burger.setFinalPrice(customPrice);
+                logger.info("Precio personalizado aplicado → base: ${}, final: ${}, margen: {}%, pérdida: {}",
+                        burger.getBasePrice(),
+                        burger.getFinalPrice(),
+                        burger.getMarginPercentage(),
+                        burger.getSellingAtLoss()
+                );
 
             } else {
-                logger.info("Usando precio calculado automáticamente: ${}",
-                        burger.getFinalPrice());
+                logger.info("Usando precio calculado automáticamente: ${}", burger.getFinalPrice());
             }
 
             logger.info("Guardando hamburguesa: name={}, basePrice={}, finalPrice={}, ingredients={}",
-                    command.name(), burger.getBasePrice(), burger.getFinalPrice(),
+                    command.name(),
+                    burger.getBasePrice(),
+                    burger.getFinalPrice(),
                     burger.getIngredients().size());
 
             Burger savedBurger = burgerRepository.save(burger);
@@ -119,10 +112,12 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                 throw new BurgerCreationException("Error al guardar la hamburguesa en la base de datos");
             }
 
-            logger.info("Hamburguesa guardada exitosamente: ID={}, basePrice=${}, finalPrice=${}",
+            logger.info("Hamburguesa guardada: ID={}, basePrice=${}, finalPrice=${}, margen={}%",
                     savedBurger.getIdBurger(),
                     savedBurger.getBasePrice(),
-                    savedBurger.getFinalPrice());
+                    savedBurger.getFinalPrice(),
+                    savedBurger.getMarginPercentage()
+            );
 
             publishImageUploadEvent(savedBurger, command);
 
@@ -142,23 +137,14 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
     // ==================== MÉTODOS PRIVADOS ====================
 
     private void validateCommand(CreateBurgerCommand command) {
-        if (command == null) {
+        if (command == null)
             throw new InvalidBurgerException("El comando no puede ser nulo");
-        }
-
-        if (command.name() == null || command.name().isBlank()) {
+        if (command.name() == null || command.name().isBlank())
             throw new InvalidBurgerException("El nombre no puede estar vacío");
-        }
-
-        if (command.ingredients() == null || command.ingredients().isEmpty()) {
-            throw new InvalidBurgerException(
-                    "La hamburguesa debe tener al menos un ingrediente"
-            );
-        }
-
-        if (command.createdBy() == null) {
+        if (command.ingredients() == null || command.ingredients().isEmpty())
+            throw new InvalidBurgerException("La hamburguesa debe tener al menos un ingrediente");
+        if (command.createdBy() == null)
             throw new InvalidBurgerException("El ID del usuario creador es obligatorio");
-        }
     }
 
     private void validateUniqueMenuBurgerName(String name) {
@@ -178,9 +164,7 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                 .count();
 
         if (uniqueProducts < ingredients.size()) {
-            throw new InvalidBurgerException(
-                    "La hamburguesa contiene ingredientes duplicados"
-            );
+            throw new InvalidBurgerException("La hamburguesa contiene ingredientes duplicados");
         }
     }
 
@@ -190,39 +174,32 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                     "El producto '" + product.getName() + "' no está disponible"
             );
         }
-
         if (product.getIsBurgerIngredient() == null || !product.getIsBurgerIngredient()) {
             throw new InvalidBurgerException(
                     "El producto '" + product.getName() + "' no es un ingrediente de hamburguesa"
             );
         }
-
         if (!ALLOWED_INGREDIENT_TYPES.contains(product.getProductType())) {
             throw new InvalidBurgerException(
                     "El producto '" + product.getName() + "' debe ser de tipo INGREDIENT. " +
                             "Tipo actual: " + product.getProductType()
             );
         }
-
-        if (product.getQuantity()  <= 0) {
+        if (product.getQuantity() <= 0) {
             logger.warn("Producto sin stock usado en menu burger: {} (ID: {})",
                     product.getName(), product.getId());
         }
     }
 
     private void validateFinalPrice(BigDecimal finalPrice, BigDecimal basePrice) {
-        if (finalPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new InvalidBurgerException(
-                    "El precio final debe ser mayor a cero"
-            );
-        }
+        if (finalPrice.compareTo(BigDecimal.ZERO) <= 0)
+            throw new InvalidBurgerException("El precio final debe ser mayor a cero");
 
-        if (basePrice.compareTo(BigDecimal.ZERO) == 0) {
-            return;
-        }
+        if (basePrice.compareTo(BigDecimal.ZERO) == 0) return;
 
+        // ✅ FIX 1: RoundingMode.HALF_UP en vez de BigDecimal.ROUND_HALF_UP (deprecated)
         BigDecimal marginPercent = finalPrice.subtract(basePrice)
-                .divide(basePrice, 4, BigDecimal.ROUND_HALF_UP)
+                .divide(basePrice, 4, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100));
 
         if (marginPercent.compareTo(BigDecimal.valueOf(-50)) < 0) {
@@ -232,7 +209,6 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                             basePrice, finalPrice, marginPercent.abs().doubleValue())
             );
         }
-
         if (marginPercent.compareTo(BigDecimal.valueOf(300)) > 0) {
             throw new InvalidBurgerException(
                     String.format("El precio no puede ser mayor al 300%% del costo base. " +
@@ -240,7 +216,6 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                             basePrice, finalPrice, marginPercent.doubleValue())
             );
         }
-
         if (finalPrice.compareTo(basePrice) < 0) {
             logger.warn("Precio de venta menor al costo base: ${} < ${}", finalPrice, basePrice);
         }
@@ -249,7 +224,6 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
     private void publishImageUploadEvent(Burger burger, CreateBurgerCommand command) {
         if (command.imageData() != null && command.imageData().bytes() != null) {
             logger.info("Publicando evento de imagen para burger ID: {}", burger.getIdBurger());
-
             eventPublisher.publishEvent(
                     new MenuBurgerImageUploadRequestedEvent(
                             burger.getIdBurger(),

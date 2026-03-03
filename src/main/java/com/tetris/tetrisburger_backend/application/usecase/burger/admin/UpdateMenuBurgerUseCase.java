@@ -82,8 +82,8 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
                         //  Crear snapshot del producto
                         ProductSnapshot snapshot = ProductSnapshot.fromProduct(
                                 product,
-                                req.quantity(),
-                                req.isOptional()
+                                req.quantity()
+
                         );
 
                         // Crear ingrediente desde snapshot

@@ -24,8 +24,7 @@ public class BurgerIngredientEntityMapper {
                 entity.getProductName(),
                 entity.getPriceAtTime(),
                 entity.getQuantity(),
-                entity.getSubtotal(),
-                entity.getIsOptional()
+                entity.getSubtotal()
         );
     }
 
@@ -50,7 +49,7 @@ public class BurgerIngredientEntityMapper {
         }
         entity.setSubtotal(subtotal);
 
-        entity.setIsOptional(domain.isOptional());
+
 
         return entity;
     }

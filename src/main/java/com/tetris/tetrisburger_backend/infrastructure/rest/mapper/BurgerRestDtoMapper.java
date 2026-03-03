@@ -41,8 +41,7 @@ public interface BurgerRestDtoMapper {
         List<CreateBurgerCommand.IngredientRequest> ingredients = dto.ingredients().stream()
                 .map(ing -> new CreateBurgerCommand.IngredientRequest(
                         ing.idProduct(),
-                        ing.quantity(),
-                        ing.isOptional() != null ? ing.isOptional() : false
+                        ing.quantity()
                 ))
                 .toList();
 
@@ -50,9 +49,8 @@ public interface BurgerRestDtoMapper {
                 dto.name(),
                 dto.description(),
                 imageData,
-                imageStatus,
                 ingredients,
-                dto.isFavorite(),
+                dto.isFeatured(),
                 dto.finalPrice(),
                 createdBy
         );
@@ -74,8 +72,7 @@ public interface BurgerRestDtoMapper {
                 : dto.ingredients().stream()
                 .map(ing -> new CreateCustomBurgerCommand.IngredientRequest(
                         ing.idProduct(),
-                        ing.quantity(),
-                        ing.isOptional()
+                        ing.quantity()
                 ))
                 .collect(Collectors.toList());
 
@@ -102,8 +99,7 @@ public interface BurgerRestDtoMapper {
                 : dto.ingredients().stream()
                 .map(ing -> new UpdateMenuBurgerCommand.IngredientRequest(
                         ing.idProduct(),
-                        ing.quantity(),
-                        ing.isOptional()
+                        ing.quantity()
                 ))
                 .collect(Collectors.toList());
 
@@ -131,8 +127,7 @@ public interface BurgerRestDtoMapper {
                 : dto.ingredients().stream()
                 .map(ing -> new UpdateCustomBurgerCommand.IngredientRequest(
                         ing.idProduct(),
-                        ing.quantity(),
-                        ing.isOptional()
+                        ing.quantity()
                 ))
                 .collect(Collectors.toList());
 
@@ -160,7 +155,7 @@ public interface BurgerRestDtoMapper {
                 burger.calculateMarginPercentage(),
                 burger.isSellingAtLoss(),
                 burger.isOnMenu(),
-                burger.isFavorite(),
+                burger.isFeatured(),
                 burger.isAvailability(),
                 burger.getImageUrl(),
                 burger.getImageKey(),
@@ -169,10 +164,8 @@ public interface BurgerRestDtoMapper {
                 toMenuBurgerIngredientResponseDTOList(burger.getIngredients()),
                 burger.getCreatedAt(),
                 burger.getUpdatedAt(),
-                burger.getDeletedAt(),
                 burger.getCreatedBy(),
-                burger.getUpdatedBy(),
-                burger.getDeletedBy()
+                burger.getUpdatedBy()
         );
     }
 
@@ -205,7 +198,7 @@ public interface BurgerRestDtoMapper {
                 burger.getName(),
                 burger.getDescription(),
                 burger.getFinalPrice(),
-                burger.isFavorite(),
+                burger.isFeatured(),
                 burger.isAvailability(),
                 burger.getImageUrl(),
                 burger.getImageStatus(),
@@ -248,8 +241,7 @@ public interface BurgerRestDtoMapper {
                 ingredient.getProductName(),
                 ingredient.getPriceAtTime(),
                 ingredient.getQuantity(),
-                ingredient.calculateSubtotal(),
-                ingredient.isOptional()
+                ingredient.calculateSubtotal()
         );
     }
 
@@ -276,8 +268,7 @@ public interface BurgerRestDtoMapper {
                 ingredient.getProductName(),
                 ingredient.getPriceAtTime(),
                 ingredient.getQuantity(),
-                ingredient.calculateSubtotal(),
-                ingredient.isOptional()
+                ingredient.calculateSubtotal()
         );
     }
 

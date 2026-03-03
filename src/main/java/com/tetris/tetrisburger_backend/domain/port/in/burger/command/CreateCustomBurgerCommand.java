@@ -13,7 +13,6 @@ public record CreateCustomBurgerCommand(
 ) {
     public record IngredientRequest(
             Integer idProduct,
-            Integer quantity,
-            Boolean isOptional
+            Integer quantity
     ) {}
 }
