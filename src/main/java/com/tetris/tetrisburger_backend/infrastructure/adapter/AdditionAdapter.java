@@ -33,7 +33,7 @@ public class AdditionAdapter implements AdditionRepository {
 
         return new PageResponse<>(
                 page.getContent(),
-                page.getNumber() + 1,
+                page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages()
@@ -64,7 +64,7 @@ public class AdditionAdapter implements AdditionRepository {
 
         return new PageResponse<>(
                 page.getContent(),
-                page.getNumber() + 1,
+                page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages()

@@ -11,6 +11,8 @@ public interface ProductRepository {
 
     Optional<Product> findById(Integer id);
 
+
+
     void deleteById(Integer id);
 
     boolean existsByNameIgnoreCase(String name);
