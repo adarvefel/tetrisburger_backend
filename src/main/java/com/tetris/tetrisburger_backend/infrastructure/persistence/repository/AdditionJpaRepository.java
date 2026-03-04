@@ -19,6 +19,9 @@ public interface AdditionJpaRepository extends JpaRepository<AdditionEntity, Int
             Pageable pageable
     );
 
+
+
+
     @Query("SELECT a FROM AdditionEntity a WHERE LOWER(a.name) LIKE LOWER(CONCAT('%', :name, '%')) AND a.deletedAt IS NULL")
     Page<AdditionEntity> findByNameContaining(@Param("name") String name, Pageable pageable);
 }

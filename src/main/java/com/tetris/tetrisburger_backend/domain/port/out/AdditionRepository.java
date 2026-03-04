@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface AdditionRepository {
     PageResponse<Addition> findAll(Boolean available, PaginationRequest pagination);
     Optional<Addition> findById(Integer id);
+
+
     boolean existsByNameIgnoreCase(String name);
     Addition save(Addition addition);
     PageResponse<Addition> findByName(String name, PaginationRequest pagination);
