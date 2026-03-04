@@ -153,7 +153,7 @@ public class Burger {
             String description,
             String imageUrl,
             List<ProductSnapshot> ingredients,
-            boolean isFavorite
+            boolean isFeatured
     ) {
         if (name == null || name.isBlank())
             throw new IllegalArgumentException("El nombre es obligatorio");
@@ -165,7 +165,7 @@ public class Burger {
         burger.imageKey = null;
         burger.isOnMenu = true;
         burger.isSaved = false;
-        burger.isFeatured = isFavorite;
+        burger.isFeatured = isFeatured;
         burger.availability = true;
         burger.idUser = null;
         burger.timesOrdered = 0;
@@ -381,15 +381,15 @@ public class Burger {
     // FAVORITOS: Menu Burger (ADMIN)
     // ============================================
 
-    public void setMenuBurgerFavorite(Boolean isFavorite, Integer updatedBy) {
+    public void setMenuBurgerFeatured(Boolean isFeatured, Integer updatedBy) {
         if (!this.isOnMenu)
             throw new InvalidBurgerException("Solo burgers de menú pueden marcarse como destacadas. ID: " + this.idBurger);
         if (updatedBy == null)
             throw new InvalidBurgerException("updatedBy no puede ser null");
-        if (isFavorite == null)
+        if (isFeatured == null)
             throw new InvalidBurgerException("isFavorite no puede ser null");
 
-        this.isFeatured = isFavorite;
+        this.isFeatured = isFeatured;
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
     }
@@ -520,7 +520,6 @@ public class Burger {
 
     public boolean isMenuBurger()   { return this.isOnMenu; }
     public boolean isCustomBurger() { return this.isSaved; }
-    public boolean isFavoriteBurger() { return this.isFeatured; }
     public boolean isAvailable()    { return this.availability && this.deletedAt == null; }
     public boolean isDeleted()      { return this.deletedAt != null; }
     public boolean canBeModified()  { return !this.isDeleted(); }

@@ -11,122 +11,98 @@ public class BurgerIngredient {
     private String productName;
     private BigDecimal priceAtTime;
     private int quantity;
+    private boolean isOptional;
     private BigDecimal subtotal;
-    // Constructor privado
+    private String imageUrl;
+
     private BurgerIngredient() {}
 
-    // ==================== Factory Method: Reconstitución ====================
+    // ==================== Reconstitución ====================
 
-    /**
-     *  Reconstitución completa desde persistencia
-     */
     public static BurgerIngredient reconstitute(
             Integer idBurgerIngredient,
             Integer idProduct,
             String productName,
             BigDecimal priceAtTime,
             Integer quantity,
-            BigDecimal subtotal
+            BigDecimal subtotal,
+            Boolean isOptional,
+            String imageUrl
     ) {
         BurgerIngredient ingredient = new BurgerIngredient();
         ingredient.idBurgerIngredient = idBurgerIngredient;
         ingredient.idProduct = idProduct;
         ingredient.productName = productName;
         ingredient.priceAtTime = priceAtTime;
-        ingredient.quantity = quantity;
+        ingredient.quantity = quantity != null ? quantity : 0;
         ingredient.subtotal = subtotal != null ? subtotal : BigDecimal.ZERO;
+        ingredient.isOptional = isOptional != null ? isOptional : false;
+        ingredient.imageUrl = imageUrl;
         return ingredient;
     }
 
-    // ==================== Factory Method: Desde Snapshot ====================
+    // ==================== Desde Snapshot ====================
 
-    /**
-     * Crea un ingrediente desde un ProductSnapshot (al crear burger)
-     */
     public static BurgerIngredient fromSnapshot(ProductSnapshot snapshot) {
-        if (snapshot == null) {
+        if (snapshot == null)
             throw new IllegalArgumentException("ProductSnapshot no puede ser null");
-        }
 
         BurgerIngredient ingredient = new BurgerIngredient();
         ingredient.idProduct = snapshot.idProduct();
         ingredient.productName = snapshot.name();
         ingredient.priceAtTime = snapshot.price();
         ingredient.quantity = snapshot.quantity();
-        ingredient.subtotal = snapshot.price().multiply(new BigDecimal(snapshot.quantity()));
+        ingredient.subtotal = snapshot.calculateSubtotal();
+        ingredient.isOptional = snapshot.isOptional() != null ? snapshot.isOptional() : false;
+        ingredient.imageUrl = snapshot.imageUrl();
         return ingredient;
     }
 
     // ==================== Comportamiento ====================
 
-    /**
-     * Calcula el subtotal (precio × cantidad)
-     */
     public BigDecimal calculateSubtotal() {
-        if (priceAtTime == null) {
-            return BigDecimal.ZERO;
-        }
+        if (priceAtTime == null) return BigDecimal.ZERO;
         return priceAtTime.multiply(BigDecimal.valueOf(quantity));
     }
 
-
     // ==================== Getters ====================
 
-    public Integer getIdBurgerIngredient() {
-        return idBurgerIngredient;
-    }
+    public Integer getIdBurgerIngredient() { return idBurgerIngredient; }
+    public Integer getIdProduct()          { return idProduct; }
+    public String getProductName()         { return productName; }
+    public BigDecimal getPriceAtTime()     { return priceAtTime; }
+    public int getQuantity()               { return quantity; }
+    public boolean getIsOptional()         { return isOptional; }
 
-    public Integer getIdProduct() {
-        return idProduct;
-    }
-
-    public String getProductName() {
-        return productName;
-    }
-
-    public BigDecimal getPriceAtTime() {
-        return priceAtTime;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
 
     public BigDecimal getSubtotal() {
-        if (subtotal == null) {
-            return calculateSubtotal();
-        }
-        return subtotal;
+        return subtotal != null ? subtotal : calculateSubtotal();
     }
 
+    // ==================== Setters (solo infra) ====================
 
 
-    // ==================== Setters (solo para infraestructura) ====================
-
-    public void setIdBurgerIngredient(Integer idBurgerIngredient) {
-        this.idBurgerIngredient = idBurgerIngredient;
+    public boolean isOptional() {
+        return isOptional;
     }
 
-    public void setIdProduct(Integer idProduct) {
-        this.idProduct = idProduct;
+    public void setOptional(boolean optional) {
+        isOptional = optional;
     }
 
-    public void setProductName(String productName) {
-        this.productName = productName;
+    public String getImageUrl() {
+        return imageUrl;
     }
 
-    public void setPriceAtTime(BigDecimal priceAtTime) {
-        this.priceAtTime = priceAtTime;
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
-    public void setSubtotal(BigDecimal subtotal) {
-        this.subtotal = subtotal;
-    }
-
-
-    // Para compatibilidad con mappers
+    public void setIdBurgerIngredient(Integer idBurgerIngredient) { this.idBurgerIngredient = idBurgerIngredient; }
+    public void setIdProduct(Integer idProduct)                   { this.idProduct = idProduct; }
+    public void setProductName(String productName)                { this.productName = productName; }
+    public void setPriceAtTime(BigDecimal priceAtTime)            { this.priceAtTime = priceAtTime; }
+    public void setQuantity(int quantity)                         { this.quantity = quantity; }
+    public void setSubtotal(BigDecimal subtotal)                  { this.subtotal = subtotal; }
+    public void setIsOptional(boolean isOptional)                   { this.isOptional = isOptional; }
 }

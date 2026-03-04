@@ -3,8 +3,10 @@ package com.tetris.tetrisburger_backend.infrastructure.adapter;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
+import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.BurgerEntity;
+import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.ProductEntity;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.mapper.BurgerEntityMapper;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.BurgerJpaRepository;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.util.SortBuilder;
@@ -39,9 +41,11 @@ public class BurgerAdapter implements BurgerRepository {
         return mapper.toDomain(saved);
     }
 
+
     @Override
     public Optional<Burger> findById(Integer idBurger) {
-        return jpaRepository.findById(idBurger).map(mapper::toDomain);
+        return jpaRepository.findByIdWithProductsAndDeletedAtIsNull(idBurger)
+                .map(mapper::toDomain);
     }
 
     @Override
@@ -91,24 +95,29 @@ public class BurgerAdapter implements BurgerRepository {
 
     @Override
     public Optional<Burger> findMenuById(Integer idBurger) {
-        return jpaRepository.findByIdBurgerAndIsOnMenuTrue(idBurger).map(mapper::toDomain);
+        return jpaRepository.findByIdOnMenuWithProducts(idBurger)
+                .map(mapper::toDomain);
     }
 
     @Override
     public Optional<Burger> findActiveMenuById(Integer idBurger) {
-        return jpaRepository.findByIdBurgerAndIsOnMenuTrueAndDeletedAtIsNull(idBurger)
+        return jpaRepository.findActiveMenuByIdWithProducts(idBurger)
                 .map(mapper::toDomain);
     }
 
     @Override
     public Optional<Burger> findActiveById(Integer idBurger) {
-        return jpaRepository.findByIdBurgerAndDeletedAtIsNull(idBurger).map(mapper::toDomain);
+        return jpaRepository.findByIdWithProductsAndDeletedAtIsNull(idBurger)
+                .map(mapper::toDomain);
     }
 
     @Override
     public Optional<Burger> findByNameAndIsOnMenuTrueAndDeletedAtIsNull(String name) {
-        return jpaRepository.findByNameAndIsOnMenuTrueAndDeletedAtIsNull(name).map(mapper::toDomain);
+        return jpaRepository.findByNameAndIsOnMenuTrueAndDeletedAtIsNull(name)
+                .map(mapper::toDomain);
     }
+
+
 
     // ========================================
     // MENÚ - FILTROS Y BÚSQUEDA
@@ -191,8 +200,7 @@ public class BurgerAdapter implements BurgerRepository {
 
     @Override
     public Optional<Burger> findSavedByIdAndUser(Integer idBurger, Integer idUser) {
-        return jpaRepository
-                .findByIdBurgerAndIdUserAndIsSavedTrueAndDeletedAtIsNull(idBurger, idUser)
+        return jpaRepository.findSavedByIdAndUserWithProducts(idBurger, idUser)
                 .map(mapper::toDomain);
     }
 

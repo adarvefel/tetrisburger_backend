@@ -45,6 +45,12 @@ public class ProductAdapter implements ProductRepository {
     }
 
     @Override
+    public PageResponse<Product> findAllBurgerIngredients(PaginationRequest page) {
+        Page<ProductEntity> result = jpa.findAllBurgerIngredients(toPageable(page));
+        return toPageResponse(result);
+    }
+
+    @Override
     public void deleteById(Integer id) {
         jpa.deleteById(id);
     }

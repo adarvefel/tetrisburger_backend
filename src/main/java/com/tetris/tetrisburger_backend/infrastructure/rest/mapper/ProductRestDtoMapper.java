@@ -162,4 +162,33 @@ public interface ProductRestDtoMapper {
                 .map(this::toDeletedProductResponseDTO)
                 .collect(Collectors.toList());
     }
+
+    default BurgerIngredientOptionDTO toBurgerIngredientOptionDTO(Product product) {
+        if (product == null) return null;
+
+        BurgerIngredientOptionDTO dto = new BurgerIngredientOptionDTO();
+        dto.setIdProduct(product.getId());
+        dto.setName(product.getName());
+        dto.setPrice(product.getPrice());
+        dto.setImageUrl(product.getImageUrl());
+        dto.setAvailability(product.getAvailability());
+        dto.setQuantity(product.getQuantity());
+        return dto;
+    }
+
+    default BurgerIngredientListDTO toBurgerIngredientListDTO(PageResponse<Product> page) {
+        if (page == null) return null;
+
+        List<BurgerIngredientOptionDTO> items = page.content().stream()
+                .map(this::toBurgerIngredientOptionDTO)
+                .collect(Collectors.toList());
+
+        return new BurgerIngredientListDTO(
+                items,
+                page.page(),
+                page.size(),
+                page.totalElements(),
+                page.totalPages()
+        );
+    }
 }

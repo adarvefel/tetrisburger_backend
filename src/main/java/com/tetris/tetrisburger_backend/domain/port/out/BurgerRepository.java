@@ -3,6 +3,7 @@ package com.tetris.tetrisburger_backend.domain.port.out;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
+import com.tetris.tetrisburger_backend.domain.model.Product;
 
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +54,7 @@ public interface BurgerRepository {
     // MENÚ - FILTROS Y BÚSQUEDA
     // ========================================
 
+
     PageResponse<Burger> searchMenuByName(String name, PaginationRequest pagination);
 
     PageResponse<Burger> searchMenuBurgersWithFilters(
@@ -61,6 +63,7 @@ public interface BurgerRepository {
             Boolean isFeatured,
             PaginationRequest pagination
     );
+
 
     PageResponse<Burger> findTopOrderedMenuBurgers(PaginationRequest pagination);
 

@@ -20,7 +20,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;  // ✅ FIX 1: Importar RoundingMode
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Set;
 
@@ -63,7 +63,9 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                         validateProductForBurger(product);
                         return ProductSnapshot.fromProduct(
                                 product,
-                                ing.quantity()
+                                ing.quantity(),
+                                ing.isOptional()
+
 
                         );
                     })
@@ -197,7 +199,6 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
 
         if (basePrice.compareTo(BigDecimal.ZERO) == 0) return;
 
-        // ✅ FIX 1: RoundingMode.HALF_UP en vez de BigDecimal.ROUND_HALF_UP (deprecated)
         BigDecimal marginPercent = finalPrice.subtract(basePrice)
                 .divide(basePrice, 4, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100));

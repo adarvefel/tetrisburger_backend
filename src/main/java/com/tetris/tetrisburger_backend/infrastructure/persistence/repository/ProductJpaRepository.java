@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductJpaRepository extends JpaRepository<ProductEntity, Integer>, JpaSpecificationExecutor<ProductEntity> {
@@ -32,4 +33,15 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, Integ
             @Param("availability") Boolean availability,
             Pageable pageable);
 
+
+    @Query("SELECT p FROM ProductEntity p WHERE p.deletedAt IS NULL")
+    List<ProductEntity> findAllActive();
+
+
+    @Query("SELECT p FROM ProductEntity p " +
+            "WHERE p.isBurgerIngredient = true " +
+            "AND p.availability = true " +
+            "AND p.deletedAt IS NULL " +
+            "ORDER BY p.name ASC")
+    Page<ProductEntity> findAllBurgerIngredients(Pageable pageable);
 }

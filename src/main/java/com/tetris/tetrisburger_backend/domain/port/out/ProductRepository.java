@@ -11,6 +11,8 @@ public interface ProductRepository {
 
     Optional<Product> findById(Integer id);
 
+    PageResponse<Product> findAllBurgerIngredients(PaginationRequest page);
+
     void deleteById(Integer id);
 
     boolean existsByNameIgnoreCase(String name);

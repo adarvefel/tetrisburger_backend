@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Table(name = "product",
         uniqueConstraints = {@UniqueConstraint(name = "uc_product_name", columnNames = "name")},
         indexes = {@Index(name = "idx_product_type", columnList = "product_type")})
-@SQLRestriction("deleted_at IS NULL")
+
 public class ProductEntity {
 
     @Id

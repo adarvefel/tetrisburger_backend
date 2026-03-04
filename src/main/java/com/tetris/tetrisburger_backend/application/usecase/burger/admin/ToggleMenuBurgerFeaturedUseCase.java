@@ -4,7 +4,7 @@ import com.tetris.tetrisburger_backend.domain.exception.BurgerNotFoundException;
 import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
 import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
-import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.ToggleMenuBurgerFavorite;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.ToggleMenuBurgerFeatured;
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import jakarta.transaction.Transactional;
@@ -14,14 +14,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Transactional
-public class ToggleMenuBurgerFavoriteUseCase implements ToggleMenuBurgerFavorite {
+public class ToggleMenuBurgerFeaturedUseCase implements ToggleMenuBurgerFeatured {
 
-    private static final Logger logger = LoggerFactory.getLogger(ToggleMenuBurgerFavoriteUseCase.class);
+    private static final Logger logger = LoggerFactory.getLogger(ToggleMenuBurgerFeaturedUseCase.class);
 
     private final BurgerRepository burgerRepository;
     private final UserRepository userRepository;
 
-    public ToggleMenuBurgerFavoriteUseCase(
+    public ToggleMenuBurgerFeaturedUseCase(
             BurgerRepository burgerRepository,
             UserRepository userRepository
     ) {
@@ -33,18 +33,18 @@ public class ToggleMenuBurgerFavoriteUseCase implements ToggleMenuBurgerFavorite
      * Cambia el estado isFavorite de una hamburguesa de menú
      *
      * @param idBurger ID de la hamburguesa
-     * @param isFavorite true para marcar como destacada, false para desmarcar
+     * @param isFeatured true para marcar como destacada, false para desmarcar
      * @param adminUserId ID del admin/employee que realiza el cambio
      * @return Hamburguesa actualizada
      */
     @Override
-    public Burger handle(Integer idBurger, Boolean isFavorite, Integer adminUserId) {
+    public Burger handle(Integer idBurger, Boolean isFeatured, Integer adminUserId) {
         logger.info(" Toggle favorita menu burger: burgerId={}, isFavorite={}, adminId={}",
-                idBurger, isFavorite, adminUserId);
+                idBurger, isFeatured, adminUserId);
 
         try {
             // 1. Validaciones
-            validateInput(idBurger, isFavorite, adminUserId);
+            validateInput(idBurger, isFeatured, adminUserId);
             validateUser(adminUserId);
 
             // 2. Buscar hamburguesa de menú
@@ -60,14 +60,14 @@ public class ToggleMenuBurgerFavoriteUseCase implements ToggleMenuBurgerFavorite
             validateIsMenuBurger(burger);
 
             // 4. Verificar si ya tiene ese estado
-            if (burger.isFeatured() == isFavorite) {
-                logger.info(" Sin cambios: la hamburguesa ya tiene isFavorite={}", isFavorite);
+            if (burger.isFeatured() == isFeatured) {
+                logger.info(" Sin cambios: la hamburguesa ya tiene isFavorite={}", isFeatured);
                 return burger;
             }
 
             // 5. Actualizar estado de favorita
-            logger.info("Cambiando estado: from={} to={}", burger.isFeatured(), isFavorite);
-            burger.setMenuBurgerFavorite(isFavorite, adminUserId);
+            logger.info("Cambiando estado: from={} to={}", burger.isFeatured(), isFeatured);
+            burger.setMenuBurgerFeatured(isFeatured, adminUserId);
 
             // 6. Guardar
             Burger saved = burgerRepository.save(burger);
@@ -87,18 +87,18 @@ public class ToggleMenuBurgerFavoriteUseCase implements ToggleMenuBurgerFavorite
             throw new InvalidBurgerException(e.getMessage());
         } catch (Exception e) {
             logger.error("Error inesperado en marcar favorita: burgerId={}", idBurger, e);
-            throw new InvalidBurgerException("Error cambiando estado de favorita", e);
+            throw new InvalidBurgerException("Error cambiando estado de destacada", e);
         }
     }
 
     // ==================== VALIDACIONES ====================
 
-    private void validateInput(Integer idBurger, Boolean isFavorite, Integer adminUserId) {
+    private void validateInput(Integer idBurger, Boolean isFeatured, Integer adminUserId) {
         if (idBurger == null) {
             throw new InvalidBurgerException("El ID de la hamburguesa no puede ser nulo");
         }
 
-        if (isFavorite == null) {
+        if (isFeatured== null) {
             throw new InvalidBurgerException("El estado de favorita no puede ser nulo");
         }
 
@@ -117,13 +117,6 @@ public class ToggleMenuBurgerFavoriteUseCase implements ToggleMenuBurgerFavorite
         if (!burger.isMenuBurger()) {
             throw new InvalidBurgerException(
                     "Solo hamburguesas de menú pueden marcarse como destacadas. " +
-                            "Burger ID: " + burger.getIdBurger()
-            );
-        }
-
-        if (burger.isCustomBurger()) {
-            throw new InvalidBurgerException(
-                    "No se puede marcar como destacada una hamburguesa personalizada. " +
                             "Burger ID: " + burger.getIdBurger()
             );
         }
