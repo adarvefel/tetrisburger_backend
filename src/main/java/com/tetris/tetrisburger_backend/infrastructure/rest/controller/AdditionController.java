@@ -39,15 +39,17 @@ public class AdditionController {
     private final UpdateAdditionImage  updateAdditionImage;
     private final ListAddition listAddition;
     private final SearchAdditionByName searchAdditionByName;
+    private final GetAdditionById getAdditionById;
     private final DeleteAddition deleteAddition;
     private final AdditionRestMapper mapper;
 
-    public AdditionController(CreateAddition createAddition, UpdateAddition updateAddition, UpdateAdditionImage updateAdditionImage, ListAddition listAddition, SearchAdditionByName searchAdditionByName, DeleteAddition deleteAddition, AdditionRestMapper mapper) {
+    public AdditionController(CreateAddition createAddition, UpdateAddition updateAddition, UpdateAdditionImage updateAdditionImage, ListAddition listAddition, SearchAdditionByName searchAdditionByName, GetAdditionById getAdditionById, DeleteAddition deleteAddition, AdditionRestMapper mapper) {
         this.createAddition = createAddition;
         this.updateAddition = updateAddition;
         this.updateAdditionImage = updateAdditionImage;
         this.listAddition = listAddition;
         this.searchAdditionByName = searchAdditionByName;
+        this.getAdditionById = getAdditionById;
         this.deleteAddition = deleteAddition;
         this.mapper = mapper;
     }
@@ -154,6 +156,19 @@ public class AdditionController {
         ));
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
+    public ResponseEntity<AdditionResponseDTO> getById(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Integer id
+    ) {
+        Addition addition = getAdditionById.execute(id);
+
+        return ResponseEntity.ok(
+                mapper.toAdditionResponseDTO(addition, false)
+        );
+    }
+
     @GetMapping("/search")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     public ResponseEntity<PageResponse<AdditionResponseDTO>> searchByName(
@@ -180,6 +195,8 @@ public class AdditionController {
 
         return ResponseEntity.ok(response);
     }
+
+
 
 
 

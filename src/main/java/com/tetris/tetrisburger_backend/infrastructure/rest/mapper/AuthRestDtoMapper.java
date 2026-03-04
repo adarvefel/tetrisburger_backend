@@ -74,6 +74,7 @@ public interface AuthRestDtoMapper {
     @Mapping(source = "idUser", target = "idUser")
     @Mapping(source = "userName", target = "userName")
     @Mapping(source = "email", target = "email")
+    @Mapping(source = "userImage",target = "userImage")
     @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
     UserInfoDTO toUserInfoDTO(User user);
 
