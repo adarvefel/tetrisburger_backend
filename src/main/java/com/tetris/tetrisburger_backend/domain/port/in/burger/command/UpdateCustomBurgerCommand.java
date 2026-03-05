@@ -11,8 +11,7 @@ public record UpdateCustomBurgerCommand(
 ) {
     public record IngredientRequest(
             Integer idProduct,
-            Integer quantity,
-            Boolean isOptional
+            Integer quantity
     ) {
     }
 }

@@ -173,9 +173,9 @@ public class AdditionController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     public ResponseEntity<PageResponse<AdditionResponseDTO>> searchByName(
             @RequestParam String name,
-            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "idAddition") String sortBy,
+            @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDirection
     ) {
         PaginationRequest pagination = new PaginationRequest(page, size, sortBy, sortDirection);

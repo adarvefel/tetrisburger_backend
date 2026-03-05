@@ -25,4 +25,5 @@ public record PageResponse<T>(
         return new PageResponse<>(mappedContent, page, size, totalElements, totalPages);
     }
 
+
 }

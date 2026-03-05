@@ -15,20 +15,20 @@ public record CreateMenuBurgerRequestDTO(
 
         @Size(max = 500, message = "La descripción no puede exceder 500 caracteres")
         String description,
-
-        @NotEmpty(message = "Debe incluir al menos un ingrediente")
-        @Size(min = 1, max = 15, message = "Una hamburguesa debe tener entre 1 y 15 ingredientes")
-        @Valid
-        List<IngredientRequestDTO> ingredients,
-
         @Positive(message = "El precio debe ser mayor a cero")
         @DecimalMin(value = "0.01", message = "El precio debe ser mayor a cero")
         @DecimalMax(value = "999999.99", message = "El precio no puede exceder 999,999.99")
         BigDecimal finalPrice,
 
-        @NotNull(message = "Debe especificar si es destacada")
-        Boolean isFavorite,
+
+        Boolean isFeatured,
 
         @NotNull(message = "Debe especificar la disponibilidad")
-        Boolean availability  )
+        Boolean availability,
+
+        @NotEmpty(message = "Debe incluir al menos un ingrediente")
+        @Valid
+        List<IngredientRequestDTO> ingredients
+
+         )
 {}

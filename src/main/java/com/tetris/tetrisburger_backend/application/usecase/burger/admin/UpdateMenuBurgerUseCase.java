@@ -83,7 +83,8 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
                         ProductSnapshot snapshot = ProductSnapshot.fromProduct(
                                 product,
                                 req.quantity(),
-                                req.isOptional()
+                                false
+
                         );
 
                         // Crear ingrediente desde snapshot
@@ -225,14 +226,7 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
             );
         }
 
-        // 2. Validar que sea ingrediente de hamburguesa
-        if (product.getIsBurgerIngredient() == null || !product.getIsBurgerIngredient()) {
-            throw new InvalidBurgerException(
-                    "El producto '" + product.getName() + "' no es un ingrediente de hamburguesa"
-            );
-        }
-
-        // 3. Validar tipo de producto
+        // 2. Validar tipo de producto (reemplaza ambas validaciones anteriores)
         if (!ALLOWED_INGREDIENT_TYPES.contains(product.getProductType())) {
             throw new InvalidBurgerException(
                     "El producto '" + product.getName() + "' debe ser de tipo INGREDIENT. " +
@@ -240,13 +234,13 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
             );
         }
 
-        // 4. Validar stock disponible (advertencia, no bloquea para menu burgers)
+        // 3. Advertencia de stock
         if (product.getQuantity() <= 0) {
             logger.warn("Producto sin stock usado en menu burger: {} (ID: {})",
                     product.getName(), product.getId());
         }
 
-        logger.debug(" Producto validado: {} | Categoría: {} | Stock: {} | Tipo: {}",
+        logger.debug("Producto validado: {} | Categoría: {} | Stock: {} | Tipo: {}",
                 product.getName(),
                 product.getCategoryName(),
                 product.getQuantity(),

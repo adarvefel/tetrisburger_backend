@@ -28,6 +28,7 @@ public class UpdateMenuBurgerImageUseCase implements UpdateMenuBurgerImage {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
 
+
     public UpdateMenuBurgerImageUseCase(
             BurgerRepository burgerRepository,
             UserRepository userRepository,

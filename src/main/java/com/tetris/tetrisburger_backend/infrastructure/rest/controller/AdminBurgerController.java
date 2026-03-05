@@ -4,13 +4,18 @@ import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
+import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.*;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.*;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuBurgerImageCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.query.SearchMenuBurgersQuery;
+import com.tetris.tetrisburger_backend.domain.port.in.product.ListBurgerIngredients;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.admin.*;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.BurgerIngredientListDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.ProductResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.BurgerRestDtoMapper;
+import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.ProductRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.rest.validator.ImageValidator;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,11 +53,13 @@ public class AdminBurgerController {
     private final DeleteMenuBurger deleteMenuBurger;
     private final UpdateMenuBurgerPrice updateMenuBurgerPrice;
     private final SearchMenuBurgers searchMenuBurgers;
-    private final ToggleMenuBurgerFavorite toggleMenuBurgerFavorite;
+    private final ToggleMenuBurgerFeatured toggleMenuBurgerFeatured;
     private final BurgerRestDtoMapper mapper;
+    private final ProductRestDtoMapper productRestDtoMapper;
+    private final ListBurgerIngredients listBurgersIngredients;
     private final ImageValidator imageValidator;
 
-    public AdminBurgerController(CreateMenuBurger createMenuBurger, GetBurgerById getBurgerById, ListBurgers listBurgers, UpdateMenuBurger updateMenuBurger, UpdateMenuBurgerImage updateMenuBurgerImage, DeleteMenuBurger deleteMenuBurger, UpdateMenuBurgerPrice updateMenuBurgerPrice, SearchMenuBurgers searchMenuBurgers, ToggleMenuBurgerFavorite toggleMenuBurgerFavorite, BurgerRestDtoMapper mapper, ImageValidator imageValidator) {
+    public AdminBurgerController(CreateMenuBurger createMenuBurger, GetBurgerById getBurgerById, ListBurgers listBurgers, UpdateMenuBurger updateMenuBurger, UpdateMenuBurgerImage updateMenuBurgerImage, DeleteMenuBurger deleteMenuBurger, UpdateMenuBurgerPrice updateMenuBurgerPrice, SearchMenuBurgers searchMenuBurgers, ToggleMenuBurgerFeatured toggleMenuBurgerFeatured, BurgerRestDtoMapper mapper, ProductRestDtoMapper productRestDtoMapper, ListBurgerIngredients listBurgersIngredients, ImageValidator imageValidator) {
         this.createMenuBurger = createMenuBurger;
         this.getBurgerById = getBurgerById;
         this.listBurgers = listBurgers;
@@ -61,8 +68,10 @@ public class AdminBurgerController {
         this.deleteMenuBurger = deleteMenuBurger;
         this.updateMenuBurgerPrice = updateMenuBurgerPrice;
         this.searchMenuBurgers = searchMenuBurgers;
-        this.toggleMenuBurgerFavorite = toggleMenuBurgerFavorite;
+        this.toggleMenuBurgerFeatured = toggleMenuBurgerFeatured;
         this.mapper = mapper;
+        this.productRestDtoMapper = productRestDtoMapper;
+        this.listBurgersIngredients = listBurgersIngredients;
         this.imageValidator = imageValidator;
     }
 
@@ -109,7 +118,7 @@ public class AdminBurgerController {
         Burger burger = createMenuBurger.handle(command);
 
         logger.info(" Hamburguesa de menú creada: ID={}, isFavorite={}",
-                burger.getIdBurger(), burger.isFavorite());
+                burger.getIdBurger(), burger.isFeatured());
 
         MenuBurgerResponseDTO response = mapper.toMenuBurgerResponseDTO(burger);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -199,10 +208,10 @@ public class AdminBurgerController {
     }
 
 
-    // ==================== TOGGLE FAVORITA ====================
+    // ==================== TOGGLE FEATURED ====================
 
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
-    @PatchMapping("/menu/{idBurger}/isFavorite")
+    @PatchMapping("/menu/{idBurger}/featured")
     @Operation(
             summary = "Marcar/desmarcar como destacada",
             description = "Cambia el estado de favorita de la hamburguesa " +
@@ -214,21 +223,21 @@ public class AdminBurgerController {
             @ApiResponse(responseCode = "404", description = "Hamburguesa no encontrada",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
     })
-    public ResponseEntity<MenuBurgerResponseDTO> toggleFavorite(
+    public ResponseEntity<MenuBurgerResponseDTO> toggleFeatured(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
             @Parameter(description = "ID de la hamburguesa", required = true)
             @PathVariable Integer idBurger,
             @Parameter(description = "true = marcar como destacada, false = desmarcar", required = true)
-            @RequestParam Boolean isFavorite
+            @RequestParam Boolean isFeatured
     ) {
         Integer adminUserId = userDetails.getId();
-        logger.info(" PATCH /api/admin/burgers/menu/{}/isFavorite - isFavorite={}",
-                idBurger, isFavorite);
+        logger.info(" PATCH /api/admin/burgers/menu/{}/ - isFeatured={}",
+                idBurger, isFeatured);
 
-        Burger burger = toggleMenuBurgerFavorite.handle(idBurger, isFavorite, adminUserId);
+        Burger burger = toggleMenuBurgerFeatured.handle(idBurger, isFeatured, adminUserId);
 
         logger.info(" Estado de favorita actualizado: ID={}, isFavorite={}",
-                idBurger, burger.isFavorite());
+                idBurger, burger.isFeatured());
 
         MenuBurgerResponseDTO response = mapper.toMenuBurgerResponseDTO(burger);
         return ResponseEntity.ok(response);
@@ -390,4 +399,24 @@ public class AdminBurgerController {
 
         return ResponseEntity.ok(response);
     }
+
+    // ==================== LISTAR INGREDIENTES ====================
+
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
+    @GetMapping("/ingredients")
+    @Operation(summary = "Listar ingredientes disponibles",
+            description = "Retorna todos los productos de tipo INGREDIENT. Filtrable por categoría.")
+    public ResponseEntity<BurgerIngredientListDTO> getBurgerIngredients(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Integer categoryId
+    ) {
+        logger.info("GET /api/admin/burgers/ingredients - categoryId={}", categoryId);
+
+        PaginationRequest pagination = new PaginationRequest(page, size);
+        PageResponse<Product> result = listBurgersIngredients.handle(categoryId, pagination);
+
+        return ResponseEntity.ok(productRestDtoMapper.toBurgerIngredientListDTO(result));
+    }
+
 }

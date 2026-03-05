@@ -10,10 +10,9 @@ public record CreateBurgerCommand(
         String name,
         String description,
         FileData  imageData,
-        ImageStatus imageStatus,
-        List<IngredientRequest> ingredients,
-        Boolean isFavorite,
+        Boolean isFeatured,
         BigDecimal finalPrice,
+        List<IngredientRequest> ingredients,
         Integer createdBy
 ) {
     public CreateBurgerCommand {

@@ -12,7 +12,6 @@ public record UpdateProductCommand(
         BigDecimal price,
         Boolean availability,
         ProductType productType,
-        Boolean isBurgerIngredient,
         Integer productCategoryId,
         Integer supplierId,
         Integer updatedBy

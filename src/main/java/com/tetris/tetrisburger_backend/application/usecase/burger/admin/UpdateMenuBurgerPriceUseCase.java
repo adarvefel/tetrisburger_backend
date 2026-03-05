@@ -104,7 +104,7 @@ public class UpdateMenuBurgerPriceUseCase implements UpdateMenuBurgerPrice {
                 .divide(basePrice, 2, BigDecimal.ROUND_HALF_UP)
                 .multiply(BigDecimal.valueOf(100));
 
-        // Permitir desde -50% (promoción agresiva) hasta +300% (premium extremo)
+        // Permitir desde -50% (promoción agresiva)
         if (margin.compareTo(BigDecimal.valueOf(-50)) < 0) {
             logger.warn(" ADVERTENCIA: Precio con descuento mayor al 50%: {}%", margin);
             throw new InvalidBurgerException(
@@ -114,14 +114,7 @@ public class UpdateMenuBurgerPriceUseCase implements UpdateMenuBurgerPrice {
             );
         }
 
-        if (margin.compareTo(BigDecimal.valueOf(300)) > 0) {
-            logger.warn("⚠ ADVERTENCIA: Precio con margen mayor al 300%: {}%", margin);
-            throw new InvalidBurgerException(
-                    String.format("El precio no puede ser mayor al 300%% del costo base. " +
-                                    "Costo: $%s, Precio propuesto: $%s (margen: %.1f%%)",
-                            basePrice, finalPrice, margin.doubleValue())
-            );
-        }
+
 
         // Advertencia si el precio es menor al costo (pérdida)
         if (finalPrice.compareTo(basePrice) < 0) {

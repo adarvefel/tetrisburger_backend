@@ -19,19 +19,17 @@ public class BurgerIngredientEntity {
     @Column(name = "id_burger_ingredient")
     private Integer idBurgerIngredient;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_burger", nullable = false)
     private BurgerEntity burger;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_product", nullable = false, insertable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_product", nullable = false)
     private ProductEntity product;
 
     @Column(name = "product_name", nullable = false)
     private String productName;
 
-    @Column(name = "id_product", nullable = false)
-    private Integer idProduct;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
@@ -39,11 +37,17 @@ public class BurgerIngredientEntity {
     @Column(name = "is_optional", nullable = false)
     private Boolean isOptional;
 
+
     @Column(name = "price_at_time", nullable = false)
     private BigDecimal priceAtTime;
 
     @Column(name = "subtotal", nullable = false)
     private BigDecimal subtotal;
+
+
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
 
     // ============================================
     // GETTERS Y SETTERS
@@ -77,12 +81,13 @@ public class BurgerIngredientEntity {
         this.productName = productName;
     }
 
-    public Integer getIdProduct() {
-        return idProduct;
+
+    public Boolean getOptional() {
+        return isOptional;
     }
 
-    public void setIdProduct(Integer idProduct) {
-        this.idProduct = idProduct;
+    public void setOptional(Boolean optional) {
+        isOptional = optional;
     }
 
     public String getProductName() {
@@ -102,12 +107,12 @@ public class BurgerIngredientEntity {
         return isOptional;
     }
 
-    public Boolean getOptional() {
-        return isOptional;
-    }
 
-    public void setIsOptional(Boolean optional) {
-        isOptional = optional;
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public void setIsOptional(Boolean isOptional) {
+        this.isOptional = isOptional;
     }
 
     public BigDecimal getPriceAtTime() {
@@ -124,9 +129,5 @@ public class BurgerIngredientEntity {
 
     public void setSubtotal(BigDecimal subtotal) {
         this.subtotal = subtotal;
-    }
-
-    public void setOptional(Boolean optional) {
-        isOptional = optional;
     }
 }

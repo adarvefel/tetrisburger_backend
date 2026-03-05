@@ -1,10 +1,8 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.entity;
 
 import com.tetris.tetrisburger_backend.domain.model.ProductType;
-import com.tetris.tetrisburger_backend.domain.model.Supplier;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
@@ -14,7 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "product",
         uniqueConstraints = {@UniqueConstraint(name = "uc_product_name", columnNames = "name")},
         indexes = {@Index(name = "idx_product_type", columnList = "product_type")})
-@SQLRestriction("deleted_at IS NULL")
+
 public class ProductEntity {
 
     @Id
@@ -47,7 +45,7 @@ public class ProductEntity {
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_product_category")
+    @JoinColumn(name = "id_product_category", nullable = false)
     private ProductCategoryEntity productCategory;
 
     @Column(name = "image_url", length = 500)
@@ -146,14 +144,11 @@ public class ProductEntity {
     public void setProductType(ProductType productType) {
         this.productType = productType;
     }
-
-    public Boolean getIngredientBurger() {
-        return isBurgerIngredient;
+    public boolean isBurgerIngredient() {
+        return ProductType.INGREDIENT.equals(this.productType);
     }
 
-    public void setIngredientBurger(Boolean ingredientBurger) {
-        isBurgerIngredient = ingredientBurger;
-    }
+    public void setIsBurgerIngredient(Boolean isBurgerIngredient) { this.isBurgerIngredient = isBurgerIngredient; }
 
     public ProductCategoryEntity getProductCategory() {
         return productCategory;

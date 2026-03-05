@@ -57,7 +57,7 @@ public class AdditionAdapter implements AdditionRepository {
 
     @Override
     public PageResponse<Addition> findByName(String name, PaginationRequest pagination) {
-        PageRequest pageRequest = PageRequest.of(pagination.getPage() - 1, pagination.getSize(), SortBuilder.build(pagination));
+        PageRequest pageRequest = PageRequest.of(pagination.getPage(), pagination.getSize(), SortBuilder.build(pagination));
 
         Page<Addition> page = jpa.findByNameContaining(name, pageRequest)
                 .map(mapper::toDomain);

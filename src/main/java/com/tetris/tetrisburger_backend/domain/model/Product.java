@@ -11,7 +11,6 @@ public class Product {
     private BigDecimal price;
     private Boolean availability;
     private ProductType productType;
-    private Boolean isBurgerIngredient;
     private ProductCategory productCategory;
     private String imageUrl;
     private String imageKey;
@@ -28,7 +27,7 @@ public class Product {
     private Product() {}
 
     private Product(Integer id, String name, String description, Integer quantity, BigDecimal price,
-                    Boolean availability, ProductType productType, Boolean isBurgerIngredient,
+                    Boolean availability, ProductType productType,
                     ProductCategory productCategory, String imageUrl, String imageKey, Supplier supplier,
                     LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt,
                     Integer createdBy, Integer updatedBy, Integer deletedBy) {
@@ -39,7 +38,6 @@ public class Product {
         this.price = price;
         this.availability = availability;
         this.productType = productType;
-        this.isBurgerIngredient = isBurgerIngredient;
         this.productCategory = productCategory;
         this.imageUrl = imageUrl;
         this.imageKey = imageKey;
@@ -54,14 +52,13 @@ public class Product {
 
     // ==================== FACTORY METHODS ====================
 
-
     public static Product of(Integer id, String name, String description, Integer quantity, BigDecimal price,
-                             Boolean availability, ProductType productType, Boolean isBurgerIngredient, // 🔧 FIX: nombre unificado
+                             Boolean availability, ProductType productType,
                              ProductCategory productCategory, String imageUrl, String imageKey, Supplier supplier,
                              LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt,
                              Integer createdBy, Integer updatedBy, Integer deletedBy) {
         return new Product(id, name, description, quantity, price, availability, productType,
-                isBurgerIngredient, productCategory, imageUrl, imageKey, supplier,
+                productCategory, imageUrl, imageKey, supplier,
                 createdAt, updatedAt, deletedAt, createdBy, updatedBy, deletedBy);
     }
 
@@ -72,7 +69,6 @@ public class Product {
             BigDecimal price,
             Boolean availability,
             ProductType productType,
-            Boolean isBurgerIngredient,
             ProductCategory productCategory,
             String imageUrl,
             String imageKey,
@@ -93,7 +89,6 @@ public class Product {
         product.price = price;
         product.availability = availability != null ? availability : true;
         product.productType = productType;
-        product.isBurgerIngredient = isBurgerIngredient != null ? isBurgerIngredient : false;
         product.productCategory = productCategory;
         product.imageUrl = imageUrl;
         product.imageKey = imageKey;
@@ -160,7 +155,6 @@ public class Product {
             BigDecimal price,
             Boolean availability,
             ProductType productType,
-            Boolean isBurgerIngredient,
             ProductCategory productCategory,
             Supplier supplier,
             Integer updatedBy
@@ -178,7 +172,6 @@ public class Product {
         this.price = price;
         this.availability = availability != null ? availability : this.availability;
         this.productType = productType;
-        this.isBurgerIngredient = isBurgerIngredient != null ? isBurgerIngredient : this.isBurgerIngredient;
         this.productCategory = productCategory;
         this.supplier = supplier;
         this.updatedAt = LocalDateTime.now();
@@ -229,16 +222,11 @@ public class Product {
         this.updatedBy = updatedBy;
     }
 
-
-
-
     public void updateAvailability(Boolean availability, Integer updatedBy) {
         this.availability = availability;
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
     }
-
-
 
     // ==================== MÉTODOS DE CONSULTA ====================
 
@@ -278,8 +266,9 @@ public class Product {
         return ProductType.SIDE.equals(this.productType);
     }
 
-    public boolean isIngredientBurger() {
-        return Boolean.TRUE.equals(this.isBurgerIngredient);
+    // ✅ Calculado desde productType, sin campo redundante
+    public boolean isBurgerIngredient() {
+        return ProductType.INGREDIENT.equals(this.productType);
     }
 
     // ==================== HELPERS ====================
@@ -301,7 +290,6 @@ public class Product {
     public BigDecimal getPrice() { return price; }
     public Boolean getAvailability() { return availability; }
     public ProductType getProductType() { return productType; }
-    public Boolean getIsBurgerIngredient() { return isBurgerIngredient; }
     public ProductCategory getProductCategory() { return productCategory; }
     public Supplier getSupplier() { return supplier; }
     public String getImageUrl() { return imageUrl; }
@@ -313,6 +301,7 @@ public class Product {
     public Integer getUpdatedBy() { return updatedBy; }
     public Integer getDeletedBy() { return deletedBy; }
 
+    // ==================== SETTERS ====================
 
     void setId(Integer id) { this.id = id; }
     void setName(String name) { this.name = name; }
@@ -321,7 +310,6 @@ public class Product {
     void setPrice(BigDecimal price) { this.price = price; }
     void setAvailability(Boolean availability) { this.availability = availability; }
     void setProductType(ProductType productType) { this.productType = productType; }
-    void setIsBurgerIngredient(Boolean isBurgerIngredient) { this.isBurgerIngredient = isBurgerIngredient; }
     void setProductCategory(ProductCategory productCategory) { this.productCategory = productCategory; }
     void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     void setImageKey(String imageKey) { this.imageKey = imageKey; }

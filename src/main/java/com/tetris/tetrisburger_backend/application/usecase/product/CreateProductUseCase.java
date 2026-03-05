@@ -40,7 +40,7 @@ public class CreateProductUseCase implements CreateProduct {
 
 
         // Validar duplicado
-        boolean exists = productRepository.existsByNameIgnoreCase(productName);
+        boolean exists = productRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(productName);
 
         if (exists) {
             throw new ProductAlreadyExistsException(productName);
@@ -72,7 +72,6 @@ public class CreateProductUseCase implements CreateProduct {
                 cmd.price(),
                 cmd.availability(),
                 cmd.productType(),
-                cmd.isBurgerIngredient(),
                 category,
                 null,                      // imageUrl
                 null,                      // imageKey

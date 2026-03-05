@@ -45,6 +45,13 @@ public class ProductAdapter implements ProductRepository {
     }
 
     @Override
+    public PageResponse<Product> findAllBurgerIngredients(Integer categoryId, PaginationRequest page) {
+        Page<ProductEntity> result = jpa.findAllBurgerIngredients(categoryId, toPageable(page));
+        return toPageResponse(result);
+    }
+
+
+    @Override
     public void deleteById(Integer id) {
         jpa.deleteById(id);
     }
@@ -57,7 +64,6 @@ public class ProductAdapter implements ProductRepository {
                 .and(byCategory(productCategoryId))
                 .and(byAvailability(availability));
 
-        // ✅ SOLUCIÓN: Usar toPageable() en lugar de crear Sort directamente
         Pageable pageable = toPageable(page);
         Page<ProductEntity> productPage = jpa.findAll(spec, pageable);
 
@@ -91,13 +97,18 @@ public class ProductAdapter implements ProductRepository {
     }
 
 
-
     @Override
-    public boolean existsByNameIgnoreCase(String name) {
+    public boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name) {
         boolean exists = jpa.existsByNameIgnoreCaseAndDeletedAtIsNull(name);
-        log.info(" Verificando si existe producto con nombre '{}': {}", name, exists);
+        log.info("Verificando si existe producto con nombre '{}': {}", name, exists);
         return exists;
     }
+
+    @Override
+    public boolean existsByNameIgnoreCaseAndDeletedAtIsNullAndIdNot(String name, Integer id) {
+        return jpa.existsByNameIgnoreCaseAndDeletedAtIsNullAndIdNot(name, id);
+    }
+
 
     // ========== Specifications ==========
 
@@ -120,7 +131,6 @@ public class ProductAdapter implements ProductRepository {
             if (categoryId == null) {
                 return cb.conjunction();
             }
-            // ✅ Usa join en lugar de get directo
             return cb.equal(root.join("productCategory", JoinType.LEFT).get("id"), categoryId);
         };
     }

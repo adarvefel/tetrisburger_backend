@@ -1,4 +1,3 @@
-// src/main/java/com/tetris/tetrisburger_backend/infrastructure/persistence/entity/BurgerEntity.java
 package com.tetris.tetrisburger_backend.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
@@ -6,13 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,62 +25,50 @@ public class BurgerEntity {
     @Column(name = "id_burger")
     private Integer idBurger;
 
-    @Column(name = "name", nullable = false, length = 100)
+    @Column(name = "name", nullable = false, length = 150)
     private String name;
 
     @Column(name = "description", length = 255)
     private String description;
 
-    @Column(name = "base_price")
+    @Column(name = "base_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal basePrice;
 
-    @Column(name = "final_price")
+    @Column(name = "final_price", precision = 10, scale = 2)
     private BigDecimal finalPrice;
+
+    @Column(name = "margin", precision = 10, scale = 2)
+    private BigDecimal margin;
+
+    @Column(name = "margin_percentage", precision = 10, scale = 2)
+    private BigDecimal marginPercentage;
+
+    @Column(name = "selling_at_loss")
+    private Boolean sellingAtLoss = false;
 
     @Column(name = "is_on_menu", nullable = false)
     private Boolean isOnMenu;
 
-    @Column(name = "is_favorite", nullable = false)
-    private Boolean isFavorite;
+    @Column(name = "is_saved", nullable = false)
+    private Boolean isSaved;
 
-    @Column(name = "is_custom", nullable = false)
-    private Boolean isCustom;
+    @Column(name = "is_featured", nullable = false)
+    private Boolean isFeatured = false;
 
-    @Column(name = "availability", nullable = false)
-    private Boolean availability;
+    @Column(name = "is_available", nullable = false)
+    private Boolean availability = true;
 
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
-    @Column(name = "image_key")
+    @Column(name = "image_key", length = 255)
     private String imageKey;
 
     @Column(name = "id_user")
     private Integer idUser;
 
     @Column(name = "times_ordered")
-    private Integer timesOrdered;
-
-    // Auditoría de fechas
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    // Soft delete: puede ser NULL mientras la burger esté activa
-    @Column(name = "deleted_at", nullable = true)
-    private LocalDateTime deletedAt;
-
-    // Auditoría de usuario (pueden ser NULL si aún no tienes auditor configurado)
-    @Column(name = "created_by", updatable = false)
-    private Integer createdBy;
-
-    @Column(name = "updated_by")
-    private Integer updatedBy;
-
-    @Column(name = "deleted_by")
-    private Integer deletedBy;
+    private Integer timesOrdered = 0;
 
     @OneToMany(
             mappedBy = "burger",
@@ -95,8 +78,37 @@ public class BurgerEntity {
     )
     private List<BurgerIngredientEntity> ingredients = new ArrayList<>();
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    // ========= HELPERS =========
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "created_by", updatable = false)
+    private Integer createdBy;
+
+    @Column(name = "updated_by")
+    private Integer updatedBy;
+
+    @Column(name = "deleted_by")
+    private Integer deletedBy;
+
+    @PrePersist
+    @PreUpdate
+    public void syncMetrics() {
+        if (basePrice == null) basePrice = BigDecimal.ZERO;
+        if (finalPrice == null) finalPrice = BigDecimal.ZERO;
+
+        this.margin = finalPrice.subtract(basePrice);
+        this.marginPercentage = basePrice.compareTo(BigDecimal.ZERO) > 0
+                ? margin.divide(basePrice, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                : BigDecimal.ZERO;
+        this.sellingAtLoss = finalPrice.compareTo(basePrice) < 0;
+    }
 
     public void addIngredient(BurgerIngredientEntity ingredient) {
         if (ingredient == null) return;

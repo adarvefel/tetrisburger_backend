@@ -2,6 +2,7 @@ package com.tetris.tetrisburger_backend.infrastructure.persistence.mapper;
 
 import com.tetris.tetrisburger_backend.domain.model.BurgerIngredient;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.BurgerIngredientEntity;
+import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.ProductEntity;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -18,30 +19,36 @@ public class BurgerIngredientEntityMapper {
             return null;
         }
 
+        Integer productId = (entity.getProduct() != null) ? entity.getProduct().getId() : null;
+
+        if (entity.getProduct() != null) {
+            ProductEntity p = entity.getProduct();
+        }
+
         return BurgerIngredient.reconstitute(
                 entity.getIdBurgerIngredient(),
-                entity.getIdProduct(),
+                productId,
                 entity.getProductName(),
                 entity.getPriceAtTime(),
                 entity.getQuantity(),
                 entity.getSubtotal(),
-                entity.getIsOptional()
+                entity.getIsOptional(),
+                entity.getImageUrl()
+
         );
     }
 
     // ==================== Domain -> Entity ====================
 
     public BurgerIngredientEntity toEntity(BurgerIngredient domain) {
-        if (domain == null) {
-            return null;
-        }
+        if (domain == null) return null;
 
         BurgerIngredientEntity entity = new BurgerIngredientEntity();
         entity.setIdBurgerIngredient(domain.getIdBurgerIngredient());
-        entity.setIdProduct(domain.getIdProduct());
         entity.setProductName(domain.getProductName());
         entity.setPriceAtTime(domain.getPriceAtTime());
         entity.setQuantity(domain.getQuantity());
+        entity.setIsOptional(domain.getIsOptional());
 
         // Calcular subtotal
         BigDecimal subtotal = domain.getSubtotal();
@@ -50,7 +57,13 @@ public class BurgerIngredientEntityMapper {
         }
         entity.setSubtotal(subtotal);
 
-        entity.setIsOptional(domain.isOptional());
+        // Asignar ProductEntity solo con ID para la relación
+        if (domain.getIdProduct() != null) {
+            ProductEntity product = new ProductEntity();
+            product.setId(domain.getIdProduct());
+            entity.setProduct(product);
+        }
+        entity.setImageUrl(domain.getImageUrl());
 
         return entity;
     }

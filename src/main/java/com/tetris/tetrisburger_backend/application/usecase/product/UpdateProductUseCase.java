@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.application.usecase.product;
 
+import com.tetris.tetrisburger_backend.domain.exception.ProductAlreadyExistsException;
 import com.tetris.tetrisburger_backend.domain.exception.ProductCategoryNotFoundException;
 import com.tetris.tetrisburger_backend.domain.exception.ProductNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.Product;
@@ -51,6 +52,13 @@ public class UpdateProductUseCase implements UpdateProduct {
                         "Proveedor no encontrado con ID: " + cmd.supplierId()
                 ));
 
+        // Agrega antes de updateDetails()
+        if (!current.getName().equalsIgnoreCase(cmd.name().trim())) {
+            if (productRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(cmd.name().trim())) {
+                throw new ProductAlreadyExistsException(cmd.name());
+            }
+        }
+
         current.updateDetails(
                 cmd.name(),
                 cmd.description(),
@@ -58,7 +66,6 @@ public class UpdateProductUseCase implements UpdateProduct {
                 cmd.price(),
                 cmd.availability(),
                 cmd.productType(),
-                cmd.isBurgerIngredient(),
                 category,
                 supplier,
                 cmd.updatedBy()

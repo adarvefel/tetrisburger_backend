@@ -60,7 +60,6 @@ public interface ProductEntityMapper {
                 e.getPrice(),
                 e.getAvailability(),
                 e.getProductType(),
-                e.getIngredientBurger(),
                 category,
                 trim(e.getImageUrl()),
                 trim(e.getImageKey()),
@@ -87,7 +86,7 @@ public interface ProductEntityMapper {
         e.setPrice(d.getPrice());
         e.setAvailability(d.getAvailability());
         e.setProductType(d.getProductType());
-        e.setIngredientBurger(d.getIsBurgerIngredient());
+        e.setIsBurgerIngredient(d.isBurgerIngredient());
 
         if (d.getProductCategory() != null) {
             ProductCategoryEntity catEntity = new ProductCategoryEntity();

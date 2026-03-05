@@ -11,48 +11,50 @@ public record ProductSnapshot(
         BigDecimal price,
         String categoryName,
         Integer quantity,
-        Boolean isOptional
+        Boolean isOptional,
+        String imageUrl
 ) {
 
-    public static ProductSnapshot fromProduct(Product product, Integer quantity, Boolean isOptional) {
-        if (product == null) {
-            throw new IllegalArgumentException("El producto no puede ser null");
-        }
+    public static ProductSnapshot fromProduct(
+            Product product,
+            Integer quantity,
+            Boolean isOptional
+    ) {
 
-        if (product.getProductType() != ProductType.INGREDIENT) {
+        if (product == null)
+            throw new IllegalArgumentException("El producto no puede ser null");
+
+        if (product.getProductType() != ProductType.INGREDIENT)
             throw new IllegalArgumentException(
-                    "El producto '" + product.getName() + "' no es un ingrediente de hamburguesa. " +
+                    "El producto '" + product.getName() + "' no es un ingrediente. " +
                             "Tipo actual: " + product.getProductType()
             );
-        }
 
-        if (quantity == null || quantity <= 0) {
+        if (quantity == null || quantity <= 0)
             throw new IllegalArgumentException(
                     "La cantidad debe ser mayor a 0. Cantidad recibida: " + quantity
             );
-        }
 
-        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0)
             throw new IllegalArgumentException(
                     "El producto '" + product.getName() + "' no tiene un precio válido"
             );
-        }
-
 
         return new ProductSnapshot(
                 product.getId(),
                 product.getName(),
                 product.getPrice(),
-                product.getProductCategory() != null ? product.getProductCategory().getName() : "Sin categoría",
+                product.getProductCategory() != null
+                        ? product.getProductCategory().getName()
+                        : "Sin categoría",
                 quantity,
-                isOptional != null ? isOptional : false
+                isOptional != null ? isOptional : false,
+                product.getImageUrl()
         );
     }
 
     public BigDecimal calculateSubtotal() {
-        if (price == null || quantity == null) {
-            return BigDecimal.ZERO;
-        }
+        if (price == null || quantity == null) return BigDecimal.ZERO;
         return price.multiply(new BigDecimal(quantity));
     }
 }

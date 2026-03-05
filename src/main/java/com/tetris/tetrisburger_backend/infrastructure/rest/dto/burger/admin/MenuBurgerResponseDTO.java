@@ -14,7 +14,7 @@ public record MenuBurgerResponseDTO(
         BigDecimal marginPercentage,
         boolean sellingAtLoss,
         boolean isOnMenu,
-        boolean isFavorite,
+        boolean isFeatured,
         boolean availability,
         String imageUrl,
         String imageKey,
@@ -23,9 +23,7 @@ public record MenuBurgerResponseDTO(
         List<MenuBurgerIngredientResponseDTO> ingredients,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        LocalDateTime deletedAt,
         Integer updatedBy,
-        Integer createdBy,
-        Integer deletedBy
+        Integer createdBy
 ) {
 }
