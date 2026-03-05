@@ -43,7 +43,6 @@ public class UpdateProductRequestDTO {
     )
     private String productType;
 
-    private Boolean isBurgerIngredient;
 
 
     @Schema(description = "ID de la categoría del producto", example = "2")

@@ -176,11 +176,6 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                     "El producto '" + product.getName() + "' no está disponible"
             );
         }
-        if (product.getIsBurgerIngredient() == null || !product.getIsBurgerIngredient()) {
-            throw new InvalidBurgerException(
-                    "El producto '" + product.getName() + "' no es un ingrediente de hamburguesa"
-            );
-        }
         if (!ALLOWED_INGREDIENT_TYPES.contains(product.getProductType())) {
             throw new InvalidBurgerException(
                     "El producto '" + product.getName() + "' debe ser de tipo INGREDIENT. " +

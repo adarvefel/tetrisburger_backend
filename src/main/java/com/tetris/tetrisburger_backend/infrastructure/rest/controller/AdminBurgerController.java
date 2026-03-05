@@ -13,6 +13,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.product.ListBurgerIngredie
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.admin.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.BurgerIngredientListDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.ProductResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.BurgerRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.ProductRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.rest.validator.ImageValidator;
@@ -207,7 +208,7 @@ public class AdminBurgerController {
     }
 
 
-    // ==================== TOGGLE FAVORITA ====================
+    // ==================== TOGGLE FEATURED ====================
 
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
     @PatchMapping("/menu/{idBurger}/featured")
@@ -222,7 +223,7 @@ public class AdminBurgerController {
             @ApiResponse(responseCode = "404", description = "Hamburguesa no encontrada",
                     content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
     })
-    public ResponseEntity<MenuBurgerResponseDTO> toggleFavorite(
+    public ResponseEntity<MenuBurgerResponseDTO> toggleFeatured(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
             @Parameter(description = "ID de la hamburguesa", required = true)
             @PathVariable Integer idBurger,
@@ -399,18 +400,23 @@ public class AdminBurgerController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/ingredients")
+    // ==================== LISTAR INGREDIENTES ====================
+
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
-    @Operation(summary = "Listar ingredientes disponibles para burger")
+    @GetMapping("/ingredients")
+    @Operation(summary = "Listar ingredientes disponibles",
+            description = "Retorna todos los productos de tipo INGREDIENT. Filtrable por categoría.")
     public ResponseEntity<BurgerIngredientListDTO> getBurgerIngredients(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String sortBy,
-            @RequestParam(defaultValue = "ASC") String direction
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Integer categoryId
     ) {
-        PaginationRequest pagination = new PaginationRequest(page, size, sortBy, direction);
-        PageResponse<Product> pageResponse = listBurgersIngredients.handle(pagination);
+        logger.info("GET /api/admin/burgers/ingredients - categoryId={}", categoryId);
 
-        return ResponseEntity.ok(productRestDtoMapper.toBurgerIngredientListDTO(pageResponse));
+        PaginationRequest pagination = new PaginationRequest(page, size);
+        PageResponse<Product> result = listBurgersIngredients.handle(categoryId, pagination);
+
+        return ResponseEntity.ok(productRestDtoMapper.toBurgerIngredientListDTO(result));
     }
+
 }

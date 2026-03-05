@@ -5,5 +5,5 @@ import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Product;
 
 public interface ListBurgerIngredients {
-    PageResponse<Product> handle(PaginationRequest paginationRequest);
+    PageResponse<Product> handle(Integer categoryId,PaginationRequest paginationRequest);
 }

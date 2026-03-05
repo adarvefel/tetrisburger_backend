@@ -12,6 +12,9 @@ public class PaginationRequest {
         this(page, size, sortBy, "ASC");
     }
 
+    public PaginationRequest(int page, int size) { this(page, size, null, "ASC"); }
+
+
     public PaginationRequest(int page, int size, String sortBy, String direction) {
         setPage(page);
         setSize(size);

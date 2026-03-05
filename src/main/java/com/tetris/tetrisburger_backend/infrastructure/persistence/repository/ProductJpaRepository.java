@@ -11,10 +11,14 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
+
 public interface ProductJpaRepository extends JpaRepository<ProductEntity, Integer>, JpaSpecificationExecutor<ProductEntity> {
+
     @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM ProductEntity p " +
             "WHERE LOWER(p.name) = LOWER(:name) AND p.deletedAt IS NULL")
     boolean existsByNameIgnoreCaseAndDeletedAtIsNull(@Param("name") String name);
+
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNullAndIdNot(String name, Integer id);
 
     @Query("SELECT p FROM ProductEntity p LEFT JOIN FETCH p.productCategory WHERE p.id = :id")
     Optional<ProductEntity> findByIdWithCategory(@Param("id") Integer id);
@@ -33,15 +37,20 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, Integ
             @Param("availability") Boolean availability,
             Pageable pageable);
 
-
     @Query("SELECT p FROM ProductEntity p WHERE p.deletedAt IS NULL")
     List<ProductEntity> findAllActive();
 
-
     @Query("SELECT p FROM ProductEntity p " +
-            "WHERE p.isBurgerIngredient = true " +
-            "AND p.availability = true " +
+            "LEFT JOIN FETCH p.productCategory " +
+            "WHERE p.productType = com.tetris.tetrisburger_backend.domain.model.ProductType.INGREDIENT " +
             "AND p.deletedAt IS NULL " +
+            "AND p.availability = true " +
+            "AND (:categoryId IS NULL OR p.productCategory.id = :categoryId) " +
             "ORDER BY p.name ASC")
-    Page<ProductEntity> findAllBurgerIngredients(Pageable pageable);
+    Page<ProductEntity> findAllBurgerIngredients(
+            @Param("categoryId") Integer categoryId,
+            Pageable pageable);
+
+
+
 }

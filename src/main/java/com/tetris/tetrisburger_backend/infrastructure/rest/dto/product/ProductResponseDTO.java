@@ -43,7 +43,6 @@ public class ProductResponseDTO {
     @Schema(description = "Tipo de producto", example = "INGREDIENT")
     private ProductType productType;
 
-    private Boolean isBurgerIngredient;
 
 
     @Schema(description = "Categoría del producto")

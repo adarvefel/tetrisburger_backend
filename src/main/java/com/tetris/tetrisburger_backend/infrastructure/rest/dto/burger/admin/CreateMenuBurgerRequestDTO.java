@@ -20,7 +20,7 @@ public record CreateMenuBurgerRequestDTO(
         @DecimalMax(value = "999999.99", message = "El precio no puede exceder 999,999.99")
         BigDecimal finalPrice,
 
-        @NotNull(message = "Debe especificar si es destacada")
+
         Boolean isFeatured,
 
         @NotNull(message = "Debe especificar la disponibilidad")

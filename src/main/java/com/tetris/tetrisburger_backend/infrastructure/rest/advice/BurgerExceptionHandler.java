@@ -111,17 +111,17 @@ public class BurgerExceptionHandler {
     // EXCEPCIÓN GLOBAL (RECOMENDADA)
     // ========================================
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponseDTO> handleGlobalException(
-            Exception ex,
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponseDTO> handleIllegalArgument(
+            IllegalArgumentException ex,
             WebRequest request) {
 
-        logger.error("Error inesperado: {} - Ruta: {}",
-                ex.getMessage(), request.getDescription(false), ex);
+
 
         return buildErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Ha ocurrido un error inesperado.",
+                HttpStatus.CONFLICT,
+                ex.getMessage(),
                 request
         );
     }

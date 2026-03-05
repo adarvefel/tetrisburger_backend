@@ -13,7 +13,11 @@ public interface ProductRepository {
 
     void deleteById(Integer id);
 
-    boolean existsByNameIgnoreCase(String name);
+    PageResponse<Product> findAllBurgerIngredients(Integer categoryId, PaginationRequest pagination);
+
+
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNullAndIdNot(String name, Integer id);
 
     PageResponse<Product> findAll(Integer productCategoryId, Boolean availability, PaginationRequest page);
 

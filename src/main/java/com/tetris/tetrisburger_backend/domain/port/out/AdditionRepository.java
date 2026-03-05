@@ -1,4 +1,3 @@
-// src/main/java/com/tetris/tetrisburger_backend/domain/port/out/AdditionRepository.java
 package com.tetris.tetrisburger_backend.domain.port.out;
 
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;

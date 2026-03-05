@@ -46,14 +46,15 @@ public class SupplierAdapter implements SupplierRepository {
     }
 
     @Override
-    public boolean existsByEmailIgnoreCase(String email) {
-        return jpa.existsByEmailIgnoreCase(email);
+    public boolean existsByNameAndDeletedAtIsNull(String name) {
+        return jpa.existsByNameAndDeletedAtIsNull(name);
     }
 
     @Override
-    public boolean existsByName(String name) {
-        return jpa.existsByName(name);
+    public boolean existsByEmailIgnoreCaseAndDeletedAtIsNull(String email) {
+        return jpa.existsByEmailIgnoreCaseAndDeletedAtIsNull(email);
     }
+
 
     @Override
     public PageResponse<Supplier> findAll(String q, PaginationRequest pageReq) {

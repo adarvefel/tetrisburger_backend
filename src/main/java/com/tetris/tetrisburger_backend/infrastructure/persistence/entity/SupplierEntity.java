@@ -8,26 +8,45 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "supplier",
-        indexes = {@Index(name = "idx_supplier_email", columnList = "email")},
-        uniqueConstraints = {@UniqueConstraint(name = "uc_supplier_email", columnNames = "email")})
+        indexes = {@Index(name = "idx_supplier_email", columnList = "email")})
+
 public class SupplierEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_supplier")
     private Integer id;
 
+    @Column(name = "name")
     private String name;
+
+    @Column(name = "phone")
     private String phone;
+
+    @Column(name = "email")
     private String email;
+
+    @Column(name = "address")
     private String address;
 
-    @Column(name = "registration_date")
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private LocalDate registrationDate;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
 
     public Integer getId() {
         return id;
@@ -67,6 +86,7 @@ public class SupplierEntity {
 
     public void setAddress(String address) {
         this.address = address;
+
     }
 
     public LocalDate getRegistrationDate() {
@@ -75,5 +95,21 @@ public class SupplierEntity {
 
     public void setRegistrationDate(LocalDate registrationDate) {
         this.registrationDate = registrationDate;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

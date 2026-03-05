@@ -18,7 +18,8 @@ public class ListBurgerIngredientsUseCase implements ListBurgerIngredients {
         this.productRepository = productRepository;
     }
 
-    public PageResponse<Product> handle(PaginationRequest pagination) {
-        return productRepository.findAllBurgerIngredients(pagination);
+    @Override
+    public PageResponse<Product> handle(Integer categoryId, PaginationRequest pagination) {
+        return productRepository.findAllBurgerIngredients(categoryId, pagination);
     }
 }

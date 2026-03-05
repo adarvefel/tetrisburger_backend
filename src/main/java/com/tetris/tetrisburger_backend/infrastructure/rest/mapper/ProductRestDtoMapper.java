@@ -60,7 +60,6 @@ public interface ProductRestDtoMapper {
                 dto.getPrice(),
                 dto.getAvailability(),
                 ProductType.valueOf(dto.getProductType()),
-                dto.getIsBurgerIngredient(),
                 dto.getProductCategoryId(),
                 dto.getSupplierId(),
                 updatedBy

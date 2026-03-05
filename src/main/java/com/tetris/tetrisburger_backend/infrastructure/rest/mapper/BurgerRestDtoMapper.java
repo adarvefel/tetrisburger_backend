@@ -102,12 +102,16 @@ public interface BurgerRestDtoMapper {
                 : List.of();
 
         return new UpdateMenuBurgerCommand(
+
                 burgerId,
                 dto.name(),
                 dto.description(),
+                dto.finalPrice(),
                 dto.availability(),
+                dto.isFeatured(),
                 ingredients,
                 updatedBy
+
         );
     }
 

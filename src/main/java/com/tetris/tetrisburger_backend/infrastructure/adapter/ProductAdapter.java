@@ -45,10 +45,11 @@ public class ProductAdapter implements ProductRepository {
     }
 
     @Override
-    public PageResponse<Product> findAllBurgerIngredients(PaginationRequest page) {
-        Page<ProductEntity> result = jpa.findAllBurgerIngredients(toPageable(page));
+    public PageResponse<Product> findAllBurgerIngredients(Integer categoryId, PaginationRequest page) {
+        Page<ProductEntity> result = jpa.findAllBurgerIngredients(categoryId, toPageable(page));
         return toPageResponse(result);
     }
+
 
     @Override
     public void deleteById(Integer id) {
@@ -96,13 +97,18 @@ public class ProductAdapter implements ProductRepository {
     }
 
 
-
     @Override
-    public boolean existsByNameIgnoreCase(String name) {
+    public boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name) {
         boolean exists = jpa.existsByNameIgnoreCaseAndDeletedAtIsNull(name);
-        log.info(" Verificando si existe producto con nombre '{}': {}", name, exists);
+        log.info("Verificando si existe producto con nombre '{}': {}", name, exists);
         return exists;
     }
+
+    @Override
+    public boolean existsByNameIgnoreCaseAndDeletedAtIsNullAndIdNot(String name, Integer id) {
+        return jpa.existsByNameIgnoreCaseAndDeletedAtIsNullAndIdNot(name, id);
+    }
+
 
     // ========== Specifications ==========
 
