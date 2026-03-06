@@ -1,11 +1,12 @@
 package com.tetris.tetrisburger_backend.domain.port.in.menu.command;
 
-import com.tetris.tetrisburger_backend.domain.common.FileData;
+
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public record CreateMenuCommand(
+public record UpdateMenuCommand(
+        Integer idMenu,
         String name,
         String description,
         BigDecimal regularPrice,
@@ -15,6 +16,5 @@ public record CreateMenuCommand(
         String imageKey,
         Integer idMenuCategory,
         List<MenuItemCommand> items,
-        FileData imageData,
-        Integer createdBy
+        Integer updatedBy
 ) {}

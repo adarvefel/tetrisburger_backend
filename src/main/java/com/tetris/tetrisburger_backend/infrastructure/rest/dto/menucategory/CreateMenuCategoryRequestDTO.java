@@ -1,6 +1,4 @@
-package com.tetris.tetrisburger_backend.infrastructure.rest.dto.menu;
-
-import jakarta.validation.constraints.NotBlank;
+package com.tetris.tetrisburger_backend.infrastructure.rest.dto.menucategory;
 
 public record CreateMenuCategoryRequestDTO(
         String menuCategoryName,

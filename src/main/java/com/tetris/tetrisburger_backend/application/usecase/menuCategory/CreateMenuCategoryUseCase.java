@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 @Service
 @Transactional
 public class CreateMenuCategoryUseCase implements CreateMenuCategory {
-    private static final Logger logger = LoggerFactory.getLogger(CreateMenuCategory.class);
 
     private final MenuCategoryRepository repository;
 
@@ -24,15 +23,13 @@ public class CreateMenuCategoryUseCase implements CreateMenuCategory {
 
     @Override
     public MenuCategory create(CreateMenuCategoryCommand command) {
-        logger.info("Creando categoria de menu:{}",command.menuCategoryName());
         MenuCategory category = MenuCategory.create(
                 command.menuCategoryName(),
                 command.description()
         );
         MenuCategory saved = repository.save(category);
 
-        logger.info("Categoria de menu creada: ID={}, Nombre={}, Descripcion={}",saved.getIdMenuCategory(),
-                saved.getMenuCategoryName(),saved.getDescription());
+
 
         return  saved;
     }
