@@ -3,15 +3,12 @@ package com.tetris.tetrisburger_backend.application.listener;
 import com.tetris.tetrisburger_backend.application.event.MenuBurgerImageUploadRequestedEvent;
 import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
-import com.tetris.tetrisburger_backend.domain.exception.BurgerNotFoundException;
-import com.tetris.tetrisburger_backend.domain.model.Burger;
-import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
+
 import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.BurgerJpaRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;

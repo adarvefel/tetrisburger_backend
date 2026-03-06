@@ -22,6 +22,9 @@ public interface ImageStoragePort {
     ImageUploadResult uploadAdditionImage(FileData fileData);
 
 
+    ImageUploadResult uploadMenuImage(FileData fileData);
+
+
     // ====== UTILIDADES ======
     void deleteImage(String imageKey);
 

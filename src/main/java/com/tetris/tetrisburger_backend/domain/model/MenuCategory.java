@@ -9,128 +9,76 @@ public class MenuCategory {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
-    private Integer createdBy;
-    private Integer updatedBy;
-    private Integer deletedBy;
 
-    // Constructor vacío
     public MenuCategory() {
     }
 
-    // Constructor completo
     public MenuCategory(Integer idMenuCategory, String menuCategoryName, String description,
-                        LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt,
-                        Integer createdBy, Integer updatedBy, Integer deletedBy) {
+                        LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
         this.idMenuCategory = idMenuCategory;
         this.menuCategoryName = menuCategoryName;
         this.description = description;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
-        this.createdBy = createdBy;
-        this.updatedBy = updatedBy;
-        this.deletedBy = deletedBy;
     }
 
-    // Constructor simplificado (para factory methods)
-    public MenuCategory(Integer idMenuCategory, String menuCategoryName, String description) {
-        this.idMenuCategory = idMenuCategory;
-        this.menuCategoryName = menuCategoryName;
-        this.description = description;
-    }
-
-    // Factory method para crear nueva categoría
+    // Factory: nueva categoría
     public static MenuCategory create(String menuCategoryName, String description) {
         if (menuCategoryName == null || menuCategoryName.isBlank()) {
             throw new IllegalArgumentException("El nombre de la categoría es obligatorio");
         }
-        return new MenuCategory(null, menuCategoryName, description);
+        MenuCategory mc = new MenuCategory();
+        mc.menuCategoryName = menuCategoryName.trim();
+        mc.description = description;
+        mc.createdAt = LocalDateTime.now();
+        return mc;
     }
 
-    // Factory method para reconstitución desde BD
-    public static MenuCategory of(Integer idMenuCategory, String menuCategoryName, String description) {
-        return new MenuCategory(idMenuCategory, menuCategoryName, description);
+    // Factory: reconstituir desde DB
+    public static MenuCategory reconstitute(Integer idMenuCategory, String menuCategoryName,
+                                            String description, LocalDateTime createdAt, LocalDateTime updatedAt,
+                                            LocalDateTime deletedAt) {
+        return new MenuCategory(idMenuCategory, menuCategoryName, description,
+                createdAt, updatedAt, deletedAt);
     }
 
-    // Método de negocio para actualizar
+    // Método de negocio
     public void update(String menuCategoryName, String description) {
         if (menuCategoryName == null || menuCategoryName.isBlank()) {
             throw new IllegalArgumentException("El nombre de la categoría es obligatorio");
         }
-        this.menuCategoryName = menuCategoryName;
+        this.menuCategoryName = menuCategoryName.trim();
         this.description = description;
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters y Setters
-    public Integer getIdMenuCategory() {
-        return idMenuCategory;
+    public void softDelete() {
+        if (this.deletedAt != null) {
+            throw new IllegalStateException("La categoría ya fue eliminada");
+        }
+        this.deletedAt = LocalDateTime.now();
     }
 
-    public void setIdMenuCategory(Integer idMenuCategory) {
-        this.idMenuCategory = idMenuCategory;
-    }
 
-    public String getMenuCategoryName() {
-        return menuCategoryName;
-    }
 
-    public void setMenuCategoryName(String menuCategoryName) {
-        this.menuCategoryName = menuCategoryName;
-    }
+    // ==================== GETTERS Y SETTERS ====================
 
-    public String getDescription() {
-        return description;
-    }
+    public Integer getIdMenuCategory() { return idMenuCategory; }
+    public void setIdMenuCategory(Integer idMenuCategory) { this.idMenuCategory = idMenuCategory; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public String getMenuCategoryName() { return menuCategoryName; }
+    public void setMenuCategoryName(String menuCategoryName) { this.menuCategoryName = menuCategoryName; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void setDeletedAt(LocalDateTime deletedAt) {
-        this.deletedAt = deletedAt;
-    }
-
-    public Integer getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(Integer createdBy) {
-        this.createdBy = createdBy;
-    }
-
-    public Integer getUpdatedBy() {
-        return updatedBy;
-    }
-
-    public void setUpdatedBy(Integer updatedBy) {
-        this.updatedBy = updatedBy;
-    }
-
-    public Integer getDeletedBy() {
-        return deletedBy;
-    }
-
-    public void setDeletedBy(Integer deletedBy) {
-        this.deletedBy = deletedBy;
-    }
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

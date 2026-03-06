@@ -22,6 +22,9 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
     @Value("${s3.folder.addition:addition}")
     private String additionFolder;
 
+    @Value("${s3.folder.menu:menus}")
+    private String menuFolder;
+
     private final S3Client s3Client;
     private final String bucketName;
     private final String region;
@@ -85,6 +88,16 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
                 fileData.contentType(),
                 fileData.originalFilename(),
                 additionFolder
+        );
+    }
+
+    @Override
+    public ImageUploadResult uploadMenuImage(FileData fileData) {
+        return uploadImageInternal(
+                fileData.bytes(),
+                fileData.contentType(),
+                fileData.originalFilename(),
+                menuFolder
         );
     }
 
