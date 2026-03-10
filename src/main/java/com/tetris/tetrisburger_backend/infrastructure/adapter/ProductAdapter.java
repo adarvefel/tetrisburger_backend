@@ -149,6 +149,13 @@ public class ProductAdapter implements ProductRepository {
         );
     }
 
+
+    @Override
+    public PageResponse<Product> searchIngredients(String name, PaginationRequest pagination) {
+        Page<ProductEntity> page = jpa.searchIngredients(name, toPageable(pagination));
+        return toPageResponse(page);
+    }
+
     // ========== Helper Methods ==========
 
     private Pageable toPageable(PaginationRequest pageReq) {

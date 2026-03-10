@@ -26,9 +26,9 @@ import java.util.Set;
 
 @Service
 @Transactional
-public class CreateBurgerUseCase implements CreateMenuBurger {
+public class CreateMenuBurgerUseCase implements CreateMenuBurger {
 
-    private static final Logger logger = LoggerFactory.getLogger(CreateBurgerUseCase.class);
+    private static final Logger logger = LoggerFactory.getLogger(CreateMenuBurgerUseCase.class);
 
     private static final Set<ProductType> ALLOWED_INGREDIENT_TYPES = Set.of(
             ProductType.INGREDIENT
@@ -38,9 +38,9 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
     private final ProductRepository productRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    public CreateBurgerUseCase(BurgerRepository burgerRepository,
-                               ProductRepository productRepository,
-                               ApplicationEventPublisher eventPublisher) {
+    public CreateMenuBurgerUseCase(BurgerRepository burgerRepository,
+                                   ProductRepository productRepository,
+                                   ApplicationEventPublisher eventPublisher) {
         this.burgerRepository = burgerRepository;
         this.productRepository = productRepository;
         this.eventPublisher = eventPublisher;
@@ -64,7 +64,7 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                         return ProductSnapshot.fromProduct(
                                 product,
                                 ing.quantity(),
-                                ing.isOptional()
+                                false
 
 
                         );
@@ -77,7 +77,8 @@ public class CreateBurgerUseCase implements CreateMenuBurger {
                     command.description(),
                     null,
                     snapshots,
-                    command.isFeatured() != null ? command.isFeatured() : false
+                    command.isFeatured() != null ? command.isFeatured() : false,
+                    command.availability() != null ? command.availability() : true
             );
 
             burger.setCreatedBy(command.createdBy());

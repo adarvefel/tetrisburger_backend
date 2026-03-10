@@ -6,7 +6,7 @@ import com.tetris.tetrisburger_backend.domain.model.Menu;
 import com.tetris.tetrisburger_backend.domain.port.in.menu.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.DeleteResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.menu.*;
-import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.MenuDtoMapper;
+import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.MenuRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,12 +27,12 @@ public class MenuController {
     private final GetMenuById getMenuById;
     private final ListMenu listMenu;
     private final UpdateMenuImage updateMenuImage;
-    private final MenuDtoMapper mapper;
+    private final MenuRestDtoMapper mapper;
 
     public MenuController(CreateMenu createMenu, UpdateMenu updateMenu,
                           DeleteMenu deleteMenu, GetMenuById getMenuById,
                           ListMenu listMenu, UpdateMenuImage updateMenuImage,
-                          MenuDtoMapper mapper) {
+                          MenuRestDtoMapper mapper) {
         this.createMenu = createMenu;
         this.updateMenu = updateMenu;
         this.deleteMenu = deleteMenu;

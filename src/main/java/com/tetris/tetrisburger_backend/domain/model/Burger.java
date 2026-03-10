@@ -153,7 +153,8 @@ public class Burger {
             String description,
             String imageUrl,
             List<ProductSnapshot> ingredients,
-            boolean isFeatured
+            boolean isFeatured,
+            boolean availability
     ) {
         if (name == null || name.isBlank())
             throw new IllegalArgumentException("El nombre es obligatorio");
@@ -166,7 +167,7 @@ public class Burger {
         burger.isOnMenu = true;
         burger.isSaved = false;
         burger.isFeatured = isFeatured;
-        burger.availability = true;
+        burger.availability = availability;
         burger.idUser = null;
         burger.timesOrdered = 0;
         burger.createdAt = LocalDateTime.now();
@@ -191,21 +192,21 @@ public class Burger {
     public static class CustomBuilder {
         private final Burger burger;
 
-        public CustomBuilder(String name, Integer userId) {
+        public CustomBuilder(String name, Integer idUser) {
             if (name == null || name.isBlank())
                 throw new IllegalArgumentException("El nombre es obligatorio");
-            if (userId == null)
+            if (idUser == null)
                 throw new IllegalArgumentException("El ID del usuario es obligatorio");
 
             this.burger = new Burger();
             burger.name = name;
             burger.isOnMenu = false;
-            burger.isSaved = true;
+            burger.isSaved = false;
             burger.isFeatured = false;
             burger.availability = true;
-            burger.idUser = userId;
+            burger.idUser = idUser;
             burger.createdAt = LocalDateTime.now();
-            burger.createdBy = userId;
+            burger.createdBy = idUser;
         }
 
         public CustomBuilder addIngredient(ProductSnapshot snapshot) {
@@ -245,6 +246,7 @@ public class Burger {
             String description,
             List<BurgerIngredient> newIngredients,
             Boolean availability,
+            Boolean isFeatured,
             Integer updatedBy
     ) {
         if (!this.isOnMenu)
@@ -273,6 +275,8 @@ public class Burger {
         }
 
         if (availability != null) this.availability = availability;
+
+        if (isFeatured != null) this.isFeatured = isFeatured;
 
         this.syncMetrics();
         this.updatedAt = LocalDateTime.now();

@@ -7,8 +7,6 @@ import java.util.List;
 public record CreateMenuRequestDTO(
         String name,
         String description,
-        BigDecimal regularPrice,
-        BigDecimal comboPrice,
         Boolean isAvailable,
         Integer idMenuCategory,
         List<MenuItemRequestDTO> items

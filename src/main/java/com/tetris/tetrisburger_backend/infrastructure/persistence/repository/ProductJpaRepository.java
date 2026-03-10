@@ -52,6 +52,17 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, Integ
             @Param("categoryId") Integer categoryId,
             Pageable pageable);
 
+    @Query("SELECT p FROM ProductEntity p " +
+            "LEFT JOIN FETCH p.productCategory " +
+            "WHERE p.productType = com.tetris.tetrisburger_backend.domain.model.ProductType.INGREDIENT " +
+            "AND p.deletedAt IS NULL " +
+            "AND p.availability = true " +
+            "AND (:name IS NULL OR TRIM(:name) = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+            "ORDER BY p.name ASC")
+    Page<ProductEntity> searchIngredients(
+            @Param("name") String name,
+            Pageable pageable);
+
 
 
 }

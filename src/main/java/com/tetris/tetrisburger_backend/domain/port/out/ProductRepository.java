@@ -19,6 +19,9 @@ public interface ProductRepository {
     boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
     boolean existsByNameIgnoreCaseAndDeletedAtIsNullAndIdNot(String name, Integer id);
 
+    PageResponse<Product> searchIngredients(String name, PaginationRequest pagination);
+
+
     PageResponse<Product> findAll(Integer productCategoryId, Boolean availability, PaginationRequest page);
 
     PageResponse<Product> search(String q, Integer productCategoryId, Boolean availability, PaginationRequest page);

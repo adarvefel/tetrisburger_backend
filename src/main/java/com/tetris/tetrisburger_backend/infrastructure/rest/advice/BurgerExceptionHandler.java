@@ -107,6 +107,29 @@ public class BurgerExceptionHandler {
         );
     }
 
+
+    @ExceptionHandler(InvalidSettingsException.class)
+    public ResponseEntity<ErrorResponseDTO> handleInvalidSettings(
+            InvalidSettingsException ex,
+            WebRequest request) {
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage(),
+                request
+        );
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ErrorResponseDTO> handleProductNotFound(
+            ProductNotFoundException ex,
+            WebRequest request) {
+        return buildErrorResponse(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage(),
+                request
+        );
+    }
+
     // ========================================
     // EXCEPCIÓN GLOBAL (RECOMENDADA)
     // ========================================

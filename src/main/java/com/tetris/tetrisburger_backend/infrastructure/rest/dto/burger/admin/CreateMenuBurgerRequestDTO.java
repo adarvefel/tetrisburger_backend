@@ -29,6 +29,5 @@ public record CreateMenuBurgerRequestDTO(
         @NotEmpty(message = "Debe incluir al menos un ingrediente")
         @Valid
         List<IngredientRequestDTO> ingredients
-
-         )
+)
 {}

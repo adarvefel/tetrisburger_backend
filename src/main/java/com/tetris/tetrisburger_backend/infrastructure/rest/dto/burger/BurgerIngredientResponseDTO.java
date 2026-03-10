@@ -9,7 +9,6 @@ public record BurgerIngredientResponseDTO(
         String productName,
         BigDecimal priceAtTime,
         Integer quantity,
-        Boolean isOptional,
         BigDecimal subtotal,
         String imageUrl
 ) {

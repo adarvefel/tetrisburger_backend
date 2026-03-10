@@ -1,111 +1,105 @@
-//package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
-//
-//import com.tetris.tetrisburger_backend.domain.common.PageResponse;
-//import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
-//import com.tetris.tetrisburger_backend.domain.model.Burger;
-//import com.tetris.tetrisburger_backend.domain.port.in.burger.user.UnmarkCustomBurgerAsFavorite;
-//import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.UpdateCustomBurger;
-//import com.tetris.tetrisburger_backend.domain.port.in.burger.command.CreateCustomBurgerCommand;
-//import com.tetris.tetrisburger_backend.domain.port.in.burger.command.DeleteCustomBurgerCommand;
-//import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateCustomBurgerCommand;
-//import com.tetris.tetrisburger_backend.domain.port.in.burger.query.SearchCustomBurgersQuery;
-//import com.tetris.tetrisburger_backend.domain.port.in.burger.user.*;
-//import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
-//import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.BurgerPageResponseDTO;
-//import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user.BurgerResponseDTO;
-//import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user.CreateCustomBurgerRequestDTO;
-//import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user.UpdateCustomBurgerRequestDTO;
-//import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.BurgerRestDtoMapper;
-//import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
-//import io.swagger.v3.oas.annotations.Operation;
-//import io.swagger.v3.oas.annotations.Parameter;
-//import io.swagger.v3.oas.annotations.media.Content;
-//import io.swagger.v3.oas.annotations.media.Schema;
-//import io.swagger.v3.oas.annotations.responses.ApiResponse;
-//import io.swagger.v3.oas.annotations.responses.ApiResponses;
-//import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-//import io.swagger.v3.oas.annotations.tags.Tag;
-//import jakarta.validation.Valid;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
-//import org.springframework.http.HttpStatus;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.security.access.prepost.PreAuthorize;
-//import org.springframework.security.core.annotation.AuthenticationPrincipal;
-//import org.springframework.web.bind.annotation.*;
-//
-//@RestController
-//@RequestMapping("/api/burgers")
-//@Tag(name = "User Burgers", description = "Gestión de hamburguesas personalizadas del cliente")
-//@SecurityRequirement(name = "bearerAuth")
-//public class UserBurgerController {
-//
-//    private static final Logger logger = LoggerFactory.getLogger(UserBurgerController.class);
-//
-//    private final CreateCustomBurger createCustomBurger;
-//    private final ListCustomBurgersByUser listCustomBurgersByUser;
-//    private final UpdateCustomBurger updateCustomBurger;
-//    private final DeleteCustomBurger deleteCustomBurger;
-//    private final MarkCustomBurgerAsFavorite markCustomBurgerAsFavorite;
-//    private final UnmarkCustomBurgerAsFavorite unmarkCustomBurgerAsFavorite;
-//    private final SearchCustomBurgers searchCustomBurgers;
-//    private final BurgerRestDtoMapper mapper;
-//
-//    public UserBurgerController(
-//            CreateCustomBurger createCustomBurger,
-//            ListCustomBurgersByUser listCustomBurgersByUser,
-//            UpdateCustomBurger updateCustomBurger,
-//            DeleteCustomBurger deleteCustomBurger,
-//            MarkCustomBurgerAsFavorite markCustomBurgerAsFavorite,
-//            UnmarkCustomBurgerAsFavorite unmarkCustomBurgerAsFavorite,
-//            SearchCustomBurgers searchCustomBurgers,
-//            BurgerRestDtoMapper mapper
-//    ) {
-//        this.createCustomBurger = createCustomBurger;
-//        this.listCustomBurgersByUser = listCustomBurgersByUser;
-//        this.updateCustomBurger = updateCustomBurger;
-//        this.deleteCustomBurger = deleteCustomBurger;
-//        this.markCustomBurgerAsFavorite = markCustomBurgerAsFavorite;
-//        this.unmarkCustomBurgerAsFavorite = unmarkCustomBurgerAsFavorite;
-//        this.searchCustomBurgers = searchCustomBurgers;
-//        this.mapper = mapper;
-//    }
-//
-//    // ==================== CREAR CUSTOM BURGER ====================
-//
-//    @PreAuthorize("hasAuthority('ROLE_CLIENT')")
-//    @PostMapping("/custom")
-//    @Operation(
-//            summary = "Crear hamburguesa personalizada",
-//            description = "Permite al cliente crear su propia hamburguesa. " +
-//                    "El precio se calcula automáticamente según los ingredientes elegidos."
-//    )
-//    @ApiResponses({
-//            @ApiResponse(responseCode = "201", description = "Hamburguesa creada exitosamente",
-//                    content = @Content(schema = @Schema(implementation = BurgerResponseDTO.class))),
-//            @ApiResponse(responseCode = "400", description = "Datos inválidos o ingredientes sin stock",
-//                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-//            @ApiResponse(responseCode = "401", description = "No autenticado",
-//                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-//            @ApiResponse(responseCode = "403", description = "Sin permisos de cliente",
-//                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
-//    })
-//    public ResponseEntity<BurgerResponseDTO> createCustomBurger(
-//            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
-//            @Valid @RequestBody CreateCustomBurgerRequestDTO dto
-//    ) {
-//        Integer userId = userDetails.getId();
-//        logger.info("📍 POST /api/burgers/custom - Usuario ID: {}", userId);
-//
-//        CreateCustomBurgerCommand command = mapper.toCreateCustomBurgerCommand(dto, null, userId);
-//        Burger burger = createCustomBurger.handle(command);
-//
-//        logger.info(" Custom burger creada: ID={}, precio=${}", burger.getIdBurger(), burger.getFinalPrice());
-//
-//        BurgerResponseDTO response = mapper.toBurgerResponseDTO(burger);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-//    }
-//
+package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
+
+
+import com.tetris.tetrisburger_backend.domain.common.PageResponse;
+import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
+import com.tetris.tetrisburger_backend.domain.model.Burger;
+import com.tetris.tetrisburger_backend.domain.model.Product;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.ListBurgerIngredients;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.SearchIngredients;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.client.CreateCustomBurger;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.client.command.CreateCustomBurgerCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.user.*;
+
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.client.BurgerResponseDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.client.CreateCustomBurgerRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.BurgerIngredientListDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.BurgerRestDtoMapper;
+import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.ProductRestDtoMapper;
+import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/burgers")
+@Tag(name = "Client Burgers", description = "Gestión de hamburguesas personalizadas del cliente")
+@SecurityRequirement(name = "bearerAuth")
+public class UserBurgerController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserBurgerController.class);
+
+    private final CreateCustomBurger createCustomBurger;
+    private final ListBurgerIngredients listBurgerIngredients;
+    private final SearchIngredients searchIngredients;
+    private final ProductRestDtoMapper productRestDtoMapper;
+    private final BurgerRestDtoMapper mapper;
+
+    public UserBurgerController(CreateCustomBurger createCustomBurger, ListBurgerIngredients listBurgerIngredients, SearchIngredients searchIngredients, ProductRestDtoMapper productRestDtoMapper, BurgerRestDtoMapper mapper) {
+        this.createCustomBurger = createCustomBurger;
+        this.listBurgerIngredients = listBurgerIngredients;
+        this.searchIngredients = searchIngredients;
+        this.productRestDtoMapper = productRestDtoMapper;
+        this.mapper = mapper;
+    }
+
+    // ==================== CREAR CUSTOM BURGER ====================
+
+    @PreAuthorize("hasAuthority('ROLE_CLIENT')")
+    @PostMapping("/custom")
+    public ResponseEntity<BurgerResponseDTO> createCustomBurger(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody CreateCustomBurgerRequestDTO dto
+    ) {
+        Integer userId = userDetails.getId();
+        CreateCustomBurgerCommand command = mapper.toCreateCustomBurgerCommand(dto, userId);
+        Burger burger = createCustomBurger.handle(command);
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toBurgerResponseDTO(burger));
+    }
+
+    @PreAuthorize("hasAnyAuthority('ROLE_CLIENT')")
+    @GetMapping("/ingredients/search")
+    @Operation(
+            summary = "Buscar ingredientes por nombre",
+            description = "Busca productos de tipo INGREDIENT disponibles y no eliminados que contengan el nombre especificado."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Búsqueda completada",
+                    content = @Content(schema = @Schema(implementation = BurgerIngredientListDTO.class)))
+    })
+    public ResponseEntity<BurgerIngredientListDTO> searchIngredients(
+            @Parameter(description = "Texto de búsqueda por nombre")
+            @RequestParam(required = false) String name,
+            @Parameter(description = "Número de página")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Tamaño de página")
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        logger.info("GET /api/admin/burgers/ingredients/search - name='{}'", name);
+
+        PaginationRequest pagination = new PaginationRequest(page, size);
+        PageResponse<Product> result = searchIngredients.handle(name, pagination);
+
+        return ResponseEntity.ok(productRestDtoMapper.toBurgerIngredientListDTO(result));
+    }
+
+
+
+
+}
 //    // ==================== LISTAR MIS CUSTOM BURGERS ====================
 //
 //    @PreAuthorize("hasAuthority('ROLE_CLIENT')")

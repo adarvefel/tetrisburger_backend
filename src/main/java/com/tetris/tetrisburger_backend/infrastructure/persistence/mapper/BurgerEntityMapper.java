@@ -28,19 +28,19 @@ public abstract class BurgerEntityMapper {
 
         return Burger.reconstitute(
                 entity.getIdBurger(),
-                safeTrim(entity.getName()),
-                safeTrim(entity.getDescription()),
+                entity.getName(),
+                entity.getDescription(),
                 entity.getBasePrice(),
                 entity.getFinalPrice(),
-                entity.getMargin(),              // ← agregar
-                entity.getMarginPercentage(),    // ← agregar
-                entity.getSellingAtLoss(),       // ← agregar
+                entity.getMargin(),
+                entity.getMarginPercentage(),
+                entity.getSellingAtLoss(),
                 bool(entity.getIsOnMenu()),
-                bool(entity.getIsSaved()),    // ← corregir typo (isFavorite en domain)
-                bool(entity.getIsFeatured()),      // ← is_saved en DB
+                bool(entity.getIsFeatured()),
+                bool(entity.getIsSaved()),
                 bool(entity.getAvailability()),
-                safeTrim(entity.getImageKey()),
-                safeTrim(entity.getImageUrl()),
+                entity.getImageKey(),
+                entity.getImageUrl(),
                 entity.getIdUser(),
                 entity.getTimesOrdered(),
                 entity.getCreatedAt(),
@@ -107,7 +107,4 @@ public abstract class BurgerEntityMapper {
         return Boolean.TRUE.equals(value);
     }
 
-    protected static String safeTrim(String value) {
-        return value == null ? null : value.trim();
-    }
 }

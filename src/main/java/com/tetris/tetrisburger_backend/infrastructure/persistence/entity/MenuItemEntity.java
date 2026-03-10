@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.entity;
 
+import com.tetris.tetrisburger_backend.domain.model.ItemType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,14 +22,21 @@ public class MenuItemEntity {
     @EqualsAndHashCode.Exclude
     private MenuEntity menu;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "item_type", nullable = false, length = 20)
-    private String itemType;
+    private ItemType itemType;
 
-    @Column(name = "id_burger")
-    private Integer idBurger;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_burger")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private BurgerEntity burger;
 
-    @Column(name = "id_product")
-    private Integer idProduct;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_product")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private ProductEntity product;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;

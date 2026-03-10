@@ -9,11 +9,9 @@ import com.tetris.tetrisburger_backend.domain.port.in.burger.*;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.*;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuBurgerImageCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.query.SearchMenuBurgersQuery;
-import com.tetris.tetrisburger_backend.domain.port.in.product.ListBurgerIngredients;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.admin.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.BurgerIngredientListDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.ProductResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.BurgerRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.ProductRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.rest.validator.ImageValidator;
@@ -55,11 +53,12 @@ public class AdminBurgerController {
     private final SearchMenuBurgers searchMenuBurgers;
     private final ToggleMenuBurgerFeatured toggleMenuBurgerFeatured;
     private final BurgerRestDtoMapper mapper;
+    private final ListBurgerIngredients listBurgerIngredients;
     private final ProductRestDtoMapper productRestDtoMapper;
-    private final ListBurgerIngredients listBurgersIngredients;
+    private final SearchIngredients searchIngredients;
     private final ImageValidator imageValidator;
 
-    public AdminBurgerController(CreateMenuBurger createMenuBurger, GetBurgerById getBurgerById, ListBurgers listBurgers, UpdateMenuBurger updateMenuBurger, UpdateMenuBurgerImage updateMenuBurgerImage, DeleteMenuBurger deleteMenuBurger, UpdateMenuBurgerPrice updateMenuBurgerPrice, SearchMenuBurgers searchMenuBurgers, ToggleMenuBurgerFeatured toggleMenuBurgerFeatured, BurgerRestDtoMapper mapper, ProductRestDtoMapper productRestDtoMapper, ListBurgerIngredients listBurgersIngredients, ImageValidator imageValidator) {
+    public AdminBurgerController(CreateMenuBurger createMenuBurger, GetBurgerById getBurgerById, ListBurgers listBurgers, UpdateMenuBurger updateMenuBurger, UpdateMenuBurgerImage updateMenuBurgerImage, DeleteMenuBurger deleteMenuBurger, UpdateMenuBurgerPrice updateMenuBurgerPrice, SearchMenuBurgers searchMenuBurgers, ToggleMenuBurgerFeatured toggleMenuBurgerFeatured, BurgerRestDtoMapper mapper, com.tetris.tetrisburger_backend.domain.port.in.burger.ListBurgerIngredients listBurgerIngredients, ProductRestDtoMapper productRestDtoMapper, SearchIngredients searchIngredients, ImageValidator imageValidator) {
         this.createMenuBurger = createMenuBurger;
         this.getBurgerById = getBurgerById;
         this.listBurgers = listBurgers;
@@ -70,8 +69,9 @@ public class AdminBurgerController {
         this.searchMenuBurgers = searchMenuBurgers;
         this.toggleMenuBurgerFeatured = toggleMenuBurgerFeatured;
         this.mapper = mapper;
+        this.listBurgerIngredients = listBurgerIngredients;
         this.productRestDtoMapper = productRestDtoMapper;
-        this.listBurgersIngredients = listBurgersIngredients;
+        this.searchIngredients = searchIngredients;
         this.imageValidator = imageValidator;
     }
 
@@ -408,15 +408,44 @@ public class AdminBurgerController {
             description = "Retorna todos los productos de tipo INGREDIENT. Filtrable por categoría.")
     public ResponseEntity<BurgerIngredientListDTO> getBurgerIngredients(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Integer categoryId
     ) {
         logger.info("GET /api/admin/burgers/ingredients - categoryId={}", categoryId);
 
         PaginationRequest pagination = new PaginationRequest(page, size);
-        PageResponse<Product> result = listBurgersIngredients.handle(categoryId, pagination);
+        PageResponse<Product> result = listBurgerIngredients.handle(categoryId, pagination);
+
 
         return ResponseEntity.ok(productRestDtoMapper.toBurgerIngredientListDTO(result));
     }
+
+
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
+    @GetMapping("/ingredients/search")
+    @Operation(
+            summary = "Buscar ingredientes por nombre",
+            description = "Busca productos de tipo INGREDIENT disponibles y no eliminados que contengan el nombre especificado."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Búsqueda completada",
+                    content = @Content(schema = @Schema(implementation = BurgerIngredientListDTO.class)))
+    })
+    public ResponseEntity<BurgerIngredientListDTO> searchIngredients(
+            @Parameter(description = "Texto de búsqueda por nombre")
+            @RequestParam(required = false) String name,
+            @Parameter(description = "Número de página")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Tamaño de página")
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        logger.info("GET /api/admin/burgers/ingredients/search - name='{}'", name);
+
+        PaginationRequest pagination = new PaginationRequest(page, size);
+        PageResponse<Product> result = searchIngredients.handle(name, pagination);
+
+        return ResponseEntity.ok(productRestDtoMapper.toBurgerIngredientListDTO(result));
+    }
+
 
 }
