@@ -16,13 +16,24 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
-public interface MenuDtoMapper {
+@Mapper(
+        componentModel = "spring",
+        uses = {
+                BurgerRestDtoMapper.class,
+                ProductRestDtoMapper.class
+        }
+)
+public interface MenuRestDtoMapper {
 
     @Mapping(target = "imageStatus", expression = "java(resolveImageStatus(menu.getImageUrl()))")
+    @Mapping(target = "menuCategory", source = "menuCategory")
     MenuResponseDTO toResponseDTO(Menu menu);
 
+
+    @Mapping(target = "burger", source = "burger")
+    @Mapping(target = "product", source = "product")
     MenuItemResponseDTO toItemResponseDTO(MenuItem item);
+
 
     MenuItemCommand toItemCommand(MenuItemRequestDTO itemDTO);
 
@@ -51,11 +62,7 @@ public interface MenuDtoMapper {
         return new CreateMenuCommand(
                 dto.name(),
                 dto.description(),
-                dto.regularPrice(),
-                dto.comboPrice(),
                 dto.isAvailable(),
-                null,
-                null,
                 dto.idMenuCategory(),
                 items,
                 imageData,
@@ -76,11 +83,7 @@ public interface MenuDtoMapper {
                 id,
                 dto.name(),
                 dto.description(),
-                dto.regularPrice(),
-                dto.comboPrice(),
                 dto.isAvailable(),
-                null,
-                null,
                 dto.idMenuCategory(),
                 items,
                 updatedBy

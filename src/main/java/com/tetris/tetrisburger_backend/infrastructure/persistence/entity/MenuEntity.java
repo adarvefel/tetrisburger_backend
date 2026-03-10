@@ -12,6 +12,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class MenuEntity {
 
     @Id
@@ -25,11 +26,6 @@ public class MenuEntity {
     @Column(name = "description", length = 255)
     private String description;
 
-    @Column(name = "regular_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal regularPrice;
-
-    @Column(name = "combo_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal comboPrice;
 
     @Column(name = "is_available", nullable = false)
     private boolean isAvailable;
@@ -40,8 +36,9 @@ public class MenuEntity {
     @Column(name = "image_key", length = 255)
     private String imageKey;
 
-    @Column(name = "id_menu_category")
-    private Integer idMenuCategory;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_menu_category")
+    private MenuCategoryEntity menuCategory;
 
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MenuItemEntity> items = new ArrayList<>();
@@ -63,4 +60,6 @@ public class MenuEntity {
 
     @Column(name = "deleted_by")
     private Integer deletedBy;
+
+
 }

@@ -1,4 +1,3 @@
-// src/main/java/com/tetris/tetrisburger_backend/infrastructure/persistence/mapper/ProductEntityMapper.java
 package com.tetris.tetrisburger_backend.infrastructure.persistence.mapper;
 
 import com.tetris.tetrisburger_backend.domain.model.Product;
@@ -14,7 +13,9 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", uses = {ProductCategoryEntityMapper.class})
+
+@Mapper(componentModel = "spring", uses = {ProductCategoryEntityMapper.class, StringMapperHelper.class})
+
 public interface ProductEntityMapper {
 
     Logger logger = LoggerFactory.getLogger(ProductEntityMapper.class);
@@ -54,15 +55,15 @@ public interface ProductEntityMapper {
 
         return Product.of(
                 e.getId(),
-                trim(e.getName()),
-                trim(e.getDescription()),
+                e.getName(),
+                e.getDescription(),
                 e.getQuantity(),
                 e.getPrice(),
                 e.getAvailability(),
                 e.getProductType(),
                 category,
-                trim(e.getImageUrl()),
-                trim(e.getImageKey()),
+                e.getImageUrl(),
+                e.getImageKey(),
                 supplier,
                 e.getCreatedAt(),
                 e.getUpdatedAt(),
@@ -80,8 +81,8 @@ public interface ProductEntityMapper {
 
         ProductEntity e = new ProductEntity();
         e.setId(d.getId());
-        e.setName(trim(d.getName()));
-        e.setDescription(trim(d.getDescription()));
+        e.setName(d.getName());
+        e.setDescription(d.getDescription());
         e.setQuantity(d.getQuantity());
         e.setPrice(d.getPrice());
         e.setAvailability(d.getAvailability());
@@ -97,8 +98,8 @@ public interface ProductEntityMapper {
             e.setProductCategory(catEntity);
         }
 
-        e.setImageUrl(trim(d.getImageUrl()));
-        e.setImageKey(trim(d.getImageKey()));
+        e.setImageUrl(d.getImageUrl());
+        e.setImageKey(d.getImageKey());
 
         if (d.getSupplier() != null && d.getSupplier().getId() != null) {
             SupplierEntity sup = new SupplierEntity();
@@ -129,9 +130,5 @@ public interface ProductEntityMapper {
                 domains.stream().map(this::toEntity).collect(Collectors.toList());
     }
 
-    // ==================== Utils ====================
 
-    default String trim(String s) {
-        return s == null ? null : s.trim();
-    }
 }

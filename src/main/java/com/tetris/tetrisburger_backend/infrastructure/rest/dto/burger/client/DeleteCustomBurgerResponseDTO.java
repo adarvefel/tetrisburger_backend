@@ -1,4 +1,4 @@
-package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user;
+package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.client;
 
 public record DeleteCustomBurgerResponseDTO(
         Integer idBurger,

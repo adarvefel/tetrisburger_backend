@@ -1,4 +1,4 @@
-package com.tetris.tetrisburger_backend.domain.port.in.burger.command;
+package com.tetris.tetrisburger_backend.domain.port.in.burger.client.command;
 
 import java.util.List;
 

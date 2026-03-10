@@ -9,11 +9,7 @@ public record UpdateMenuCommand(
         Integer idMenu,
         String name,
         String description,
-        BigDecimal regularPrice,
-        BigDecimal comboPrice,
         boolean isAvailable,
-        String imageUrl,
-        String imageKey,
         Integer idMenuCategory,
         List<MenuItemCommand> items,
         Integer updatedBy

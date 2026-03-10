@@ -102,6 +102,7 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
                     command.description(),
                     newIngredients,
                     command.availability(),
+                    command.isFeatured(),
                     command.updatedBy()
 
             );
@@ -181,12 +182,7 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
             );
         }
 
-        if (burger.isCustomBurger()) {
-            throw new InvalidBurgerException(
-                    "No se puede actualizar una hamburguesa personalizada con este método. " +
-                            "ID: " + burger.getIdBurger()
-            );
-        }
+
 
         if (burger.isDeleted()) {
             throw new InvalidBurgerException(

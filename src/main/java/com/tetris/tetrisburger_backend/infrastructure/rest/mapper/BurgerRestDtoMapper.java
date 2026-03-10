@@ -4,16 +4,15 @@ import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.model.BurgerIngredient;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.client.command.CreateCustomBurgerCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.CreateBurgerCommand;
-import com.tetris.tetrisburger_backend.domain.port.in.burger.command.CreateCustomBurgerCommand;
-import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateCustomBurgerCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.client.command.UpdateCustomBurgerCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuBurgerCommand;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.*;
-import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.admin.*;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user.BurgerResponseDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user.CreateCustomBurgerRequestDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.user.UpdateCustomBurgerRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.client.BurgerResponseDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.client.CreateCustomBurgerRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.client.UpdateCustomBurgerRequestDTO;
 import org.mapstruct.Mapper;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,8 +37,7 @@ public interface BurgerRestDtoMapper {
                 ? dto.ingredients().stream()
                 .map(ing -> new CreateBurgerCommand.IngredientRequest(
                         ing.idProduct(),
-                        ing.quantity(),
-                        ing.isOptional()
+                        ing.quantity()
                 ))
                 .toList()
                 : List.of();
@@ -49,6 +47,7 @@ public interface BurgerRestDtoMapper {
                 dto.description(),
                 imageData,
                 dto.isFeatured(),
+                dto.availability(),
                 dto.finalPrice(),
                 ingredients,
                 createdBy
@@ -58,30 +57,25 @@ public interface BurgerRestDtoMapper {
     // ==================== CREATE CUSTOM BURGER ====================
     default CreateCustomBurgerCommand toCreateCustomBurgerCommand(
             CreateCustomBurgerRequestDTO dto,
-            MultipartFile burgerImage,
-            Integer userId) {
+            Integer userId) {  // ← quita MultipartFile
 
         if (dto == null) return null;
-
-        FileData imageData = FileData.from(burgerImage);
 
         List<CreateCustomBurgerCommand.IngredientRequest> ingredients = dto.ingredients() != null
                 ? dto.ingredients().stream()
                 .map(ing -> new CreateCustomBurgerCommand.IngredientRequest(
                         ing.idProduct(),
-                        ing.quantity()
-                ))
+                        ing.quantity()))
                 .collect(Collectors.toList())
                 : List.of();
 
         return new CreateCustomBurgerCommand(
                 dto.name(),
-                dto.description(),
-                imageData,
                 userId,
                 ingredients
         );
     }
+
 
     // ==================== UPDATE MENU BURGER ====================
     default UpdateMenuBurgerCommand toUpdateMenuBurgerCommand(
@@ -95,8 +89,7 @@ public interface BurgerRestDtoMapper {
                 ? dto.ingredients().stream()
                 .map(ing -> new UpdateMenuBurgerCommand.IngredientRequest(
                         ing.idProduct(),
-                        ing.quantity(),
-                        ing.isOptional()
+                        ing.quantity()
                 ))
                 .collect(Collectors.toList())
                 : List.of();
@@ -195,13 +188,8 @@ public interface BurgerRestDtoMapper {
         return new BurgerResponseDTO(
                 burger.getIdBurger(),
                 burger.getName(),
-                burger.getDescription(),
                 burger.getFinalPrice(),
-                burger.isFeatured(),
-                burger.isAvailability(),
                 burger.getImageUrl(),
-                burger.getImageStatus(),
-                burger.getTimesOrdered(),
                 toBurgerIngredientResponseDTOList(burger.getIngredients())
         );
     }
@@ -258,7 +246,6 @@ public interface BurgerRestDtoMapper {
                 ingredient.getProductName(),
                 ingredient.getPriceAtTime(),
                 ingredient.getQuantity(),
-                ingredient.isOptional(),
                 ingredient.calculateSubtotal(),
                 ingredient.getImageUrl()
         );

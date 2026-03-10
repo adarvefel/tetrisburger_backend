@@ -9,13 +9,12 @@ public record UpdateMenuBurgerCommand(
         String description,
         BigDecimal finalPrice,
         Boolean availability,
-        Boolean isFeatured,
+        boolean isFeatured,
         List<IngredientRequest> ingredients,
         Integer updatedBy
 ) {
     public record IngredientRequest(
             Integer idProduct,
-            Integer quantity,
-            boolean isOptional
+            Integer quantity
     ) {}
 }

@@ -1,8 +1,0 @@
-package com.tetris.tetrisburger_backend.domain.port.in.burger.user;
-
-import com.tetris.tetrisburger_backend.domain.model.Burger;
-import com.tetris.tetrisburger_backend.domain.port.in.burger.command.CreateCustomBurgerCommand;
-
-public interface CreateCustomBurger {
-    Burger handle(CreateCustomBurgerCommand command);
-}

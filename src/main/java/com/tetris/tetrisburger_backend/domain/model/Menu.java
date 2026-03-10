@@ -1,6 +1,5 @@
 package com.tetris.tetrisburger_backend.domain.model;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,12 +8,10 @@ public class Menu {
     private Integer idMenu;
     private String name;
     private String description;
-    private BigDecimal regularPrice;
-    private BigDecimal comboPrice;
     private boolean isAvailable;
     private String imageUrl;
     private String imageKey;
-    private Integer idMenuCategory;
+    private MenuCategory menuCategory;
     private List<MenuItem> items;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -25,20 +22,17 @@ public class Menu {
 
     public Menu() {}
 
-    private Menu(Integer idMenu, String name, String description, BigDecimal regularPrice,
-                 BigDecimal comboPrice, boolean isAvailable, String imageUrl, String imageKey,
-                 Integer idMenuCategory, List<MenuItem> items, LocalDateTime createdAt,
-                 LocalDateTime updatedAt, LocalDateTime deletedAt,
-                 Integer createdBy, Integer updatedBy, Integer deletedBy) {
+    private Menu(Integer idMenu, String name, String description, boolean isAvailable,
+                 String imageUrl, String imageKey, MenuCategory menuCategory,
+                 List<MenuItem> items, LocalDateTime createdAt, LocalDateTime updatedAt,
+                 LocalDateTime deletedAt, Integer createdBy, Integer updatedBy, Integer deletedBy) {
         this.idMenu = idMenu;
         this.name = name;
         this.description = description;
-        this.regularPrice = regularPrice;
-        this.comboPrice = comboPrice;
         this.isAvailable = isAvailable;
         this.imageUrl = imageUrl;
         this.imageKey = imageKey;
-        this.idMenuCategory = idMenuCategory;
+        this.menuCategory = menuCategory;
         this.items = items;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -48,28 +42,21 @@ public class Menu {
         this.deletedBy = deletedBy;
     }
 
-    public static Menu create(String name, String description, BigDecimal regularPrice,
-                              BigDecimal comboPrice, Boolean isAvailable, String imageUrl,
-                              String imageKey, Integer idMenuCategory, List<MenuItem> items,
-                              Integer createdBy) {
+    public static Menu create(String name, String description, Boolean isAvailable,
+                              String imageUrl, String imageKey, MenuCategory menuCategory,
+                              List<MenuItem> items, Integer createdBy) {
         if (name == null || name.isBlank())
             throw new IllegalArgumentException("El nombre del menú es obligatorio");
-        if (regularPrice == null || regularPrice.compareTo(BigDecimal.ZERO) <= 0)
-            throw new IllegalArgumentException("El precio regular debe ser mayor a 0");
-        if (comboPrice == null || comboPrice.compareTo(BigDecimal.ZERO) <= 0)
-            throw new IllegalArgumentException("El precio combo debe ser mayor a 0");
         if (items == null || items.isEmpty())
             throw new IllegalArgumentException("El menú debe tener al menos un ítem");
 
         Menu menu = new Menu();
         menu.name = name.trim();
         menu.description = description;
-        menu.regularPrice = regularPrice;
-        menu.comboPrice = comboPrice;
         menu.isAvailable = isAvailable != null ? isAvailable : true;
         menu.imageUrl = imageUrl;
         menu.imageKey = imageKey;
-        menu.idMenuCategory = idMenuCategory;
+        menu.menuCategory = menuCategory;
         menu.items = items;
         menu.createdAt = LocalDateTime.now();
         menu.createdBy = createdBy;
@@ -77,38 +64,27 @@ public class Menu {
     }
 
     public static Menu reconstitute(Integer idMenu, String name, String description,
-                                    BigDecimal regularPrice, BigDecimal comboPrice,
                                     boolean isAvailable, String imageUrl, String imageKey,
-                                    Integer idMenuCategory, List<MenuItem> items,
+                                    MenuCategory menuCategory, List<MenuItem> items,
                                     LocalDateTime createdAt, LocalDateTime updatedAt,
                                     LocalDateTime deletedAt, Integer createdBy,
                                     Integer updatedBy, Integer deletedBy) {
-        return new Menu(idMenu, name, description, regularPrice, comboPrice, isAvailable,
-                imageUrl, imageKey, idMenuCategory, items, createdAt, updatedAt,
-                deletedAt, createdBy, updatedBy, deletedBy);
+        return new Menu(idMenu, name, description, isAvailable, imageUrl, imageKey,
+                menuCategory, items, createdAt, updatedAt, deletedAt,
+                createdBy, updatedBy, deletedBy);
     }
 
-    public void update(String name, String description, BigDecimal regularPrice,
-                       BigDecimal comboPrice, Boolean isAvailable, String imageUrl,
-                       String imageKey, Integer idMenuCategory, List<MenuItem> items,
-                       Integer updatedBy) {
+    public void update(String name, String description, Boolean isAvailable, MenuCategory menuCategory,
+                       List<MenuItem> items, Integer updatedBy) {
         if (name == null || name.isBlank())
             throw new IllegalArgumentException("El nombre del menú es obligatorio");
-        if (regularPrice == null || regularPrice.compareTo(BigDecimal.ZERO) <= 0)
-            throw new IllegalArgumentException("El precio regular debe ser mayor a 0");
-        if (comboPrice == null || comboPrice.compareTo(BigDecimal.ZERO) <= 0)
-            throw new IllegalArgumentException("El precio combo debe ser mayor a 0");
         if (items == null || items.isEmpty())
             throw new IllegalArgumentException("El menú debe tener al menos un ítem");
 
         this.name = name.trim();
         this.description = description;
-        this.regularPrice = regularPrice;
-        this.comboPrice = comboPrice;
         this.isAvailable = isAvailable != null ? isAvailable : this.isAvailable;
-        this.imageUrl = imageUrl;
-        this.imageKey = imageKey;
-        this.idMenuCategory = idMenuCategory;
+        this.menuCategory = menuCategory;
         this.items = items;
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
@@ -143,12 +119,6 @@ public class Menu {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public BigDecimal getRegularPrice() { return regularPrice; }
-    public void setRegularPrice(BigDecimal regularPrice) { this.regularPrice = regularPrice; }
-
-    public BigDecimal getComboPrice() { return comboPrice; }
-    public void setComboPrice(BigDecimal comboPrice) { this.comboPrice = comboPrice; }
-
     public boolean isAvailable() { return isAvailable; }
     public void setAvailable(boolean available) { isAvailable = available; }
 
@@ -158,8 +128,8 @@ public class Menu {
     public String getImageKey() { return imageKey; }
     public void setImageKey(String imageKey) { this.imageKey = imageKey; }
 
-    public Integer getIdMenuCategory() { return idMenuCategory; }
-    public void setIdMenuCategory(Integer idMenuCategory) { this.idMenuCategory = idMenuCategory; }
+    public MenuCategory getMenuCategory() { return menuCategory; }
+    public void setMenuCategory(MenuCategory menuCategory) { this.menuCategory = menuCategory; }
 
     public List<MenuItem> getItems() { return items; }
     public void setItems(List<MenuItem> items) { this.items = items; }

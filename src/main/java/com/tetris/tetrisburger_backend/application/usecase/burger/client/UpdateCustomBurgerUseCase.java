@@ -9,7 +9,7 @@
 //import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.GetBurgerSettings;
 //import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.UpdateCustomBurger;
 //import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;
-//import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateCustomBurgerCommand;
+//import com.tetris.tetrisburger_backend.domain.port.in.burger.client.command.UpdateCustomBurgerCommand;
 //import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
 //import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 //import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;

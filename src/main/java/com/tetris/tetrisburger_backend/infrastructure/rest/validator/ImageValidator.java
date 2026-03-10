@@ -17,7 +17,11 @@ public class ImageValidator {
     private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
             "image/jpeg",
             "image/png",
-            "image/webp"
+            "image/webp",
+            "image/gif",
+            "image/avif",
+            "image/heif",
+            "image/heic"
     );
 
     public void validate(MultipartFile file) {

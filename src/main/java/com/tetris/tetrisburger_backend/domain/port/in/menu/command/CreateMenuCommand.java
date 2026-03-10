@@ -8,11 +8,7 @@ import java.util.List;
 public record CreateMenuCommand(
         String name,
         String description,
-        BigDecimal regularPrice,
-        BigDecimal comboPrice,
         boolean isAvailable,
-        String imageUrl,
-        String imageKey,
         Integer idMenuCategory,
         List<MenuItemCommand> items,
         FileData imageData,

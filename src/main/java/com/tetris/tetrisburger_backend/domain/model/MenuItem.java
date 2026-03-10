@@ -3,63 +3,90 @@ package com.tetris.tetrisburger_backend.domain.model;
 public class MenuItem {
 
     private Integer idMenuItem;
-    private Integer idMenu;
-    private String itemType; // BURGER, PRODUCT
-    private Integer idBurger;
-    private Integer idProduct;
+    private Menu menu;
+    private ItemType itemType;
+    private Burger burger;
+    private Product product;
     private Integer quantity;
 
     public MenuItem() {}
 
-    private MenuItem(Integer idMenuItem, Integer idMenu, String itemType,
-                     Integer idBurger, Integer idProduct, Integer quantity) {
+    private MenuItem(Integer idMenuItem, Menu menu, ItemType itemType,
+                     Burger burger, Product product, Integer quantity) {
         this.idMenuItem = idMenuItem;
-        this.idMenu = idMenu;
+        this.menu = menu;
         this.itemType = itemType;
-        this.idBurger = idBurger;
-        this.idProduct = idProduct;
+        this.burger = burger;
+        this.product = product;
         this.quantity = quantity;
     }
 
-    public static MenuItem create(String itemType, Integer idBurger,
-                                  Integer idProduct, Integer quantity) {
-        if (itemType == null || itemType.isBlank())
-            throw new IllegalArgumentException("El tipo de ítem es obligatorio");
-        if ("BURGER".equals(itemType) && idBurger == null)
-            throw new IllegalArgumentException("idBurger es obligatorio para tipo BURGER");
-        if ("PRODUCT".equals(itemType) && idProduct == null)
-            throw new IllegalArgumentException("idProduct es obligatorio para tipo PRODUCT");
-        if (quantity == null || quantity <= 0)
-            throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
+    // ── Nuevo ítem (menu se asigna luego con assignMenu)
+    public static MenuItem create(ItemType itemType, Burger burger,
+                                  Product product, Integer quantity) {
+        validate(itemType, burger, product, quantity);
 
         MenuItem item = new MenuItem();
         item.itemType = itemType;
-        item.idBurger = idBurger;
-        item.idProduct = idProduct;
+        item.burger = burger;
+        item.product = product;
         item.quantity = quantity;
         return item;
     }
 
-    public static MenuItem reconstitute(Integer idMenuItem, Integer idMenu, String itemType,
-                                        Integer idBurger, Integer idProduct, Integer quantity) {
-        return new MenuItem(idMenuItem, idMenu, itemType, idBurger, idProduct, quantity);
+    // ── Rehidratación desde BD
+    public static MenuItem reconstitute(Integer idMenuItem, Menu menu,
+                                        ItemType itemType, Burger burger,
+                                        Product product, Integer quantity) {
+        return new MenuItem(idMenuItem, menu, itemType, burger, product, quantity);
     }
 
-    // Getters y Setters
+    // ── Actualizar ítem existente
+    public void update(ItemType itemType, Burger burger,
+                       Product product, Integer quantity) {
+        validate(itemType, burger, product, quantity);
+        this.itemType = itemType;
+        this.burger = burger;
+        this.product = product;
+        this.quantity = quantity;
+    }
+
+    // ── Asignar menú padre tras persistir Menu
+    public void assignMenu(Menu menu) {
+        if (menu == null)
+            throw new IllegalArgumentException("menu no puede ser nulo");
+        this.menu = menu;
+    }
+
+    // ── Validación centralizada
+    private static void validate(ItemType itemType, Burger burger,
+                                 Product product, Integer quantity) {
+        if (itemType == null)
+            throw new IllegalArgumentException("El tipo de ítem es obligatorio");
+        if (itemType == ItemType.BURGER && burger == null)
+            throw new IllegalArgumentException("Se requiere una burger para tipo BURGER");
+        if (itemType == ItemType.PRODUCT && product == null)
+            throw new IllegalArgumentException("Se requiere un producto para tipo PRODUCT");
+        if (quantity == null || quantity <= 0)
+            throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
+    }
+
+    // ==================== GETTERS Y SETTERS ====================
+
     public Integer getIdMenuItem() { return idMenuItem; }
     public void setIdMenuItem(Integer idMenuItem) { this.idMenuItem = idMenuItem; }
 
-    public Integer getIdMenu() { return idMenu; }
-    public void setIdMenu(Integer idMenu) { this.idMenu = idMenu; }
+    public Menu getMenu() { return menu; }
+    public void setMenu(Menu menu) { this.menu = menu; }
 
-    public String getItemType() { return itemType; }
-    public void setItemType(String itemType) { this.itemType = itemType; }
+    public ItemType getItemType() { return itemType; }
+    public void setItemType(ItemType itemType) { this.itemType = itemType; }
 
-    public Integer getIdBurger() { return idBurger; }
-    public void setIdBurger(Integer idBurger) { this.idBurger = idBurger; }
+    public Burger getBurger() { return burger; }
+    public void setBurger(Burger burger) { this.burger = burger; }
 
-    public Integer getIdProduct() { return idProduct; }
-    public void setIdProduct(Integer idProduct) { this.idProduct = idProduct; }
+    public Product getProduct() { return product; }
+    public void setProduct(Product product) { this.product = product; }
 
     public Integer getQuantity() { return quantity; }
     public void setQuantity(Integer quantity) { this.quantity = quantity; }

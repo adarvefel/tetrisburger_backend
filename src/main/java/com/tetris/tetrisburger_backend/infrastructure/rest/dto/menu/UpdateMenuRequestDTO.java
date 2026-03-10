@@ -6,8 +6,6 @@ import java.util.List;
 public record UpdateMenuRequestDTO(
         String name,
         String description,
-        BigDecimal regularPrice,
-        BigDecimal comboPrice,
         Boolean isAvailable,
         Integer idMenuCategory,
         List<MenuItemRequestDTO> items
