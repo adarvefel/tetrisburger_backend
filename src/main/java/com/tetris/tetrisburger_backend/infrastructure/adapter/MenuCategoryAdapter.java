@@ -42,6 +42,13 @@ public class MenuCategoryAdapter implements MenuCategoryRepository {
     }
 
     @Override
+    public boolean existsByNameAndDeletedAtIsNull(String name) {
+        return menuCategoryJpaRepository.existsByMenuCategoryNameIgnoreCaseAndDeletedAtIsNull( name);
+    }
+
+
+
+    @Override
     public PageResponse<MenuCategory> findAll(PaginationRequest pagination) {
         Sort sort = pagination.getSortBy() != null
                 ? Sort.by(Sort.Direction.fromString(pagination.getDirection()), pagination.getSortBy())

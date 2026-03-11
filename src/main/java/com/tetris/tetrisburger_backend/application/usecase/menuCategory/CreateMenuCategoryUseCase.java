@@ -23,14 +23,15 @@ public class CreateMenuCategoryUseCase implements CreateMenuCategory {
 
     @Override
     public MenuCategory create(CreateMenuCategoryCommand command) {
+        if (repository.existsByNameAndDeletedAtIsNull(command.menuCategoryName()))
+            throw new IllegalArgumentException(
+                    "Ya existe una categoría activa con el nombre: " + command.menuCategoryName());
+
         MenuCategory category = MenuCategory.create(
                 command.menuCategoryName(),
                 command.description()
         );
-        MenuCategory saved = repository.save(category);
-
-
-
-        return  saved;
+        return repository.save(category);
     }
+
 }
