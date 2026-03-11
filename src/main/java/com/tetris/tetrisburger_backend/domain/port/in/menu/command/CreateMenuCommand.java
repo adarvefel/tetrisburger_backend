@@ -8,7 +8,7 @@ import java.util.List;
 public record CreateMenuCommand(
         String name,
         String description,
-        boolean isAvailable,
+        Boolean isAvailable,
         Integer idMenuCategory,
         List<MenuItemCommand> items,
         FileData imageData,

@@ -80,6 +80,6 @@ public class UpdateMenuUseCase implements UpdateMenu {
                 command.updatedBy()
         );
 
-        return menuRepository.save(menu);
+        return menuRepository.update(menu);
     }
 }
