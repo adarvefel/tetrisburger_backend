@@ -9,6 +9,9 @@ import java.util.Optional;
 public interface MenuCategoryRepository {
     MenuCategory save(MenuCategory menuCategory);
     Optional<MenuCategory> findById(Integer id);
+
+    boolean existsByNameAndDeletedAtIsNull(String name);
+
     PageResponse<MenuCategory> findAll(PaginationRequest pagination);
-    void delete(MenuCategory menuCategory); // soft delete: el dominio setea deletedAt, JPA persiste
+    void delete(MenuCategory menuCategory);
 }

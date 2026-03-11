@@ -12,7 +12,9 @@ import java.util.Optional;
 public interface MenuCategoryJpaRepository  extends JpaRepository<MenuCategoryEntity, Integer > {
     Optional<MenuCategoryEntity> findByIdMenuCategoryAndDeletedAtIsNull(Integer id);
 
-    // Listar solo activos con paginación
+    boolean existsByMenuCategoryNameIgnoreCaseAndDeletedAtIsNull(String menuCategoryName);
+
+
     Page<MenuCategoryEntity> findAllByDeletedAtIsNull(Pageable pageable);
 
 
