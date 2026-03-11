@@ -35,10 +35,10 @@ public abstract class BurgerEntityMapper {
                 entity.getMargin(),
                 entity.getMarginPercentage(),
                 entity.getSellingAtLoss(),
-                bool(entity.getIsOnMenu()),
-                bool(entity.getIsFeatured()),
-                bool(entity.getIsSaved()),
-                bool(entity.getAvailability()),
+                MapperUtils.bool(entity.getIsOnMenu()),      // ← antes: bool(...)
+                MapperUtils.bool(entity.getIsFeatured()),
+                MapperUtils.bool(entity.getIsSaved()),
+                MapperUtils.bool(entity.getAvailability()),
                 entity.getImageKey(),
                 entity.getImageUrl(),
                 entity.getIdUser(),
@@ -103,8 +103,5 @@ public abstract class BurgerEntityMapper {
         }
     }
 
-    protected static boolean bool(Boolean value) {
-        return Boolean.TRUE.equals(value);
-    }
 
 }

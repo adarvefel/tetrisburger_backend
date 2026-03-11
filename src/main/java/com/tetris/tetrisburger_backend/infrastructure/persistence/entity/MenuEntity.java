@@ -13,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class MenuEntity {
 
     @Id
@@ -27,6 +28,8 @@ public class MenuEntity {
     private String description;
 
 
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Column(name = "is_available", nullable = false)
     private boolean isAvailable;
 
@@ -60,6 +63,15 @@ public class MenuEntity {
 
     @Column(name = "deleted_by")
     private Integer deletedBy;
+
+
+    public boolean isAvailable() {
+        return isAvailable;
+    }
+
+    public void setAvailable(boolean available) {
+        this.isAvailable = available;
+    }
 
 
 }

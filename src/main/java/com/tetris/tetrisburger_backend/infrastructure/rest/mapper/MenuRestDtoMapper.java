@@ -4,6 +4,7 @@ import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
 import com.tetris.tetrisburger_backend.domain.model.Menu;
 import com.tetris.tetrisburger_backend.domain.model.MenuItem;
+import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.in.menu.command.CreateMenuCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.menu.command.MenuItemCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.menu.command.UpdateMenuCommand;
@@ -24,9 +25,9 @@ import java.util.List;
         }
 )
 public interface MenuRestDtoMapper {
-
     @Mapping(target = "imageStatus", expression = "java(resolveImageStatus(menu.getImageUrl()))")
     @Mapping(target = "menuCategory", source = "menuCategory")
+    @Mapping(target = "isAvailable", source = "available")
     MenuResponseDTO toResponseDTO(Menu menu);
 
 
@@ -89,6 +90,13 @@ public interface MenuRestDtoMapper {
                 updatedBy
         );
     }
+
+
+    @Mapping(target = "idProduct", source = "product.id")
+    @Mapping(target = "name", source = "product.name")
+    @Mapping(target = "price", source = "product.price")
+    @Mapping(target = "imageUrl", source = "product.imageUrl")
+    ProductSummaryDTO toProductSummaryDTO(Product product);
 
     default UpdateMenuImageCommand toUpdateImageCommand(Integer id,
                                                         MultipartFile image,

@@ -11,4 +11,6 @@ public interface MenuRepository {
     Optional<Menu> findById(Integer id);
     PageResponse<Menu> findAll(PaginationRequest pagination);
     void delete(Menu menu);
+
+    Menu update(Menu menu);
 }

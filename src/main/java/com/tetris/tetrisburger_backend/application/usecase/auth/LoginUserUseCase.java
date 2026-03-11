@@ -37,7 +37,7 @@ public class LoginUserUseCase implements LoginUser {
     public LoginResponse execute(LoginUserCommand command) {
         boolean isHuman = recaptchaPort.verifyToken(command.recaptchaToken(),"login");
         if(!isHuman){
-            throw new InvalidRecaptchaException("  \"Verificación de seguridad falló. Por favor intenta de nuevo.");
+            throw new InvalidRecaptchaException("Verificación de seguridad falló. Por favor intenta de nuevo.");
         }
 
 
