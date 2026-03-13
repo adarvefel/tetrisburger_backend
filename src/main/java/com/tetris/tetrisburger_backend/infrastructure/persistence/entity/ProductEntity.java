@@ -44,7 +44,7 @@ public class ProductEntity {
     private Boolean isBurgerIngredient;
 
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_product_category", nullable = false)
     private ProductCategoryEntity productCategory;
 
@@ -54,7 +54,7 @@ public class ProductEntity {
     @Column(name = "image_key", length = 255)
     private String imageKey;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_supplier", nullable = false)
     private SupplierEntity supplier;
 

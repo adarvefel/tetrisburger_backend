@@ -37,7 +37,7 @@ public abstract class BurgerEntityMapper {
                 entity.getSellingAtLoss(),
                 MapperUtils.bool(entity.getIsOnMenu()),      // ← antes: bool(...)
                 MapperUtils.bool(entity.getIsFeatured()),
-                MapperUtils.bool(entity.getIsSaved()),
+                MapperUtils.bool(entity.getCustom()),
                 MapperUtils.bool(entity.getAvailability()),
                 entity.getImageKey(),
                 entity.getImageUrl(),
@@ -67,7 +67,7 @@ public abstract class BurgerEntityMapper {
         entity.setBasePrice(domain.getBasePrice());
         entity.setFinalPrice(domain.getFinalPrice());
         entity.setIsOnMenu(domain.isOnMenu());
-        entity.setIsSaved(domain.isSaved());
+        entity.setCustom(domain.isCustom());
         entity.setIsFeatured(domain.isFeatured());
         entity.setAvailability(domain.isAvailability());
         entity.setImageKey(domain.getImageKey());

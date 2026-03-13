@@ -1,5 +1,5 @@
 // src/main/java/com/tetris/tetrisburger_backend/domain/port/in/burger/ListCustomBurgersByUser.java
-package com.tetris.tetrisburger_backend.domain.port.in.burger.user;
+package com.tetris.tetrisburger_backend.domain.port.in.burger.client;
 
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;

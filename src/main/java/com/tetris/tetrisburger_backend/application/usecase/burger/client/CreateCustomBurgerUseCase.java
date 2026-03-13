@@ -1,6 +1,5 @@
 package com.tetris.tetrisburger_backend.application.usecase.burger.client;
 
-import com.tetris.tetrisburger_backend.domain.exception.BurgerCreationException;
 import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
 import com.tetris.tetrisburger_backend.domain.exception.InvalidSettingsException;
 import com.tetris.tetrisburger_backend.domain.exception.ProductNotFoundException;
@@ -16,6 +15,8 @@ import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.SettingsRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -38,48 +39,40 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
     @Override
     public Burger handle(CreateCustomBurgerCommand command) {
 
-        // 1. Obtener settings
+        // 1. Obtener configuración global del sistema
         BurgerSettings settings = settingsRepository.getBurgerSettings();
 
-        // 2. Validar que custom burgers estén habilitadas
+        // 2. Validar que la funcionalidad esté activa
         if (!settings.isCustomBurgersEnabled()) {
-            throw new InvalidSettingsException(
-                    "Las hamburguesas personalizadas están deshabilitadas temporalmente"
-            );
+            throw new InvalidSettingsException("Las hamburguesas personalizadas están deshabilitadas temporalmente");
         }
 
-        // 3. Validar cantidad de ingredientes
-        int total = command.ingredients().size();
-        if (total < settings.getMinIngredients()) {
-            throw new InvalidSettingsException(
-                    "Mínimo " + settings.getMinIngredients() + " ingredientes requeridos. " +
-                            "Tienes " + total
-            );
+        // 3. LIMPIEZA: Eliminamos cualquier borrador (draft) previo del usuario.
+        // Esto evita el error de "NonUniqueResultException" al asegurar que
+        // siempre partimos de cero.
+        burgerRepository.deleteActiveDraftsByUser(command.idUser());
+
+        // 4. Validar límites de cantidad de ingredientes
+        int totalIngredients = command.ingredients().size();
+        if (totalIngredients < settings.getMinIngredients()) {
+            throw new InvalidSettingsException("Mínimo " + settings.getMinIngredients() + " ingredientes requeridos.");
         }
-        if (total > settings.getMaxIngredients()) {
-            throw new InvalidSettingsException(
-                    "Máximo " + settings.getMaxIngredients() + " ingredientes permitidos. " +
-                            "Tienes " + total
-            );
+        if (totalIngredients > settings.getMaxIngredients()) {
+            throw new InvalidSettingsException("Máximo " + settings.getMaxIngredients() + " ingredientes permitidos.");
         }
 
-        // 4. Validar duplicados
-        long unique = command.ingredients().stream()
+        // 5. Validar que no existan ingredientes duplicados en el comando
+        boolean hasDuplicates = command.ingredients().stream()
                 .map(CreateCustomBurgerCommand.IngredientRequest::idProduct)
-                .distinct().count();
-        if (unique < total) {
-            throw new InvalidBurgerException(
-                    "No puedes repetir ingredientes. " +
-                            "Aumenta la cantidad si quieres más de uno"
-            );
+                .collect(Collectors.toSet())
+                .size() < totalIngredients;
+
+        if (hasDuplicates) {
+            throw new InvalidBurgerException("No puedes repetir ingredientes. Incrementa la cantidad del ingrediente existente.");
         }
 
-        // 5. Construir burger
-        Burger.CustomBuilder builder = new Burger.CustomBuilder(
-                command.name(),
-                command.idUser()
-        );
-
+        // 6. Construcción de la Hamburguesa usando el Domain Builder
+        Burger.CustomBuilder builder = new Burger.CustomBuilder(command.name(), command.idUser());
 
         for (var req : command.ingredients()) {
             Product product = productRepository.findById(req.idProduct())
@@ -87,44 +80,29 @@ public class CreateCustomBurgerUseCase implements CreateCustomBurger {
 
             validateProduct(product);
 
-            ProductSnapshot snapshot = ProductSnapshot.fromProduct(
-                    product,
-                    req.quantity(),
-                    false);
+            // Creamos el snapshot para persistir el estado actual del producto (precio/nombre)
+            ProductSnapshot snapshot = ProductSnapshot.fromProduct(product, req.quantity(), false);
             builder.addIngredient(snapshot);
         }
 
         Burger burger = builder.build();
 
-        // 6. Validar precio contra settings
+        // 7. Validar que el precio resultante cumpla con las políticas de negocio
         settings.validatePriceForNew(burger.getBasePrice());
 
-        // 7. Guardar
-        Burger saved = burgerRepository.save(burger);
-
-        if (saved == null || saved.getIdBurger() == null) {
-            throw new BurgerCreationException("Error al guardar la hamburguesa personalizada");
-        }
-
-        return saved;
+        // 8. Persistir el nuevo borrador
+        return burgerRepository.save(burger);
     }
 
     private void validateProduct(Product product) {
+        if (product.isDeleted()) {
+            throw new InvalidBurgerException("El producto '" + product.getName() + "' ya no existe.");
+        }
         if (product.getProductType() != ProductType.INGREDIENT) {
-            throw new InvalidBurgerException(
-                    "'" + product.getName() + "' no es un ingrediente válido. " +
-                            "Tipo: " + product.getProductType()
-            );
+            throw new InvalidBurgerException("'" + product.getName() + "' no es un ingrediente válido.");
         }
         if (!product.getAvailability()) {
-            throw new InvalidBurgerException(
-                    "'" + product.getName() + "' no está disponible actualmente"
-            );
-        }
-        if (product.isDeleted()) {
-            throw new InvalidBurgerException(
-                    "'" + product.getName() + "' no existe"
-            );
+            throw new InvalidBurgerException("'" + product.getName() + "' no está disponible actualmente.");
         }
     }
 }

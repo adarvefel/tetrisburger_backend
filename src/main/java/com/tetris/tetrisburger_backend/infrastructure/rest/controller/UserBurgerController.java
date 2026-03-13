@@ -7,12 +7,15 @@ import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.ListBurgerIngredients;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.SearchIngredients;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.UpdateCustomBurger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.client.CreateCustomBurger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.client.command.CreateCustomBurgerCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.burger.client.command.UpdateCustomBurgerCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.user.*;
 
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.client.BurgerResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.client.CreateCustomBurgerRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.client.UpdateCustomBurgerRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.BurgerIngredientListDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.BurgerRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.ProductRestDtoMapper;
@@ -45,13 +48,15 @@ public class UserBurgerController {
     private final CreateCustomBurger createCustomBurger;
     private final ListBurgerIngredients listBurgerIngredients;
     private final SearchIngredients searchIngredients;
+    private final UpdateCustomBurger updateCustomBurger;
     private final ProductRestDtoMapper productRestDtoMapper;
     private final BurgerRestDtoMapper mapper;
 
-    public UserBurgerController(CreateCustomBurger createCustomBurger, ListBurgerIngredients listBurgerIngredients, SearchIngredients searchIngredients, ProductRestDtoMapper productRestDtoMapper, BurgerRestDtoMapper mapper) {
+    public UserBurgerController(CreateCustomBurger createCustomBurger, ListBurgerIngredients listBurgerIngredients, SearchIngredients searchIngredients, UpdateCustomBurger updateCustomBurger, ProductRestDtoMapper productRestDtoMapper, BurgerRestDtoMapper mapper) {
         this.createCustomBurger = createCustomBurger;
         this.listBurgerIngredients = listBurgerIngredients;
         this.searchIngredients = searchIngredients;
+        this.updateCustomBurger = updateCustomBurger;
         this.productRestDtoMapper = productRestDtoMapper;
         this.mapper = mapper;
     }
@@ -96,6 +101,21 @@ public class UserBurgerController {
         return ResponseEntity.ok(productRestDtoMapper.toBurgerIngredientListDTO(result));
     }
 
+
+    // ==================== ACTUALIZAR CUSTOM BURGER ====================
+    @PreAuthorize("hasAuthority('ROLE_CLIENT')")
+    @PutMapping("/custom/{idBurger}")
+    @Operation(summary = "Actualizar hamburguesa personalizada")
+    public ResponseEntity<BurgerResponseDTO> updateCustomBurger(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Integer idBurger,
+            @Valid @RequestBody UpdateCustomBurgerRequestDTO dto
+    ) {
+        Integer userId = userDetails.getId();
+        UpdateCustomBurgerCommand command = mapper.toUpdateCustomBurgerCommand(idBurger, dto, userId);
+        Burger burger = updateCustomBurger.handle(command);
+        return ResponseEntity.ok(mapper.toBurgerResponseDTO(burger));
+    }
 
 
 

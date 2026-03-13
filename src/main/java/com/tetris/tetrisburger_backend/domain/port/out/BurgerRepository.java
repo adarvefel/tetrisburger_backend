@@ -3,7 +3,6 @@ package com.tetris.tetrisburger_backend.domain.port.out;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
-import com.tetris.tetrisburger_backend.domain.model.Product;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +20,7 @@ public interface BurgerRepository {
     void deleteById(Integer idBurger);
 
     boolean existsById(Integer idBurger);
+
 
     // ========================================
     // MENÚ - LISTAR
@@ -54,7 +54,6 @@ public interface BurgerRepository {
     // MENÚ - FILTROS Y BÚSQUEDA
     // ========================================
 
-
     PageResponse<Burger> searchMenuByName(String name, PaginationRequest pagination);
 
     PageResponse<Burger> searchMenuBurgersWithFilters(
@@ -63,7 +62,6 @@ public interface BurgerRepository {
             Boolean isFeatured,
             PaginationRequest pagination
     );
-
 
     PageResponse<Burger> findTopOrderedMenuBurgers(PaginationRequest pagination);
 
@@ -83,37 +81,35 @@ public interface BurgerRepository {
     );
 
     // ========================================
-    // CUSTOM (isSaved) - LISTAR
+    // CUSTOM (isCustom) - LISTAR
     // ========================================
 
     /**
      * Lista burgers personalizadas de un usuario.
-     * Filtra por idUser, isSaved=true, deletedAt IS NULL.
+     * Filtra por idUser, isCustom=true, deletedAt IS NULL.
      */
-    PageResponse<Burger> findAllSavedByUserId(Integer idUser, PaginationRequest pagination);
+    PageResponse<Burger> findAllCustomByUserId(Integer idUser, PaginationRequest pagination);
 
-    /**
-     * Lista burgers personalizadas destacadas de un usuario.
-     * Filtra por idUser, isSaved=true, isFeatured=true, deletedAt IS NULL.
-     */
-    PageResponse<Burger> findAllFeaturedSavedByUserId(Integer idUser, PaginationRequest pagination);
 
     /**
      * Lista todas las burgers personalizadas de un usuario sin paginación.
      */
-    List<Burger> findAllSavedByUserId(Integer idUser);
+    List<Burger> findAllCustomByUserId(Integer idUser);
 
     // ========================================
-    // CUSTOM (isSaved) - BUSCAR
+    // CUSTOM (isCustom) - BUSCAR
     // ========================================
 
     /**
      * Busca una burger personalizada por ID que pertenezca al usuario.
-     * Verifica isSaved=true, idUser y deletedAt IS NULL.
+     * Verifica isCustom=true, idUser y deletedAt IS NULL.
      */
-    Optional<Burger> findSavedByIdAndUser(Integer idBurger, Integer idUser);
+    Optional<Burger> findCustomByIdAndUser(Integer idBurger, Integer idUser);
 
-    PageResponse<Burger> searchSavedByName(
+    /**
+     * Busca burgers personalizadas por nombre.
+     */
+    PageResponse<Burger> searchCustomByName(
             Integer idUser,
             String name,
             PaginationRequest pagination
@@ -121,20 +117,21 @@ public interface BurgerRepository {
 
     /**
      * Busca burgers personalizadas con filtros múltiples.
-     * Filtra por isSaved=true, idUser, nombre e isFeatured.
+     * Filtra por isCustom=true, idUser, nombre e isFeatured.
      */
-    PageResponse<Burger> searchSavedBurgersWithFilters(
+    PageResponse<Burger> searchCustomBurgersWithFilters(
             Integer idUser,
             String name,
             Boolean isFeatured,
             PaginationRequest pagination
     );
 
-    PageResponse<Burger> findTopOrderedSavedBurgersByUser(
+    PageResponse<Burger> findTopOrderedCustomBurgersByUser(
             Integer idUser,
             PaginationRequest pagination
     );
 
+    void deleteActiveDraftsByUser(Integer idUser);
     // ========================================
     // ESTADÍSTICAS
     // ========================================
@@ -142,7 +139,7 @@ public interface BurgerRepository {
     long countActiveMenuBurgers();
 
     /**
-     * Cuenta burgers personalizadas (isSaved=true) de un usuario.
+     * Cuenta burgers personalizadas (isCustom=true) de un usuario.
      */
-    long countSavedBurgersByUser(Integer idUser);
+    long countCustomBurgersByUser(Integer idUser);
 }

@@ -57,7 +57,7 @@ public interface BurgerRestDtoMapper {
     // ==================== CREATE CUSTOM BURGER ====================
     default CreateCustomBurgerCommand toCreateCustomBurgerCommand(
             CreateCustomBurgerRequestDTO dto,
-            Integer userId) {  // ← quita MultipartFile
+            Integer userId) {
 
         if (dto == null) return null;
 
@@ -225,7 +225,7 @@ public interface BurgerRestDtoMapper {
                 ingredient.getQuantity(),
                 ingredient.calculateSubtotal(),
                 ingredient.getIsOptional(),
-                ingredient.getImageUrl() // ⚡ Usar imageUrl directamente evita NPE
+                ingredient.getImageUrl()
         );
     }
 
