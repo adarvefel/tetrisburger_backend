@@ -20,11 +20,9 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     // MENÚ - LISTAR
     // ========================================
 
-
     Page<BurgerEntity> findByIsOnMenuTrueAndDeletedAtIsNull(Pageable pageable);
 
     Page<BurgerEntity> findAllByIsOnMenuTrueAndAvailabilityTrueAndDeletedAtIsNull(Pageable pageable);
-
 
     Page<BurgerEntity> findAllByIsOnMenuTrueAndIsFeaturedTrueAndDeletedAtIsNull(Pageable pageable);
 
@@ -57,9 +55,9 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     @Query("SELECT b FROM BurgerEntity b " +
             "LEFT JOIN FETCH b.ingredients i " +
             "LEFT JOIN FETCH i.product " +
-            "WHERE b.idBurger = :idBurger AND b.isSaved = true " +
+            "WHERE b.idBurger = :idBurger AND b.custom = true " +
             "AND b.idUser = :idUser AND b.deletedAt IS NULL")
-    Optional<BurgerEntity> findSavedByIdAndUserWithProducts(
+    Optional<BurgerEntity> findCustomByIdAndUserWithProducts(
             @Param("idBurger") Integer idBurger,
             @Param("idUser") Integer idUser);
 
@@ -86,11 +84,11 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     // LISTAS POR USUARIO
     // ========================================
 
-    Page<BurgerEntity> findAllByIdUserAndIsSavedTrueAndDeletedAtIsNull(Integer idUser, Pageable pageable);
+    Page<BurgerEntity> findAllByIdUserAndCustomTrueAndDeletedAtIsNull(Integer idUser, Pageable pageable);
 
-    Page<BurgerEntity> findAllByIdUserAndIsSavedTrueAndIsFeaturedTrueAndDeletedAtIsNull(Integer idUser, Pageable pageable);
+    Page<BurgerEntity> findAllByIdUserAndCustomTrueAndIsFeaturedTrueAndDeletedAtIsNull(Integer idUser, Pageable pageable);
 
-    List<BurgerEntity> findAllByIdUserAndIsSavedTrueAndDeletedAtIsNull(Integer idUser);
+    List<BurgerEntity> findAllByIdUserAndCustomTrueAndDeletedAtIsNull(Integer idUser);
 
     // ========================================
     // BÚSQUEDA CON PAGINACIÓN
@@ -104,7 +102,7 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     Page<BurgerEntity> searchMenuByName(@Param("name") String name, Pageable pageable);
 
     @Query("SELECT b FROM BurgerEntity b " +
-            "WHERE b.isSaved = true AND b.idUser = :idUser " +
+            "WHERE b.custom = true AND b.idUser = :idUser " +
             "AND LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%')) " +
             "AND b.deletedAt IS NULL ORDER BY b.createdAt DESC")
     Page<BurgerEntity> searchCustomByName(@Param("idUser") Integer idUser,
@@ -118,7 +116,7 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     @Query("SELECT COUNT(b) FROM BurgerEntity b WHERE b.isOnMenu = true AND b.deletedAt IS NULL")
     long countActiveMenuBurgers();
 
-    @Query("SELECT COUNT(b) FROM BurgerEntity b WHERE b.isSaved = true AND b.idUser = :idUser AND b.deletedAt IS NULL")
+    @Query("SELECT COUNT(b) FROM BurgerEntity b WHERE b.custom = true AND b.idUser = :idUser AND b.deletedAt IS NULL")
     long countCustomBurgersByUser(@Param("idUser") Integer idUser);
 
     @Query("SELECT COUNT(b) FROM BurgerEntity b WHERE b.isOnMenu = true AND b.isFeatured = true AND b.deletedAt IS NULL")
@@ -134,7 +132,7 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     Page<BurgerEntity> findTopOrderedMenuBurgers(Pageable pageable);
 
     @Query("SELECT b FROM BurgerEntity b " +
-            "WHERE b.isSaved = true AND b.idUser = :idUser AND b.deletedAt IS NULL " +
+            "WHERE b.custom = true AND b.idUser = :idUser AND b.deletedAt IS NULL " +
             "ORDER BY b.timesOrdered DESC, b.createdAt DESC")
     Page<BurgerEntity> findTopOrderedCustomBurgersByUser(@Param("idUser") Integer idUser, Pageable pageable);
 
@@ -146,22 +144,34 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
             "WHERE b.isOnMenu = true AND b.deletedAt IS NULL " +
             "AND (:name IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
             "AND (:availability IS NULL OR b.availability = :availability) " +
-            "AND (:isFavorite IS NULL OR b.isFeatured = :isFavorite) " +
+            "AND (:isFeatured IS NULL OR b.isFeatured = :isFeatured) " +
             "ORDER BY b.createdAt DESC")
     Page<BurgerEntity> searchMenuBurgersWithFilters(@Param("name") String name,
                                                     @Param("availability") Boolean availability,
-                                                    @Param("isFavorite") Boolean isFavorite,
+                                                    @Param("isFeatured") Boolean isFeatured,
                                                     Pageable pageable);
 
     @Query("SELECT b FROM BurgerEntity b " +
-            "WHERE b.isSaved = true AND b.idUser = :idUser AND b.deletedAt IS NULL " +
+            "WHERE b.custom = true AND b.idUser = :idUser AND b.deletedAt IS NULL " +
             "AND (:name IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
-            "AND (:isFavorite IS NULL OR b.isFeatured = :isFavorite) " +
+            "AND (:isFeatured IS NULL OR b.isFeatured = :isFeatured) " +
             "ORDER BY b.createdAt DESC")
     Page<BurgerEntity> searchCustomBurgersWithFilters(@Param("idUser") Integer idUser,
                                                       @Param("name") String name,
-                                                      @Param("isFavorite") Boolean isFavorite,
+                                                      @Param("isFeatured") Boolean isFeatured,
                                                       Pageable pageable);
+
+
+    @Modifying
+    @Transactional
+    @Query("""
+    UPDATE BurgerEntity b 
+    SET b.deletedAt = CURRENT_TIMESTAMP 
+    WHERE b.idUser = :idUser 
+    AND b.custom = false 
+    AND b.deletedAt IS NULL
+    """)
+    void softDeleteAllActiveDrafts(@Param("idUser") Integer idUser);
 
     // ========================================
     // PRECIO
@@ -195,4 +205,14 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
                           @Param("updatedBy") Integer updatedBy);
 
     boolean existsByIdBurger(Integer idBurger);
+
+    @Query("SELECT b FROM BurgerEntity b WHERE b.idBurger = :idBurger " +
+            "AND b.idUser = :idUser AND b.deletedAt IS NULL")
+    Optional<BurgerEntity> findCustomByIdAndUser(
+            @Param("idBurger") Integer idBurger,
+            @Param("idUser") Integer idUser);
+
+
+    Optional<BurgerEntity> findByIdUserAndCustomFalseAndDeletedAtIsNull(Integer idUser);
+
 }

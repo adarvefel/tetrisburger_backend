@@ -131,7 +131,58 @@ public class BurgerExceptionHandler {
     }
 
     // ========================================
-    // EXCEPCIÓN GLOBAL (RECOMENDADA)
+// EXCEPCIONES DE FAVORITOS
+// ========================================
+
+    @ExceptionHandler(FavoriteAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponseDTO> handleFavoriteAlreadyExists(
+            FavoriteAlreadyExistsException ex,
+            WebRequest request) {
+
+        logger.warn("Favorito duplicado: {} - Ruta: {}",
+                ex.getMessage(), request.getDescription(false));
+
+        return buildErrorResponse(
+                HttpStatus.CONFLICT,
+                ex.getMessage(),
+                request
+        );
+    }
+
+    @ExceptionHandler(FavoriteNotFoundException.class)
+    public ResponseEntity<ErrorResponseDTO> handleFavoriteNotFound(
+            FavoriteNotFoundException ex,
+            WebRequest request) {
+
+        logger.warn("Favorito no encontrado: {} - Ruta: {}",
+                ex.getMessage(), request.getDescription(false));
+
+        return buildErrorResponse(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage(),
+                request
+        );
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponseDTO> handleEntityNotFound(
+            EntityNotFoundException ex,
+            WebRequest request) {
+
+        logger.warn("Entidad no encontrada: {} - Ruta: {}",
+                ex.getMessage(), request.getDescription(false));
+
+        return buildErrorResponse(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage(),
+                request
+        );
+    }
+
+
+
+    // ========================================
+    // EXCEPCIÓN GLOBAL
     // ========================================
 
 

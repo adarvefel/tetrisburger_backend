@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.client;
 
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.IngredientRequestDTO;
+import jakarta.validation.constraints.NotBlank;
 
 import java.util.List;
 

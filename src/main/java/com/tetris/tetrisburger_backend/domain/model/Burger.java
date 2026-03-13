@@ -31,7 +31,7 @@ public class Burger {
     // Discriminadores
     private boolean isOnMenu;
     private boolean isFeatured;   // is_featured en DB (menu) / favorita en DB (custom)
-    private boolean isSaved;     // is_saved en DB
+    private boolean isCustom;      // true = hamburguesa custom guardada por usuario
 
     // Estado
     private boolean availability;
@@ -106,7 +106,7 @@ public class Burger {
         b.sellingAtLoss = sellingAtLoss != null ? sellingAtLoss : false;
         b.isOnMenu = isOnMenu;
         b.isFeatured = isFeatured;
-        b.isSaved = isSaved;
+        b.isCustom = isSaved;
         b.availability = availability;
         b.imageKey = imageKey;
         b.imageUrl = imageUrl;
@@ -136,7 +136,7 @@ public class Burger {
         burger.basePrice = basePrice;
         burger.finalPrice = basePrice;
         burger.isOnMenu = true;
-        burger.isSaved = false;
+        burger.isCustom = false;
         burger.isFeatured = false;
         burger.availability = true;
         burger.createdAt = LocalDateTime.now();
@@ -165,7 +165,7 @@ public class Burger {
         burger.imageUrl = imageUrl;
         burger.imageKey = null;
         burger.isOnMenu = true;
-        burger.isSaved = false;
+        burger.isCustom = false;
         burger.isFeatured = isFeatured;
         burger.availability = availability;
         burger.idUser = null;
@@ -201,7 +201,7 @@ public class Burger {
             this.burger = new Burger();
             burger.name = name;
             burger.isOnMenu = false;
-            burger.isSaved = false;
+            burger.isCustom = false;
             burger.isFeatured = false;
             burger.availability = true;
             burger.idUser = idUser;
@@ -342,22 +342,29 @@ public class Burger {
     public void updateCustomBurger(
             Integer idUser,
             String name,
-            String description,
             List<BurgerIngredient> newIngredients
     ) {
-        if (!this.isSaved)
-            throw new InvalidBurgerException("Solo hamburguesas personalizadas pueden actualizarse. ID: " + this.idBurger);
+
+        if (this.isOnMenu)
+            throw new InvalidBurgerException(
+                    "No se puede actualizar una hamburguesa del menú como custom. ID: " + this.idBurger);
+        if (this.idUser == null)
+            throw new InvalidBurgerException(
+                    "La hamburguesa no es personalizada. ID: " + this.idBurger);
         if (this.isDeleted())
-            throw new InvalidBurgerException("No se puede actualizar una hamburguesa eliminada. ID: " + this.idBurger);
+            throw new InvalidBurgerException(
+                    "No se puede actualizar una hamburguesa eliminada. ID: " + this.idBurger);
         if (!belongsToUser(idUser))
-            throw new InvalidBurgerException("La hamburguesa no pertenece a este usuario");
+            throw new InvalidBurgerException(
+                    "La hamburguesa no pertenece a este usuario");
         if (name == null || name.isBlank())
-            throw new InvalidBurgerException("El nombre no puede estar vacío");
+            throw new InvalidBurgerException(
+                    "El nombre no puede estar vacío");
         if (newIngredients == null || newIngredients.isEmpty())
-            throw new InvalidBurgerException("Debe tener al menos un ingrediente");
+            throw new InvalidBurgerException(
+                    "Debe tener al menos un ingrediente");
 
         this.name = name;
-        this.description = description;
         setIngredients(newIngredients);
         this.basePrice = calculateTotalPriceFromIngredients();
         this.finalPrice = this.basePrice;
@@ -366,23 +373,9 @@ public class Burger {
         this.updatedBy = idUser;
     }
 
-    public void markCustomAsDeleted(Integer idUser) {
-        if (!this.isSaved)
-            throw new InvalidBurgerException("Solo hamburguesas personalizadas pueden eliminarse. ID: " + this.idBurger);
-        if (this.isDeleted())
-            throw new InvalidBurgerException("La hamburguesa ya está eliminada. ID: " + this.idBurger);
-        if (!belongsToUser(idUser))
-            throw new InvalidBurgerException("La hamburguesa no pertenece a este usuario");
-
-        this.deletedAt = LocalDateTime.now();
-        this.availability = false;
-        this.deletedBy = idUser;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = idUser;
-    }
 
     // ============================================
-    // FAVORITOS: Menu Burger (ADMIN)
+    // DESTACADAS: Menu Burger (ADMIN)
     // ============================================
 
     public void setMenuBurgerFeatured(Boolean isFeatured, Integer updatedBy) {
@@ -398,57 +391,40 @@ public class Burger {
         this.updatedBy = updatedBy;
     }
 
-    public void toggleMenuFavorite(Integer updatedBy) {
-        if (!this.isOnMenu)
-            throw new InvalidBurgerException("Solo burgers de menú pueden marcarse como destacadas. ID: " + this.idBurger);
-        if (updatedBy == null)
-            throw new InvalidBurgerException("updatedBy no puede ser null");
 
-        this.isFeatured = !this.isFeatured;
+
+
+    public void removeAsCustom(Integer idUser) {
+        if (!belongsToUser(idUser))
+            throw new InvalidBurgerException("No pertenece a este usuario");
+        if (this.isDeleted())
+            throw new InvalidBurgerException("Burger eliminada. ID: " + this.idBurger);
+
+        this.isCustom = false;
         this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
+        this.updatedBy = idUser;
     }
 
     // ============================================
     // FAVORITOS: Custom Burger (USUARIO)
     // ============================================
 
-    public void markAsFavorite(Integer idUser) {
-        if (!this.isSaved)
-            throw new InvalidBurgerException("Solo hamburguesas personalizadas pueden marcarse como favoritas. ID: " + this.idBurger);
-        if (this.isDeleted())
-            throw new InvalidBurgerException("No se puede marcar como favorita una hamburguesa eliminada. ID: " + this.idBurger);
-        if (!belongsToUser(idUser))
-            throw new InvalidBurgerException("Solo el creador puede marcar su hamburguesa como favorita");
 
-        this.isFeatured = true;
+
+    public void saveAsCustom(Integer idUser) {
+        if (this.isOnMenu)
+            throw new InvalidBurgerException("No aplica para burgers del menú");
+        if (!belongsToUser(idUser))
+            throw new InvalidBurgerException("No pertenece a este usuario");
+        if (this.isDeleted())
+            throw new InvalidBurgerException("Burger eliminada");
+
+        this.isCustom = true;         // ← conversión draft → saved
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = idUser;
     }
 
-    public void unmarkAsFavorite(Integer idUser) {
-        if (!this.isSaved)
-            throw new InvalidBurgerException("Solo hamburguesas personalizadas pueden desmarcarse. ID: " + this.idBurger);
-        if (!belongsToUser(idUser))
-            throw new InvalidBurgerException("Solo el creador puede desmarcar su hamburguesa");
 
-        this.isFeatured = false;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = idUser;
-    }
-
-    public void toggleCustomFavorite(Integer userId) {
-        if (!this.isSaved)
-            throw new InvalidBurgerException("Solo hamburguesas personalizadas pueden cambiar favorita. ID: " + this.idBurger);
-        if (this.isDeleted())
-            throw new InvalidBurgerException("No se puede cambiar favorita de una hamburguesa eliminada. ID: " + this.idBurger);
-        if (!belongsToUser(userId))
-            throw new InvalidBurgerException("Solo el creador puede cambiar el estado de favorita");
-
-        this.isFeatured = !this.isFeatured;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = userId;
-    }
 
     // ============================================
     // IMAGEN
@@ -523,7 +499,7 @@ public class Burger {
     // ============================================
 
     public boolean isMenuBurger()   { return this.isOnMenu; }
-    public boolean isCustomBurger() { return this.isSaved; }
+    public boolean isCustomBurger() { return this.isCustom; }
     public boolean isAvailable()    { return this.availability && this.deletedAt == null; }
     public boolean isDeleted()      { return this.deletedAt != null; }
     public boolean canBeModified()  { return !this.isDeleted(); }
@@ -542,7 +518,7 @@ public class Burger {
     public BigDecimal getMarginPercentage() { return marginPercentage; }
     public Boolean getSellingAtLoss()       { return sellingAtLoss; }
     public boolean isOnMenu()               { return isOnMenu; }
-    public boolean isSaved()               { return isSaved; }
+    public boolean isCustom()               { return isCustom; }
     public boolean isFeatured()             { return isFeatured; }
     public boolean isAvailability()         { return availability; }
     public String getImageKey()             { return imageKey; }

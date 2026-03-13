@@ -49,8 +49,9 @@ public class BurgerEntity {
     @Column(name = "is_on_menu", nullable = false)
     private Boolean isOnMenu;
 
-    @Column(name = "is_saved", nullable = false)
-    private Boolean isSaved;
+    @Column(name = "is_custom", nullable = false)  // ← renombrado en BD también
+    private Boolean custom;
+
 
     @Column(name = "is_featured", nullable = false)
     private Boolean isFeatured = false;
