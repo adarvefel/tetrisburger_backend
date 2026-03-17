@@ -402,7 +402,6 @@ public class AdminBurgerController {
 
     // ==================== LISTAR INGREDIENTES ====================
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CLIENT')")
     @GetMapping("/ingredients")
     @Operation(summary = "Listar ingredientes disponibles",
             description = "Retorna todos los productos de tipo INGREDIENT. Filtrable por categoría.")
@@ -421,7 +420,6 @@ public class AdminBurgerController {
     }
 
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CLIENT')")
     @GetMapping("/ingredients/search")
     @Operation(
             summary = "Buscar ingredientes por nombre",

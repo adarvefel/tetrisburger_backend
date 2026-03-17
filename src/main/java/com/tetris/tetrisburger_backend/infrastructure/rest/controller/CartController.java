@@ -35,7 +35,6 @@ public class CartController {
         this.mapper = mapper;
     }
 
-    @PreAuthorize("hasAnyAuthority('ROLE_CLIENT', 'ROLE_ADMIN', 'ROLE_EMPLOYEE')")
     @PostMapping("/sync")
     public ResponseEntity<List<CartItemResponseDTO>> sync(
             @RequestBody List<CartItemRequestDTO> items,
@@ -48,7 +47,6 @@ public class CartController {
         return ResponseEntity.ok(mapper.toResponseDTOList(cart));
     }
 
-    @PreAuthorize("hasAnyAuthority('ROLE_CLIENT', 'ROLE_ADMIN', 'ROLE_EMPLOYEE')")
     @GetMapping
     public ResponseEntity<List<CartItemResponseDTO>> get(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -57,8 +55,7 @@ public class CartController {
         return ResponseEntity.ok(mapper.toResponseDTOList(cart));
     }
 
-    @PreAuthorize("hasAnyAuthority('ROLE_CLIENT', 'ROLE_ADMIN', 'ROLE_EMPLOYEE')")
-    @DeleteMapping
+    @DeleteMapping("/clear")
     public ResponseEntity<Void> clear(
             @AuthenticationPrincipal UserDetails userDetails) {
 

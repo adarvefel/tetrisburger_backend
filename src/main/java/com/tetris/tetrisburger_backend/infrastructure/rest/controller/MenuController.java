@@ -95,7 +95,6 @@ public class MenuController {
         ));
     }
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE', 'ROLE_CLIENT')")
     @GetMapping("/{id}")
     public ResponseEntity<MenuResponseDTO> getById(@PathVariable Integer id) {
         return ResponseEntity.ok(mapper.toResponseDTO(getMenuById.handle(id)));
