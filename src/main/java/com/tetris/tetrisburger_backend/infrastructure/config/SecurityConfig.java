@@ -81,8 +81,8 @@ public class SecurityConfig {
                         // Protegidos por rol
                         .requestMatchers("/api/profile/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT", "ROLE_EMPLOYEE")
                         .requestMatchers("/api/admin/users/**").hasAnyAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/menu/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/menu").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/menu*", "/api/menu/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/admin/burgers/menu*", "/api/admin/burgers/menu/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

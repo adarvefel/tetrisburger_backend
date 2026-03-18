@@ -311,7 +311,6 @@ public class AdminBurgerController {
 
     // ==================== LISTAR ====================
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @GetMapping("/menu")
     @Operation(
             summary = "Listar hamburguesas de menú",
@@ -342,7 +341,6 @@ public class AdminBurgerController {
 
     // ==================== BUSCAR ====================
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @GetMapping("/menu/search")
     @Operation(
             summary = "Buscar hamburguesas por nombre",

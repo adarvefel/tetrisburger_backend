@@ -100,7 +100,6 @@ public class MenuController {
         return ResponseEntity.ok(mapper.toResponseDTO(getMenuById.handle(id)));
     }
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE', 'ROLE_CLIENT')")
     @GetMapping
     public ResponseEntity<PageResponse<MenuResponseDTO>> list(
             @RequestParam(defaultValue = "0") int page,
