@@ -3,6 +3,7 @@ package com.tetris.tetrisburger_backend.infrastructure.adapter;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.ProductCategory;
+import com.tetris.tetrisburger_backend.domain.model.ProductType;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductCategoryRepository;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.ProductCategoryEntity;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.mapper.ProductCategoryEntityMapper;
@@ -13,10 +14,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
-@Component
+@Repository
 public class ProductCategoryAdapter implements ProductCategoryRepository {
 
     private final ProductCategoryJpaRepository jpa;
@@ -75,4 +78,16 @@ public class ProductCategoryAdapter implements ProductCategoryRepository {
         Sort sort = "DESC".equals(dir) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         return PageRequest.of(pageReq.getPage(), pageReq.getSize(), sort);
     }
+
+    @Override
+    public List<ProductCategory> findPublicCategories() {
+        List<ProductType> publicTypes = List.of(ProductType.SIDE, ProductType.BEVERAGE);
+        return jpa.findCategoriesWithPublicProducts(publicTypes)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+
+
 }

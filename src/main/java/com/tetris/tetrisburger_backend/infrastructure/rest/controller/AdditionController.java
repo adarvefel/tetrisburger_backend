@@ -170,7 +170,6 @@ public class AdditionController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     public ResponseEntity<PageResponse<AdditionResponseDTO>> searchByName(
             @RequestParam String name,
             @RequestParam(defaultValue = "0") int page,

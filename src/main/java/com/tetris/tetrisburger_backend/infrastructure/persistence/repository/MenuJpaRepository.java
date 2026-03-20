@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -29,4 +30,23 @@ public interface MenuJpaRepository extends JpaRepository<MenuEntity, Integer> {
                           @Param("imageUrl") String imageUrl,
                           @Param("imageKey") String imageKey,
                           @Param("updatedBy") Integer updatedBy);
+
+    @Query(
+            value = "SELECT m.idMenu FROM MenuEntity m WHERE m.deletedAt IS NULL",
+            countQuery = "SELECT COUNT(m) FROM MenuEntity m WHERE m.deletedAt IS NULL"
+    )
+    Page<Integer> findAllIdsByDeletedAtIsNull(Pageable pageable);
+
+    // Query 2: carga completa con JOIN FETCH para los IDs obtenidos
+    @Query("""
+        SELECT DISTINCT m FROM MenuEntity m
+        LEFT JOIN FETCH m.items
+        LEFT JOIN FETCH m.menuCategory
+        WHERE m.idMenu IN :ids
+        AND m.deletedAt IS NULL
+    """)
+    List<MenuEntity> findAllWithRelationsByIds(@Param("ids") List<Integer> ids);
+
+
+
 }

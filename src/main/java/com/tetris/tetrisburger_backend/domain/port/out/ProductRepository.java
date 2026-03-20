@@ -3,6 +3,7 @@ package com.tetris.tetrisburger_backend.domain.port.out;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Product;
+import com.tetris.tetrisburger_backend.domain.model.ProductType;
 
 import java.util.Optional;
 
@@ -24,5 +25,13 @@ public interface ProductRepository {
 
     PageResponse<Product> findAll(Integer productCategoryId, Boolean availability, PaginationRequest page);
 
-    PageResponse<Product> search(String q, Integer productCategoryId, Boolean availability, PaginationRequest page);
+    PageResponse<Product> search(
+            String q,
+            Integer productCategoryId,
+            Boolean availability,
+            ProductType productType,
+            PaginationRequest page
+    );
+
+    PageResponse<Product> findPublicProducts(ProductType productType, Integer categoryId, PaginationRequest pageReq);
 }

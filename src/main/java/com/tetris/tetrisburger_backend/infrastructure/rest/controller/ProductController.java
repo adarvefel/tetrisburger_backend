@@ -4,6 +4,8 @@ import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Product;
+import com.tetris.tetrisburger_backend.domain.model.ProductType;
+
 import com.tetris.tetrisburger_backend.domain.port.in.product.*;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.CreateProductCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.UpdateProductCommand;
@@ -13,6 +15,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.product.query.SearchProduc
 import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.*;
+import com.tetris.tetrisburger_backend.domain.port.in.product.ListPublicProducts;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.ProductRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,20 +59,9 @@ public class ProductController {
     private final SearchProducts searchProducts;
     private final SetProductAvailability setProductAvailability;
     private final AdjustProductStock adjustProductStock;
+    private final ListPublicProducts listPublicProducts;
 
-    public ProductController(
-            CreateProduct createProduct,
-            ListProducts listProducts,
-            GetProductById getProductById,
-            UpdateProduct updateProduct,
-            UpdateProductImage updateProductImage,
-            DeleteProduct deleteProduct,
-            ProductRestDtoMapper mapper,
-            ImageStoragePort imageStoragePort,
-            SearchProducts searchProducts,
-            SetProductAvailability setProductAvailability,
-            AdjustProductStock adjustProductStock
-    ) {
+    public ProductController(CreateProduct createProduct, ListProducts listProducts, GetProductById getProductById, UpdateProduct updateProduct, UpdateProductImage updateProductImage, DeleteProduct deleteProduct, ProductRestDtoMapper mapper, ImageStoragePort imageStoragePort, SearchProducts searchProducts, SetProductAvailability setProductAvailability, AdjustProductStock adjustProductStock, ListPublicProducts listPublicProducts) {
         this.createProduct = createProduct;
         this.listProducts = listProducts;
         this.getProductById = getProductById;
@@ -81,6 +73,7 @@ public class ProductController {
         this.searchProducts = searchProducts;
         this.setProductAvailability = setProductAvailability;
         this.adjustProductStock = adjustProductStock;
+        this.listPublicProducts = listPublicProducts;
     }
 
     // ==================== HELPERS ====================
@@ -443,4 +436,39 @@ public class ProductController {
         logger.info(" Producto eliminado: ID {}", id);
         return ResponseEntity.ok(new MessageResponseDTO("Producto eliminado exitosamente", true));
     }
+
+
+    @GetMapping("/public")
+    @Operation(summary = "Listar productos públicos",
+            description = "Retorna solo BEVERAGE y SIDE para la vista pública")
+    public ResponseEntity<ListProductResponseDTO> getPublicProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) ProductType productType,
+            @RequestParam(required = false) Integer categoryId  // ← agregar
+    ) {
+        logger.info("GET /api/products/public - productType: {} | categoryId: {}", productType, categoryId);
+
+        PaginationRequest pagination = new PaginationRequest(page, size, "name", "ASC");
+        PageResponse<Product> pageResponse = listPublicProducts.list(productType, categoryId, pagination);
+
+        List<ProductResponseDTO> items = pageResponse.content().stream()
+                .map(p -> mapper.toPublicProductResponseDTO(p, resolveImageUrlFromProduct(p))) // ← cambio
+                .toList();
+
+        ListProductResponseDTO response = ListProductResponseDTO.builder()
+                .items(items)
+                .page(pageResponse.page())
+                .size(pageResponse.size())
+                .totalElements(pageResponse.totalElements())
+                .totalPages(pageResponse.totalPages())
+                .build();
+
+        logger.info("Productos públicos: {} resultados", pageResponse.totalElements());
+        return ResponseEntity.ok(response);
+    }
+
+
+
+
 }
