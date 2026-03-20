@@ -36,17 +36,20 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final UserDetailsService userDetailsService;
     private final RateLimitFilter rateLimitFilter;
+
     @Value("${cors.allowed.origins}")
     private String allowedOrigins;
 
-    // Swagger / OpenAPI endpoints (permitir sin auth)
     private static final String[] SWAGGER_WHITELIST = {
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html"
     };
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, UserDetailsService userDetailsService, RateLimitFilter rateLimitFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter,
+                          JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+                          UserDetailsService userDetailsService,
+                          RateLimitFilter rateLimitFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.userDetailsService = userDetailsService;
@@ -62,21 +65,28 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
 
-                        // Swagger público (ponerlo arriba)
+                        // Swagger público
                         .requestMatchers(SWAGGER_WHITELIST).permitAll()
 
-                        // Públicos
+                        // Auth público
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
-//                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-//                        .requestMatchers(HttpMethod.GET, "/api/product-categories/**").permitAll()
-//                        .requestMatchers(HttpMethod.GET, "/api/suppliers/**").permitAll()
-//                        .requestMatchers(HttpMethod.GET, "/api/burgers/**").permitAll()
 
-                        // Protegidos
+                        // Carrito - adiciones e ingredientes públicos
+                        .requestMatchers(HttpMethod.GET, "/api/admin/additions/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/admin/burgers/ingredients/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/admin/additions/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/admin/burgers/ingredients/**").permitAll()
+                        .requestMatchers("/api/cart/**").permitAll()
+
+                        // Protegidos por rol
                         .requestMatchers("/api/profile/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT", "ROLE_EMPLOYEE")
-//                        .requestMatchers("/api/orders/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EMPLOYEE")
                         .requestMatchers("/api/admin/users/**").hasAnyAuthority("ROLE_ADMIN")
-
+                        .requestMatchers(HttpMethod.GET, "/api/menu*", "/api/menu/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/admin/burgers/menu*", "/api/admin/burgers/menu/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/admin/additions/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/product-categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/product-categories/public").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
@@ -85,6 +95,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
@@ -111,7 +122,6 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Usa la variable de entorno
         config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
 
         config.setAllowedMethods(List.of(

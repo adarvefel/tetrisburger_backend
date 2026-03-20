@@ -2,6 +2,7 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.mapper;
 
 import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
+import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.model.Menu;
 import com.tetris.tetrisburger_backend.domain.model.MenuItem;
 import com.tetris.tetrisburger_backend.domain.model.Product;
@@ -90,6 +91,8 @@ public interface MenuRestDtoMapper {
                 updatedBy
         );
     }
+
+    
 
 
     @Mapping(target = "idProduct", source = "product.id")

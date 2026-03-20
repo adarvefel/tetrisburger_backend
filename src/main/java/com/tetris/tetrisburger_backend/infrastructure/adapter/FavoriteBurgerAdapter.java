@@ -8,10 +8,11 @@ import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.Bur
 import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.FavoriteBurgerJpaRepository;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.UserJpaRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Component
+@Repository
 public class FavoriteBurgerAdapter implements FavoriteBurgerRepository {
 
     private final FavoriteBurgerJpaRepository jpaRepository;

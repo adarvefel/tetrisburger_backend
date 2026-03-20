@@ -8,8 +8,9 @@ import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.Bur
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
-@Component
+@Repository
 public class SettingsRepositoryAdapter implements SettingsRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(SettingsRepositoryAdapter.class);

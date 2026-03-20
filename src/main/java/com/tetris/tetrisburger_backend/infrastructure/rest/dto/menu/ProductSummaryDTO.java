@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record ProductSummaryDTO(
         Integer idProduct,
         String name,
+        String description,
         BigDecimal price,
         String imageUrl
 ) {}
