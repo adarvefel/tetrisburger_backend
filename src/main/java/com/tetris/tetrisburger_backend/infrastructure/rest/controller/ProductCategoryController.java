@@ -3,11 +3,7 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.ProductCategory;
-import com.tetris.tetrisburger_backend.domain.port.in.productcategory.CreateProductCategory;
-import com.tetris.tetrisburger_backend.domain.port.in.productcategory.DeleteProductCategory;
-import com.tetris.tetrisburger_backend.domain.port.in.productcategory.GetProductCategoryById;
-import com.tetris.tetrisburger_backend.domain.port.in.productcategory.ListProductCategories;
-import com.tetris.tetrisburger_backend.domain.port.in.productcategory.UpdateProductCategory;
+import com.tetris.tetrisburger_backend.domain.port.in.productcategory.*;
 import com.tetris.tetrisburger_backend.domain.port.in.productcategory.query.GetProductCategoryByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.in.productcategory.query.ListProductCategoriesQuery;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.productcategory.CreateProductCategoryRequestDTO;
@@ -32,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/product-categories")
 public class ProductCategoryController {
@@ -43,19 +41,16 @@ public class ProductCategoryController {
     private final DeleteProductCategory deleteCategory;
     private final GetProductCategoryById getById;
     private final ListProductCategories listCategories;
+    private final ListPublicProductCategories publicProductCategories;
     private final ProductCategoryRestDtoMapper mapper;
 
-    public ProductCategoryController(CreateProductCategory createCategory,
-                                     UpdateProductCategory updateCategory,
-                                     DeleteProductCategory deleteCategory,
-                                     GetProductCategoryById getById,
-                                     ListProductCategories listCategories,
-                                     ProductCategoryRestDtoMapper mapper) {
+    public ProductCategoryController(CreateProductCategory createCategory, UpdateProductCategory updateCategory, DeleteProductCategory deleteCategory, GetProductCategoryById getById, ListProductCategories listCategories, ListPublicProductCategories publicProductCategories, ProductCategoryRestDtoMapper mapper) {
         this.createCategory = createCategory;
         this.updateCategory = updateCategory;
         this.deleteCategory = deleteCategory;
         this.getById = getById;
         this.listCategories = listCategories;
+        this.publicProductCategories = publicProductCategories;
         this.mapper = mapper;
     }
 
@@ -78,6 +73,7 @@ public class ProductCategoryController {
         PageResponse<ProductCategory> result = listCategories.list(new ListProductCategoriesQuery(q), pr);
         return ResponseEntity.ok(mapper.toListResponseDTO(result));
     }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
@@ -103,4 +99,14 @@ public class ProductCategoryController {
         deleteCategory.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/public")
+    public ResponseEntity<List<ProductCategoryResponseDTO>> getPublicCategories() {
+        List<ProductCategoryResponseDTO> response = publicProductCategories.execute()
+                .stream()
+                .map(mapper::toResponseDTO)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
 }

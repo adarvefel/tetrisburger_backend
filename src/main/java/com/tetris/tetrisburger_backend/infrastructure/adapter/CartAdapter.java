@@ -9,6 +9,7 @@ import com.tetris.tetrisburger_backend.infrastructure.persistence.mapper.CartEnt
 import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.CartItemJpaRepository;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.CartJpaRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-@Component
+@Repository
 @Transactional
 public class CartAdapter implements CartRepository {
 

@@ -13,8 +13,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Repository
 public class MenuAdapter implements MenuRepository {
@@ -49,6 +55,7 @@ public class MenuAdapter implements MenuRepository {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<Menu> findAll(PaginationRequest pagination) {
         Sort sort = pagination.getSortBy() != null
                 ? Sort.by(Sort.Direction.fromString(pagination.getDirection()), pagination.getSortBy())
@@ -56,16 +63,38 @@ public class MenuAdapter implements MenuRepository {
 
         Pageable pageable = PageRequest.of(pagination.getPage(), pagination.getSize(), sort);
 
-        Page<MenuEntity> page = menuJpaRepository.findAllByDeletedAtIsNull(pageable);
+        Page<Integer> idPage = menuJpaRepository.findAllIdsByDeletedAtIsNull(pageable);
+
+        if (idPage.isEmpty()) {
+            return new PageResponse<>(
+                    List.of(),
+                    idPage.getNumber(),
+                    idPage.getSize(),
+                    0L,
+                    0
+            );
+        }
+
+        List<MenuEntity> entities = menuJpaRepository.findAllWithRelationsByIds(idPage.getContent());
+
+        Map<Integer, MenuEntity> entityMap = entities.stream()
+                .collect(Collectors.toMap(MenuEntity::getIdMenu, Function.identity()));
+
+        List<Menu> menus = idPage.getContent().stream()
+                .map(entityMap::get)
+                .filter(Objects::nonNull)
+                .map(mapper::toDomain)
+                .toList();
 
         return new PageResponse<>(
-                page.getContent().stream().map(mapper::toDomain).toList(),
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages()
+                menus,
+                idPage.getNumber(),
+                idPage.getSize(),
+                idPage.getTotalElements(),
+                idPage.getTotalPages()
         );
     }
+
 
     @Override
     public void delete(Menu menu) {

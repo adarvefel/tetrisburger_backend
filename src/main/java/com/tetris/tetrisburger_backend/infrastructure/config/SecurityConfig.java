@@ -85,6 +85,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/admin/burgers/menu*", "/api/admin/burgers/menu/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/admin/additions/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/product-categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/product-categories/public").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

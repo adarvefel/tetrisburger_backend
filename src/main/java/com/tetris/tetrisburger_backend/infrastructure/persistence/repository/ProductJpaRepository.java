@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.repository;
 
+import com.tetris.tetrisburger_backend.domain.model.ProductType;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.ProductEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,11 +32,13 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, Integ
             "     LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
             "     LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%'))) " +
             "AND (:categoryId IS NULL OR p.productCategory.id = :categoryId) " +
-            "AND (:availability IS NULL OR p.availability = :availability)")
+            "AND (:availability IS NULL OR p.availability = :availability) " +
+            "AND (:productType IS NULL OR p.productType = :productType)")
     Page<ProductEntity> searchProducts(
             @Param("query") String query,
             @Param("categoryId") Integer categoryId,
             @Param("availability") Boolean availability,
+            @Param("productType") ProductType productType,
             Pageable pageable);
 
     @Query("SELECT p FROM ProductEntity p WHERE p.deletedAt IS NULL")
@@ -63,6 +66,14 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, Integ
             @Param("name") String name,
             Pageable pageable);
 
-
-
+    @Query("SELECT p FROM ProductEntity p " +
+            "LEFT JOIN FETCH p.productCategory " +
+            "WHERE p.deletedAt IS NULL " +
+            "AND p.availability = true " +
+            "AND p.productType IN :types " +
+            "AND (:categoryId IS NULL OR p.productCategory.id = :categoryId)")
+    Page<ProductEntity> findByProductTypeIn(
+            @Param("types") List<ProductType> types,
+            @Param("categoryId") Integer categoryId,
+            Pageable pageable);
 }

@@ -190,4 +190,29 @@ public interface ProductRestDtoMapper {
                 page.totalPages()
         );
     }
+
+    default ProductResponseDTO toPublicProductResponseDTO(Product product, String imageUrl) {
+        if (product == null) return null;
+
+        ProductCategoryResponseDTO categoryDTO = null;
+        if (product.getProductCategory() != null) {
+            categoryDTO = ProductCategoryResponseDTO.builder()
+                    .id(product.getProductCategory().getId())
+                    .name(product.getProductCategory().getName())
+                    .build();
+        }
+
+        return ProductResponseDTO.builder()
+                .idProduct(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .quantity(product.getQuantity())
+                .price(product.getPrice())
+                .availability(product.getAvailability())
+                .productType(product.getProductType())
+                .productCategory(categoryDTO)
+                .imageUrl(product.getImageUrl())
+                .build();
+    }
+
 }
