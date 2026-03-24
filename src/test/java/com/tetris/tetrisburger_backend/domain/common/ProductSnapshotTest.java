@@ -2,7 +2,7 @@
 //
 //import com.tetris.tetrisburger_backend.domain.model.Product;
 //import com.tetris.tetrisburger_backend.domain.model.ProductCategory;
-//import com.tetris.tetrisburger_backend.domain.model.ProductType;
+//import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 //import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;
 //import org.junit.jupiter.api.DisplayName;
 //import org.junit.jupiter.api.Nested;

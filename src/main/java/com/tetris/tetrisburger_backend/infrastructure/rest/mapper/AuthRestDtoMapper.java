@@ -1,7 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.mapper;
 
 import com.tetris.tetrisburger_backend.domain.common.LoginResponse;
-import com.tetris.tetrisburger_backend.domain.model.Role;
+import com.tetris.tetrisburger_backend.domain.enums.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.auth.command.ForgotPasswordCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.auth.command.LoginUserCommand;

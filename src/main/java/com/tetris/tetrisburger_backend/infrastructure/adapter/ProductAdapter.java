@@ -3,7 +3,7 @@ package com.tetris.tetrisburger_backend.infrastructure.adapter;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Product;
-import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.ProductEntity;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.mapper.ProductEntityMapper;
@@ -111,15 +111,16 @@ public class ProductAdapter implements ProductRepository {
 
     @Override
     public PageResponse<Product> findAllBurgerIngredients(Integer categoryId, PaginationRequest page) {
-        Page<ProductEntity> result = jpa.findAllBurgerIngredients(categoryId, toPageable(page));
+        Page<ProductEntity> result = jpa.findAllBurgerIngredients(ProductType.INGREDIENT, categoryId, toPageable(page));
         return toPageResponse(result);
     }
 
     @Override
     public PageResponse<Product> searchIngredients(String name, PaginationRequest pagination) {
-        Page<ProductEntity> page = jpa.searchIngredients(name, toPageable(pagination));
+        Page<ProductEntity> page = jpa.searchIngredients(ProductType.INGREDIENT, name, toPageable(pagination));
         return toPageResponse(page);
     }
+
 
     // ==================== VISTA PÚBLICA ====================
 

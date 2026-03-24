@@ -202,6 +202,13 @@ public class GlobalExceptionHandler {
 
         return buildErrorResponseDTO(HttpStatus.NOT_FOUND, userMessage, request);
     }
+    @ExceptionHandler(PhoneRequiredException.class)
+    public ResponseEntity<MessageResponseDTO> handlePhoneRequired(PhoneRequiredException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(new MessageResponseDTO(ex.getMessage(), false));
+    }
+
+
 
     // ========================================
     // FALLBACK

@@ -7,15 +7,13 @@ import com.tetris.tetrisburger_backend.domain.exception.InvalidBurgerException;
 import com.tetris.tetrisburger_backend.domain.exception.ProductNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.model.Product;
-import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.CreateMenuBurger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.CreateBurgerCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import jakarta.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -27,8 +25,6 @@ import java.util.Set;
 @Service
 @Transactional
 public class CreateMenuBurgerUseCase implements CreateMenuBurger {
-
-    private static final Logger logger = LoggerFactory.getLogger(CreateMenuBurgerUseCase.class);
 
     private static final Set<ProductType> ALLOWED_INGREDIENT_TYPES = Set.of(
             ProductType.INGREDIENT
@@ -48,9 +44,6 @@ public class CreateMenuBurgerUseCase implements CreateMenuBurger {
 
     @Override
     public Burger handle(CreateBurgerCommand command) {
-        logger.info("Creando hamburguesa de menú: name={}, createdBy={}",
-                command.name(), command.createdBy());
-
         try {
             validateCommand(command);
             validateUniqueMenuBurgerName(command.name());
@@ -65,13 +58,10 @@ public class CreateMenuBurgerUseCase implements CreateMenuBurger {
                                 product,
                                 ing.quantity(),
                                 false
-
-
                         );
                     })
                     .toList();
 
-            // Domain factory: calcula basePrice y llama syncMetrics() internamente
             Burger burger = Burger.menuBurger(
                     command.name(),
                     command.description(),
@@ -84,43 +74,17 @@ public class CreateMenuBurgerUseCase implements CreateMenuBurger {
             burger.setCreatedBy(command.createdBy());
             burger.setUpdatedBy(command.createdBy());
 
-
             if (command.finalPrice() != null &&
                     command.finalPrice().compareTo(BigDecimal.ZERO) > 0) {
-
                 validateFinalPrice(command.finalPrice(), burger.getBasePrice());
                 burger.updateFinalPrice(command.finalPrice(), command.createdBy());
-
-
-                logger.info("Precio personalizado aplicado → base: ${}, final: ${}, margen: {}%, pérdida: {}",
-                        burger.getBasePrice(),
-                        burger.getFinalPrice(),
-                        burger.getMarginPercentage(),
-                        burger.getSellingAtLoss()
-                );
-
-            } else {
-                logger.info("Usando precio calculado automáticamente: ${}", burger.getFinalPrice());
             }
-
-            logger.info("Guardando hamburguesa: name={}, basePrice={}, finalPrice={}, ingredients={}",
-                    command.name(),
-                    burger.getBasePrice(),
-                    burger.getFinalPrice(),
-                    burger.getIngredients().size());
 
             Burger savedBurger = burgerRepository.save(burger);
 
             if (savedBurger == null || savedBurger.getIdBurger() == null) {
                 throw new BurgerCreationException("Error al guardar la hamburguesa en la base de datos");
             }
-
-            logger.info("Hamburguesa guardada: ID={}, basePrice=${}, finalPrice=${}, margen={}%",
-                    savedBurger.getIdBurger(),
-                    savedBurger.getBasePrice(),
-                    savedBurger.getFinalPrice(),
-                    savedBurger.getMarginPercentage()
-            );
 
             publishImageUploadEvent(savedBurger, command);
 
@@ -132,7 +96,6 @@ public class CreateMenuBurgerUseCase implements CreateMenuBurger {
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new InvalidBurgerException(e.getMessage());
         } catch (Exception e) {
-            logger.error("Error inesperado creando hamburguesa de menú", e);
             throw new BurgerCreationException("Error creando hamburguesa de menú", e);
         }
     }
@@ -183,10 +146,6 @@ public class CreateMenuBurgerUseCase implements CreateMenuBurger {
                             "Tipo actual: " + product.getProductType()
             );
         }
-        if (product.getQuantity() <= 0) {
-            logger.warn("Producto sin stock usado en menu burger: {} (ID: {})",
-                    product.getName(), product.getId());
-        }
     }
 
     private void validateFinalPrice(BigDecimal finalPrice, BigDecimal basePrice) {
@@ -213,14 +172,10 @@ public class CreateMenuBurgerUseCase implements CreateMenuBurger {
                             basePrice, finalPrice, marginPercent.doubleValue())
             );
         }
-        if (finalPrice.compareTo(basePrice) < 0) {
-            logger.warn("Precio de venta menor al costo base: ${} < ${}", finalPrice, basePrice);
-        }
     }
 
     private void publishImageUploadEvent(Burger burger, CreateBurgerCommand command) {
         if (command.imageData() != null && command.imageData().bytes() != null) {
-            logger.info("Publicando evento de imagen para burger ID: {}", burger.getIdBurger());
             eventPublisher.publishEvent(
                     new MenuBurgerImageUploadRequestedEvent(
                             burger.getIdBurger(),
@@ -230,8 +185,6 @@ public class CreateMenuBurgerUseCase implements CreateMenuBurger {
                             command.createdBy()
                     )
             );
-        } else {
-            logger.debug("Sin imagen para subir en burger ID: {}", burger.getIdBurger());
         }
     }
 }

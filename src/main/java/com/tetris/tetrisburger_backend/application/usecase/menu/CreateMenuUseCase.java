@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.application.usecase.menu;
 
 import com.tetris.tetrisburger_backend.application.event.MenuImageUploadRequestedEvent;
+import com.tetris.tetrisburger_backend.domain.enums.ItemType;
 import com.tetris.tetrisburger_backend.domain.model.*;
 import com.tetris.tetrisburger_backend.domain.port.in.menu.CreateMenu;
 import com.tetris.tetrisburger_backend.domain.port.in.menu.command.CreateMenuCommand;

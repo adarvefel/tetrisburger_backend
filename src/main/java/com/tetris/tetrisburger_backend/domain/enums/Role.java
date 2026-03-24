@@ -1,4 +1,4 @@
-package com.tetris.tetrisburger_backend.domain.model;
+package com.tetris.tetrisburger_backend.domain.enums;
 
 import java.util.Arrays;
 import java.util.Map;

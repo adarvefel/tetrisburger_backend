@@ -1,7 +1,6 @@
 package com.tetris.tetrisburger_backend.domain.port.in.user.command;
 
-import com.tetris.tetrisburger_backend.domain.common.FileData;
-import com.tetris.tetrisburger_backend.domain.model.Role;
+import com.tetris.tetrisburger_backend.domain.enums.Role;
 
 public record UpdateUserByAdminCommand(
         Integer idUser,

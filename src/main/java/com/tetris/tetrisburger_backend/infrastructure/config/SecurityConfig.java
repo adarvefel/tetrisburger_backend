@@ -87,6 +87,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/admin/additions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product-categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product-categories/public").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/orders/all").hasAuthority("ROLE_EMPLOYEE")
+                        .requestMatchers(HttpMethod.PATCH, "/api/orders/{id}/status").hasAuthority("ROLE_EMPLOYEE")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

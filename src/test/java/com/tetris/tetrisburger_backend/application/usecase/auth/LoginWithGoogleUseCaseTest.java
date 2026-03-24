@@ -3,7 +3,7 @@ package com.tetris.tetrisburger_backend.application.usecase.auth;
 import com.tetris.tetrisburger_backend.domain.common.LoginResponse;
 import com.tetris.tetrisburger_backend.domain.exception.InvalidCredentialsException;
 import com.tetris.tetrisburger_backend.domain.exception.InvalidTokenException;
-import com.tetris.tetrisburger_backend.domain.model.Role;
+import com.tetris.tetrisburger_backend.domain.enums.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.auth.command.LoginWithGoogleCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.EmailPort;

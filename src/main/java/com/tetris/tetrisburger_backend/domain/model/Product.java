@@ -1,5 +1,7 @@
 package com.tetris.tetrisburger_backend.domain.model;
 
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 

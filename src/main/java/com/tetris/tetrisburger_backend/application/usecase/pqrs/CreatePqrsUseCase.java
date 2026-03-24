@@ -1,9 +1,9 @@
 package com.tetris.tetrisburger_backend.application.usecase.pqrs;
 
 import com.tetris.tetrisburger_backend.domain.model.Pqrs;
-import com.tetris.tetrisburger_backend.domain.model.PqrsPriority;
-import com.tetris.tetrisburger_backend.domain.model.PqrsStatus;
-import com.tetris.tetrisburger_backend.domain.model.PqrsType;
+import com.tetris.tetrisburger_backend.domain.enums.PqrsPriority;
+import com.tetris.tetrisburger_backend.domain.enums.PqrsStatus;
+import com.tetris.tetrisburger_backend.domain.enums.PqrsType;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.CreatePqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.CreatePqrsCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.PqrsPort;

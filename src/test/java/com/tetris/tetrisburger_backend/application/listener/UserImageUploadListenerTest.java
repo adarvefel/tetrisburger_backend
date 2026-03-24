@@ -4,7 +4,7 @@ import com.tetris.tetrisburger_backend.application.event.UserImageUploadRequeste
 import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
 import com.tetris.tetrisburger_backend.domain.exception.ImageUploadException;
 import com.tetris.tetrisburger_backend.domain.exception.UserNotFoundException;
-import com.tetris.tetrisburger_backend.domain.model.Role;
+import com.tetris.tetrisburger_backend.domain.enums.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.out.ImageStoragePort;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;

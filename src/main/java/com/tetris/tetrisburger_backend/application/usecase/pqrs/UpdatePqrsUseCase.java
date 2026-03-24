@@ -2,7 +2,7 @@ package com.tetris.tetrisburger_backend.application.usecase.pqrs;
 
 import com.tetris.tetrisburger_backend.domain.exception.PqrsAlreadyDeletedException;
 import com.tetris.tetrisburger_backend.domain.model.Pqrs;
-import com.tetris.tetrisburger_backend.domain.model.PqrsType;
+import com.tetris.tetrisburger_backend.domain.enums.PqrsType;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.UpdatePqrs;
 import com.tetris.tetrisburger_backend.domain.port.in.pqrs.command.UpdatePqrsCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.PqrsPort;

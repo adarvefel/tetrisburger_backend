@@ -1,6 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.entity;
 
-import com.tetris.tetrisburger_backend.domain.model.ItemType;
+import com.tetris.tetrisburger_backend.domain.enums.ItemType;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,5 +1,9 @@
 package com.tetris.tetrisburger_backend.domain.model;
 
+import com.tetris.tetrisburger_backend.domain.enums.PqrsPriority;
+import com.tetris.tetrisburger_backend.domain.enums.PqrsStatus;
+import com.tetris.tetrisburger_backend.domain.enums.PqrsType;
+
 import java.time.LocalDateTime;
 
 public class Pqrs {

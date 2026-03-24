@@ -1,6 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.mapper;
 
-import com.tetris.tetrisburger_backend.domain.model.Role;
+import com.tetris.tetrisburger_backend.domain.enums.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.UserEntity;
 import org.junit.jupiter.api.BeforeEach;
