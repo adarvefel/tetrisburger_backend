@@ -3,6 +3,7 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.enums.OrderStatus;
+import com.tetris.tetrisburger_backend.domain.enums.PaymentMethod;
 import com.tetris.tetrisburger_backend.domain.model.Order;
 import com.tetris.tetrisburger_backend.domain.port.in.order.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.order.*;
@@ -127,11 +128,14 @@ public class OrderController {
     public ResponseEntity<OrderResponseDTO> updateStatus(
             @PathVariable Integer id,
             @RequestParam String status,
+            @RequestParam(required = false) String paymentMethod,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         OrderStatus newStatus = OrderStatus.valueOf(status);
+        PaymentMethod method = paymentMethod != null
+                ? PaymentMethod.valueOf(paymentMethod) : null;
         return ResponseEntity.ok(
                 mapper.toResponseDTO(
-                        updateOrderStatus.handle(id, newStatus, user.getId())));
+                        updateOrderStatus.handle(id, newStatus, user.getId(), method)));
     }
 }

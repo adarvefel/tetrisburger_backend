@@ -4,11 +4,12 @@ import com.tetris.tetrisburger_backend.domain.model.Invoice;
 import com.tetris.tetrisburger_backend.domain.port.out.InvoiceRepository;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.mapper.InvoiceEntityMapper;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.InvoiceJpaRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-@Repository
+@Component
 public class InvoiceAdapter implements InvoiceRepository {
 
     private final InvoiceJpaRepository jpa;
@@ -21,16 +22,22 @@ public class InvoiceAdapter implements InvoiceRepository {
 
     @Override
     public Invoice save(Invoice invoice) {
-        return mapper.toDomain(jpa.save(mapper.toEntity(invoice)));
+        return mapper.toDomain(
+                jpa.save(
+                        mapper.toEntity(invoice)
+                )
+        );
     }
 
     @Override
     public Optional<Invoice> findById(Integer idInvoice) {
-        return jpa.findById(idInvoice).map(mapper::toDomain);
+        return jpa.findById(idInvoice)
+                .map(mapper::toDomain);
     }
 
     @Override
     public Optional<Invoice> findByOrderId(Integer idOrder) {
-        return jpa.findByIdOrder(idOrder).map(mapper::toDomain);
+        return jpa.findByIdOrder(idOrder)
+                .map(mapper::toDomain);
     }
 }

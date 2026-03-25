@@ -65,6 +65,11 @@ public class OrderAdapter implements OrderRepository {
         );
     }
 
+    @Override
+    public long maxDailySequence(LocalDate date) {
+        return jpa.maxDailySequence(date);
+    }
+
 
     @Override
     public long countByOrderDate(LocalDate date) {

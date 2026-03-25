@@ -46,9 +46,7 @@ public class CreateOrderUseCase implements CreateOrder {
         User user = userRepository.findUserById(idUser)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-// Log temporal
-        System.out.println(">>> phone del usuario: " + user.getPhone());
-        System.out.println(">>> idUser: " + user.getIdUser());
+
 
         if (user.getPhone() == null || user.getPhone().isBlank())
             throw new PhoneRequiredException("El usuario debe de tener un numero de telefono");
@@ -69,7 +67,7 @@ public class CreateOrderUseCase implements CreateOrder {
                 });
 
         // Contador de órdenes del día
-        long dailyCount = orderRepository.countByOrderDate(LocalDate.now());
+        long dailyCount = orderRepository.maxDailySequence(LocalDate.now());
 
         // Crear y guardar orden
         Order order = Order.create(idUser, orderItems, dailyCount);

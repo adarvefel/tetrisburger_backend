@@ -35,4 +35,8 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Integer> 
             LocalDateTime end,
             Pageable pageable
     );
+
+    @Query("SELECT COALESCE(MAX(CAST(SUBSTRING(o.orderNumber, 16) AS int)), 0) " +
+            "FROM OrderEntity o WHERE DATE(o.orderDate) = :date")
+    long maxDailySequence(@Param("date") LocalDate date);
 }

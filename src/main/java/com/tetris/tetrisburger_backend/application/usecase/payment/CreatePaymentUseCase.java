@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
+
 @Service
 @Transactional
 public class CreatePaymentUseCase implements CreatePayment {
@@ -26,13 +27,11 @@ public class CreatePaymentUseCase implements CreatePayment {
                                 OrderRepository orderRepository) {
         this.paymentRepository = paymentRepository;
         this.orderRepository = orderRepository;
-
     }
 
     @Override
     public Payment handle(CreatePaymentCommand command) {
 
-        // 1. Validar que la orden existe y está en READY
         Order order = orderRepository.findById(command.idOrder())
                 .orElseThrow(() -> new OrderNotFoundException("Orden no encontrada: " + command.idOrder()));
 
@@ -41,11 +40,8 @@ public class CreatePaymentUseCase implements CreatePayment {
                     "La orden debe estar en READY. Estado actual: " + order.getStatus());
         }
 
-        // 2. Resolver amountReceived según método de pago
-        // Para CARD/TRANSFER no hay cambio → amountReceived = amount
         BigDecimal amountReceived = resolveAmountReceived(command);
 
-        // 3. Payment.create() valida y calcula changeAmount internamente
         Payment payment = Payment.create(
                 command.idOrder(),
                 command.idUser(),
@@ -55,19 +51,16 @@ public class CreatePaymentUseCase implements CreatePayment {
         );
         Payment savedPayment = paymentRepository.save(payment);
 
-        // 4. Marcar orden como COMPLETED
         order.updateStatus(OrderStatus.COMPLETED, command.idUser());
         orderRepository.save(order);
-        return savedPayment;
 
+        return savedPayment;
     }
 
     private BigDecimal resolveAmountReceived(CreatePaymentCommand command) {
         if (command.paymentMethod() == PaymentMethod.CASH) {
-            // Payment.create() lanzará IllegalArgumentException si es null o insuficiente
             return command.amountReceived();
         }
-        // CARD / TRANSFER: el monto recibido es exactamente el total
         return command.amount();
     }
 }
