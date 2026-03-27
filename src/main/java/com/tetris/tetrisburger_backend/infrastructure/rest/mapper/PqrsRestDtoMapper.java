@@ -36,6 +36,10 @@ public interface PqrsRestDtoMapper {
      @Mapping(source = "response", target = "response" )
      @Mapping(source = "idUser", target = "idUser" )
      @Mapping(source = "assignedTo", target = "assignedTo" )
+     @Mapping(source =  "createdAt", target = "createdAt")
+     @Mapping(source =  "updatedAt", target = "updatedAt")
+     @Mapping(source =  "createdBy", target = "createdBy")
+     @Mapping(source =  "updatedBy", target = "updatedBy")
     PqrsResponseDTO toPqrsResponseDTO(Pqrs pqrs);
 
     //Mapping para el response de list
