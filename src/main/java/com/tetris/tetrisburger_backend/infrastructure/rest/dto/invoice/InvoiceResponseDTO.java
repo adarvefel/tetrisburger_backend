@@ -11,5 +11,6 @@ public record InvoiceResponseDTO(
         String externalInvoiceId,
         BigDecimal totalAmount,
         String status,
-        LocalDateTime invoiceDate
+        LocalDateTime invoiceDate,
+        String pdfUrl
 ) {}

@@ -40,6 +40,9 @@ public class InvoiceEntity {
     @Column(name = "status")
     private InvoiceStatus status;
 
+    @Column(name = "pdf_url", length = 500)
+    private String pdfUrl;
+
     @Column(name = "invoice_date")
     private LocalDateTime invoiceDate;
 }

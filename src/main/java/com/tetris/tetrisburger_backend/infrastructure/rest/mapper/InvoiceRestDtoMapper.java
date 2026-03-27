@@ -17,7 +17,8 @@ public interface InvoiceRestDtoMapper {
                 i.getExternalInvoiceId(),
                 i.getTotalAmount(),
                 i.getStatus().name(),
-                i.getInvoiceDate()
+                i.getInvoiceDate(),
+                i.getPdfUrl()
         );
     }
 }

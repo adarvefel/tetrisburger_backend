@@ -15,6 +15,7 @@ public class Invoice {
     private BigDecimal totalAmount;
     private InvoiceStatus status;
     private LocalDateTime invoiceDate;
+    private String pdfUrl;
 
     private Invoice() {}
 
@@ -32,11 +33,12 @@ public class Invoice {
         return i;
     }
 
+
     public static Invoice reconstitute(
             Integer idInvoice, Integer idOrder, Integer idPayment,
             String invoiceNumber, String externalInvoiceId,
             BigDecimal totalAmount, InvoiceStatus status,
-            LocalDateTime invoiceDate
+            LocalDateTime invoiceDate, String pdfUrl
     ) {
         Invoice i = new Invoice();
         i.idInvoice = idInvoice;
@@ -47,19 +49,21 @@ public class Invoice {
         i.totalAmount = totalAmount;
         i.status = status;
         i.invoiceDate = invoiceDate;
+        i.pdfUrl = pdfUrl;
         return i;
     }
 
-    public void markAsIssued(String externalInvoiceId, String invoiceNumber) {
+    public void markAsIssued(String externalInvoiceId, String invoiceNumber, String pdfUrl) {
         this.externalInvoiceId = externalInvoiceId;
         this.invoiceNumber = invoiceNumber;
+        this.pdfUrl = pdfUrl;
         this.status = InvoiceStatus.ISSUED;
     }
 
     public void markAsFailed() {
         this.status = InvoiceStatus.FAILED;
     }
-
+    public String getPdfUrl() { return pdfUrl; }
     public Integer getIdInvoice()           { return idInvoice; }
     public Integer getIdOrder()             { return idOrder; }
     public Integer getIdPayment()           { return idPayment; }

@@ -35,10 +35,15 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
                 .orElseThrow(() -> new OrderNotFoundException(
                         "Orden no encontrada: " + idOrder));
 
+        if (newStatus == OrderStatus.ACCEPTED && paymentMethod == null) {
+            throw new IllegalArgumentException(
+                    "Se requiere el método de pago al aceptar la orden");
+        }
+
         order.updateStatus(newStatus, employeeId);
         Order saved = orderRepository.save(order);
 
-        // ✅ Al aceptar: registrar pago y generar factura
+
         if (newStatus == OrderStatus.ACCEPTED) {
             if (paymentMethod == null) {
                 throw new IllegalArgumentException(

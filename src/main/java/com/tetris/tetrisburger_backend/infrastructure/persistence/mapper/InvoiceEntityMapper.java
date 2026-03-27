@@ -12,7 +12,8 @@ public interface InvoiceEntityMapper {
         return Invoice.reconstitute(
                 e.getIdInvoice(), e.getIdOrder(), e.getIdPayment(),
                 e.getInvoiceNumber(), e.getExternalInvoiceId(),
-                e.getTotalAmount(), e.getStatus(), e.getInvoiceDate()
+                e.getTotalAmount(), e.getStatus(), e.getInvoiceDate(),
+                e.getPdfUrl()
         );
     }
 
@@ -27,6 +28,7 @@ public interface InvoiceEntityMapper {
         e.setTotalAmount(i.getTotalAmount());
         e.setStatus(i.getStatus());
         e.setInvoiceDate(i.getInvoiceDate());
+        e.setPdfUrl(i.getPdfUrl());
         return e;
     }
 }
