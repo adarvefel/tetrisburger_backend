@@ -53,15 +53,15 @@ public class OrderAdapter implements OrderRepository {
                                        LocalDateTime end, PaginationRequest pagination) {
         Pageable pageable = PageRequest.of(pagination.getPage(), pagination.getSize());
 
-        Page<Order> page = status != null
-                ? jpa.findByStatusAndOrderDateBetween(status, start, end, pageable)
-                .map(mapper::toDomain)
-                : jpa.findByOrderDateBetween(start, end, pageable)
+        Page<Order> page = jpa.findAllWithFilters(status, start, end, pageable)
                 .map(mapper::toDomain);
 
         return new PageResponse<>(
-                page.getContent(), page.getNumber(),
-                page.getSize(), page.getTotalElements(), page.getTotalPages()
+                page.getContent(),
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages()
         );
     }
 

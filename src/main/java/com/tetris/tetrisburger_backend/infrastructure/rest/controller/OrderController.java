@@ -9,6 +9,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.order.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.order.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.OrderRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -103,25 +104,20 @@ public class OrderController {
 
     @GetMapping("/all")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
-    public ResponseEntity<PageResponse<OrderResponseDTO>> listAll(
+    public ResponseEntity<PageResponse<Order>> listAll(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) LocalDate date,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        OrderStatus orderStatus = status != null
-                ? OrderStatus.valueOf(status) : null;
+        OrderStatus orderStatus = status != null ? OrderStatus.valueOf(status) : null;
 
         PageResponse<Order> result = listAllOrders.handle(
                 orderStatus, date, new PaginationRequest(page, size));
 
-        PageResponse<OrderResponseDTO> response = new PageResponse<>(
-                result.content().stream().map(mapper::toResponseDTO).toList(),
-                result.page(), result.size(),
-                result.totalElements(), result.totalPages()
-        );
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(result);
     }
+
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")

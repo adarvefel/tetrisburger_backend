@@ -23,16 +23,18 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Integer> 
     @Query("SELECT o FROM OrderEntity o WHERE (:status IS NULL OR o.status = :status) AND o.deletedAt IS NULL ORDER BY o.orderDate DESC")
     Page<OrderEntity> findAllByStatus(@Param("status") OrderStatus status, Pageable pageable);
 
-    Page<OrderEntity> findByStatusAndOrderDateBetween(
-            OrderStatus status,
-            LocalDateTime start,
-            LocalDateTime end,
-            Pageable pageable
-    );
-
-    Page<OrderEntity> findByOrderDateBetween(
-            LocalDateTime start,
-            LocalDateTime end,
+    @Query("""
+        SELECT o FROM OrderEntity o
+        WHERE o.deletedAt IS NULL
+          AND (:status IS NULL OR o.status = :status)
+          AND (:start IS NULL OR o.orderDate >= :start)
+          AND (:end IS NULL OR o.orderDate < :end)
+        ORDER BY o.orderDate DESC
+    """)
+    Page<OrderEntity> findAllWithFilters(
+            @Param("status") OrderStatus status,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
             Pageable pageable
     );
 

@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Service
 @Transactional(readOnly = true)
@@ -26,10 +25,14 @@ public class ListAllOrdersUseCase implements ListAllOrders {
     @Override
     public PageResponse<Order> handle(OrderStatus status, LocalDate date,
                                       PaginationRequest pagination) {
-        LocalDate target = date != null ? date : LocalDate.now();
 
-        LocalDateTime start = target.atStartOfDay();
-        LocalDateTime end   = target.atTime(LocalTime.MAX);
+        LocalDateTime start = null;
+        LocalDateTime end = null;
+
+        if (date != null) {
+            start = date.atStartOfDay();
+            end = date.plusDays(1).atStartOfDay(); // rango del día
+        }
 
         return orderRepository.findAll(status, start, end, pagination);
     }
