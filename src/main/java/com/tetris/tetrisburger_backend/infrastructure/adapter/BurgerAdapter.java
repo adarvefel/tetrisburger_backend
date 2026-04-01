@@ -3,6 +3,7 @@ package com.tetris.tetrisburger_backend.infrastructure.adapter;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
+import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.BurgerEntity;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.mapper.BurgerEntityMapper;
@@ -237,6 +238,15 @@ public class BurgerAdapter implements BurgerRepository {
         return jpaRepository.countCustomBurgersByUser(idUser);
     }
 
+    @Override
+    public List<Burger> findAllByIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return jpaRepository.findAllByIds(ids)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
     // ========================================
     // HELPERS
     // ========================================
@@ -256,5 +266,14 @@ public class BurgerAdapter implements BurgerRepository {
                 page.getTotalElements(),
                 page.getTotalPages()
         );
+    }
+
+
+    @Override
+    public List<Burger> findAllFeaturedAndAvailable() {
+        return jpaRepository.findAllFeaturedAndAvailable()
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 }

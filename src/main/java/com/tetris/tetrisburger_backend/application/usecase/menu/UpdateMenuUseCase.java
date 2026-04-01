@@ -13,6 +13,11 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Service
 @Transactional
 public class UpdateMenuUseCase implements UpdateMenu {
@@ -34,6 +39,7 @@ public class UpdateMenuUseCase implements UpdateMenu {
 
     @Override
     public Menu handle(UpdateMenuCommand command) {
+
         // 1. Buscar menú existente
         Menu menu = menuRepository.findById(command.idMenu())
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -46,32 +52,48 @@ public class UpdateMenuUseCase implements UpdateMenu {
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Categoría no encontrada: " + command.idMenuCategory()));
 
-        // 3. Construir ítems con objetos completos
-        List<MenuItem> items = command.items().stream()
-                .map(i -> {
-                    Burger burger = null;
-                    Product product = null;
-
-                    if (i.idBurger() != null)
-                        burger = burgerRepository.findById(i.idBurger())
-                                .orElseThrow(() -> new IllegalArgumentException(
-                                        "Burger no encontrada: " + i.idBurger()));
-
-                    if (i.idProduct() != null)
-                        product = productRepository.findById(i.idProduct())
-                                .orElseThrow(() -> new IllegalArgumentException(
-                                        "Producto no encontrado: " + i.idProduct()));
-
-                    return MenuItem.create(
-                            ItemType.valueOf(i.itemType().toUpperCase()),
-                            burger,
-                            product,
-                            i.quantity()
-                    );
-                })
+        // 3. Recolectar IDs únicos — 2 queries en total, no N
+        List<Integer> burgerIds = command.items().stream()
+                .map(i -> i.idBurger())
+                .filter(Objects::nonNull)
+                .distinct()
                 .toList();
 
-        // 4. Actualizar el menú
+        List<Integer> productIds = command.items().stream()
+                .map(i -> i.idProduct())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Integer, Burger> burgerMap = burgerRepository.findAllByIds(burgerIds)
+                .stream()
+                .collect(Collectors.toMap(Burger::getIdBurger, Function.identity()));
+
+        Map<Integer, Product> productMap = productRepository.findAllByIds(productIds)
+                .stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        // 4. Validar que todos existan
+        burgerIds.forEach(id -> {
+            if (!burgerMap.containsKey(id))
+                throw new IllegalArgumentException("Burger no encontrada: " + id);
+        });
+
+        productIds.forEach(id -> {
+            if (!productMap.containsKey(id))
+                throw new IllegalArgumentException("Producto no encontrado: " + id);
+        });
+
+        List<MenuItem> items = command.items().stream()
+                .map(i -> MenuItem.create(
+                        ItemType.valueOf(i.itemType().toUpperCase()),
+                        i.idBurger()  != null ? burgerMap.get(i.idBurger())   : null,
+                        i.idProduct() != null ? productMap.get(i.idProduct()) : null,
+                        i.quantity()
+                ))
+                .toList();
+
+        // 6. Actualizar el menú
         menu.update(
                 command.name(),
                 command.description(),

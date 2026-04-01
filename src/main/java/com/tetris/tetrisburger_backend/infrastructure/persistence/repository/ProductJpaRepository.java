@@ -84,4 +84,8 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, Integ
             @Param("types") List<ProductType> types,
             @Param("categoryId") Integer categoryId,
             Pageable pageable);
+
+
+    @Query("SELECT p FROM ProductEntity p WHERE p.id IN :ids AND p.deletedAt IS NULL")
+    List<ProductEntity> findAllByIds(@Param("ids") List<Integer> ids);
 }

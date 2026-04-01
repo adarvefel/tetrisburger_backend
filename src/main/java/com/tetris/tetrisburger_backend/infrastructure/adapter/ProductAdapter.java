@@ -200,6 +200,16 @@ public class ProductAdapter implements ProductRepository {
                 page.getTotalPages()
         );
     }
+
+
+    @Override
+    public List<Product> findAllByIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return  jpa.findAllByIds(ids)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
 }
 
 

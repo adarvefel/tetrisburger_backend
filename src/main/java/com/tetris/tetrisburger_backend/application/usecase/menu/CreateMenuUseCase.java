@@ -14,6 +14,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -46,37 +50,54 @@ public class CreateMenuUseCase implements CreateMenu {
                         "Categoría de menú no encontrada: " + command.idMenuCategory()))
                 : null;
 
-        List<MenuItem> items = command.items().stream()
-                .map(i -> {
-                    Burger burger = null;
-                    Product product = null;
-
-                    if (i.idBurger() != null)
-                        burger = burgerRepository.findById(i.idBurger())
-                                .orElseThrow(() -> new IllegalArgumentException(
-                                        "Burger no encontrada: " + i.idBurger()));
-
-                    if (i.idProduct() != null)
-                        product = productRepository.findById(i.idProduct())
-                                .orElseThrow(() -> new IllegalArgumentException(
-                                        "Producto no encontrado: " + i.idProduct()));
-
-                    return MenuItem.create(
-                            ItemType.valueOf(i.itemType().toUpperCase()),
-                            burger,
-                            product,
-                            i.quantity()
-                    );
-                })
+        // ── 1. Recolectar IDs únicos — 2 queries en total, no N ──────────────
+        List<Integer> burgerIds = command.items().stream()
+                .map(i -> i.idBurger())
+                .filter(Objects::nonNull)
+                .distinct()
                 .toList();
 
+        List<Integer> productIds = command.items().stream()
+                .map(i -> i.idProduct())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Integer, Burger> burgerMap = burgerRepository.findAllByIds(burgerIds)
+                .stream()
+                .collect(Collectors.toMap(Burger::getIdBurger, Function.identity()));
+
+        Map<Integer, Product> productMap = productRepository.findAllByIds(productIds)
+                .stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        // ── 2. Validar que todos existan ──────────────────────────────────────
+        burgerIds.forEach(id -> {
+            if (!burgerMap.containsKey(id))
+                throw new IllegalArgumentException("Burger no encontrada: " + id);
+        });
+
+        productIds.forEach(id -> {
+            if (!productMap.containsKey(id))
+                throw new IllegalArgumentException("Producto no encontrado: " + id);
+        });
+
+        // ── 3. Construir ítems desde el map — O(1) por lookup ─────────────────
+        List<MenuItem> items = command.items().stream()
+                .map(i -> MenuItem.create(
+                        ItemType.valueOf(i.itemType().toUpperCase()),
+                        i.idBurger()  != null ? burgerMap.get(i.idBurger())   : null,
+                        i.idProduct() != null ? productMap.get(i.idProduct()) : null,
+                        i.quantity()
+                ))
+                .toList();
 
         Menu menu = Menu.create(
                 command.name(),
                 command.description(),
                 command.isAvailable(),
-                null,           // imageUrl
-                null,           // imageKey
+                null,
+                null,
                 menuCategory,
                 items,
                 command.createdBy()
