@@ -1,4 +1,3 @@
-// src/main/java/com/tetris/tetrisburger_backend/infrastructure/persistence/mapper/AdditionEntityMapper.java
 package com.tetris.tetrisburger_backend.infrastructure.persistence.mapper;
 
 import com.tetris.tetrisburger_backend.domain.model.Addition;
@@ -23,7 +22,10 @@ public interface AdditionEntityMapper {
                 trim(e.getImageKey()),
                 e.getCreatedAt(),
                 e.getUpdatedAt(),
-                e.getDeletedAt()
+                e.getDeletedAt(),
+                e.getCreatedBy(),
+                e.getUpdatedBy(),
+                e.getDeletedBy()
         );
     }
 
@@ -41,7 +43,9 @@ public interface AdditionEntityMapper {
         e.setImageUrl(trim(d.getImageUrl()));
         e.setImageKey(trim(d.getImageKey()));
         e.setDeletedAt(d.getDeletedAt());
-
+        e.setCreatedBy(d.getCreatedBy());
+        e.setUpdatedBy(d.getUpdatedBy());
+        e.setDeletedBy(d.getDeletedBy());
 
         return e;
     }

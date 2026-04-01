@@ -44,7 +44,7 @@ public class AdditionImageUploadListener {
                 return;
             }
 
-            persistAdditionImage(event.additionId(), upload);
+            persistAdditionImage(event.additionId(), upload,event.userId());
 
         } catch (Exception e) {
             throw new ImageUploadException("No se pudo subir la imagen de la adición", e);
@@ -52,14 +52,14 @@ public class AdditionImageUploadListener {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    void persistAdditionImage(Integer additionId, ImageUploadResult upload) {
+    void persistAdditionImage(Integer additionId, ImageUploadResult upload,Integer updatedBy) {
         Addition addition = additionRepository.findById(additionId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Adición no encontrada con ID: " + additionId
                 ));
 
         String imageUrl = imageStoragePort.getImageUrl(upload.imageKey());
-        addition.updateImage(upload.imageKey(), imageUrl);
+        addition.updateImage(upload.imageKey(), imageUrl,updatedBy);
 
         additionRepository.save(addition);
     }

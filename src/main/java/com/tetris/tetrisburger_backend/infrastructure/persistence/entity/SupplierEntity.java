@@ -36,16 +36,23 @@ public class SupplierEntity {
     @Column(name = "address")
     private String address;
 
-    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDate registrationDate;
+    private LocalDateTime registrationDate;
 
-    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @Column(name = "created_by", updatable = false)
+    private Integer createdBy;
+
+    @Column(name = "updated_by")
+    private Integer updatedBy;
+
+    @Column(name = "deleted_by")
+    private Integer deletedBy;
 
 
     public Integer getId() {
@@ -89,11 +96,11 @@ public class SupplierEntity {
 
     }
 
-    public LocalDate getRegistrationDate() {
+    public LocalDateTime getRegistrationDate() {
         return registrationDate;
     }
 
-    public void setRegistrationDate(LocalDate registrationDate) {
+    public void setRegistrationDate(LocalDateTime registrationDate) {
         this.registrationDate = registrationDate;
     }
 
@@ -112,4 +119,13 @@ public class SupplierEntity {
     public void setDeletedAt(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
     }
+
+    public Integer getCreatedBy()               { return createdBy; }
+    public void setCreatedBy(Integer v)         { this.createdBy = v; }
+
+    public Integer getUpdatedBy()               { return updatedBy; }
+    public void setUpdatedBy(Integer v)         { this.updatedBy = v; }
+
+    public Integer getDeletedBy()               { return deletedBy; }
+    public void setDeletedBy(Integer v)         { this.deletedBy = v; }
 }

@@ -3,7 +3,8 @@ package com.tetris.tetrisburger_backend.domain.enums;
 
 public enum PaymentMethod {
     CASH("Efectivo"),
-    CARD("Tarjeta");
+    CARD("Tarjeta"),
+    TRANSFER("Transferencia");
 
     private final String displayName;
 

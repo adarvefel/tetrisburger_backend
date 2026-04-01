@@ -124,14 +124,11 @@ public class OrderController {
     public ResponseEntity<OrderResponseDTO> updateStatus(
             @PathVariable Integer id,
             @RequestParam String status,
-            @RequestParam(required = false) String paymentMethod,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        OrderStatus newStatus = OrderStatus.valueOf(status);
-        PaymentMethod method = paymentMethod != null
-                ? PaymentMethod.valueOf(paymentMethod) : null;
+        OrderStatus newStatus = OrderStatus.valueOf(status.toUpperCase());
         return ResponseEntity.ok(
                 mapper.toResponseDTO(
-                        updateOrderStatus.handle(id, newStatus, user.getId(), method)));
+                        updateOrderStatus.handle(id, newStatus, user.getId())));
     }
 }

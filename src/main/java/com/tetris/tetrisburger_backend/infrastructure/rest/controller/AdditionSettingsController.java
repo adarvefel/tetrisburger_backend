@@ -26,14 +26,14 @@ public class AdditionSettingsController {
         this.mapper = mapper;
     }
 
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @GetMapping
     public ResponseEntity<AdditionSettingsResponseDTO> get() {
         AdditionSettings settings = getAdditionSettings.handle();
         return ResponseEntity.ok(mapper.toResponseDTO(settings));
     }
 
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @PutMapping
     public ResponseEntity<AdditionSettingsResponseDTO> update(
             @RequestBody UpdateAdditionSettingsRequestDTO requestDTO) {

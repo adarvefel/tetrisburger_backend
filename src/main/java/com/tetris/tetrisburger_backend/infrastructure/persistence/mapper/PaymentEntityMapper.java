@@ -11,8 +11,7 @@ public interface PaymentEntityMapper {
         if (e == null) return null;
         return Payment.reconstitute(
                 e.getIdPayment(), e.getIdOrder(), e.getIdUser(),
-                e.getPaymentMethod(), e.getAmount(),
-                e.getAmountReceived(), e.getChangeAmount(), e.getPaidAt()
+                e.getPaymentMethod(), e.getAmount(), e.getPaidAt()
         );
     }
 
@@ -24,8 +23,6 @@ public interface PaymentEntityMapper {
         e.setIdUser(p.getIdUser());
         e.setPaymentMethod(p.getPaymentMethod());
         e.setAmount(p.getAmount());
-        e.setAmountReceived(p.getAmountReceived());
-        e.setChangeAmount(p.getChangeAmount());
         e.setPaidAt(p.getPaidAt());
         return e;
     }

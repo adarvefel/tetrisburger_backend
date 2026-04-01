@@ -186,6 +186,11 @@ public class ProductAdapter implements ProductRepository {
         return PageRequest.of(pageReq.getPage(), pageReq.getSize(), sort);
     }
 
+    @Override
+    public Optional<Product> findByIdForUpdate(Integer id) {
+        return jpa.findByIdForUpdate(id).map(mapper::toDomain);
+    }
+
     private PageResponse<Product> toPageResponse(Page<ProductEntity> page) {
         return new PageResponse<>(
                 page.map(mapper::toDomain).getContent(),

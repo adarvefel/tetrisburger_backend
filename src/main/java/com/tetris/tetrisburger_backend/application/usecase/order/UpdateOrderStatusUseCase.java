@@ -1,7 +1,6 @@
 package com.tetris.tetrisburger_backend.application.usecase.order;
 
 import com.tetris.tetrisburger_backend.domain.enums.OrderStatus;
-import com.tetris.tetrisburger_backend.domain.enums.PaymentMethod;
 import com.tetris.tetrisburger_backend.domain.exception.OrderNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.Order;
 import com.tetris.tetrisburger_backend.domain.model.Payment;
@@ -29,37 +28,39 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
     }
 
     @Override
-    public Order handle(Integer idOrder, OrderStatus newStatus,
-                        Integer employeeId, PaymentMethod paymentMethod) {
+    public Order handle(Integer idOrder, OrderStatus newStatus, Integer employeeId) {
         Order order = orderRepository.findById(idOrder)
                 .orElseThrow(() -> new OrderNotFoundException(
                         "Orden no encontrada: " + idOrder));
 
-        if (newStatus == OrderStatus.ACCEPTED && paymentMethod == null) {
-            throw new IllegalArgumentException(
-                    "Se requiere el método de pago al aceptar la orden");
+        validateTransition(order.getStatus(), newStatus);
+
+        if (newStatus == OrderStatus.ACCEPTED) {
+            Payment payment = paymentRepository.findByOrderId(idOrder)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Se requiere registrar el pago antes de aceptar la orden"));
+
+            order.updateStatus(newStatus, employeeId);
+            Order saved = orderRepository.save(order);
+            invoicePort.createInvoice(saved, payment);
+            return saved;
         }
 
         order.updateStatus(newStatus, employeeId);
-        Order saved = orderRepository.save(order);
+        return orderRepository.save(order);
+    }
 
+    private void validateTransition(OrderStatus current, OrderStatus next) {
+        boolean valid = switch (current) {
+            case PENDING    -> next == OrderStatus.ACCEPTED;
+            case ACCEPTED   -> next == OrderStatus.IN_PROGRESS;
+            case IN_PROGRESS -> next == OrderStatus.COMPLETED;
+            default         -> false;
+        };
 
-        if (newStatus == OrderStatus.ACCEPTED) {
-            if (paymentMethod == null) {
-                throw new IllegalArgumentException(
-                        "Se requiere el método de pago al aceptar la orden");
-            }
-            Payment payment = Payment.create(
-                    saved.getIdOrder(),
-                    employeeId,
-                    paymentMethod,
-                    saved.getTotalAmount(),
-                    saved.getTotalAmount()
-            );
-            Payment savedPayment = paymentRepository.save(payment);
-            invoicePort.createInvoice(saved, savedPayment);
+        if (!valid) {
+            throw new IllegalStateException(
+                    "Transición inválida: " + current + " → " + next);
         }
-
-        return saved;
     }
 }

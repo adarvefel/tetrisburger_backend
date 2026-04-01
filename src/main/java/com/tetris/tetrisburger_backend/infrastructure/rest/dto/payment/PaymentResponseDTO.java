@@ -9,7 +9,5 @@ public record PaymentResponseDTO(
         Integer idUser,
         String paymentMethod,
         BigDecimal amount,
-        BigDecimal amountReceived,
-        BigDecimal changeAmount,
         LocalDateTime paidAt
 ) {}

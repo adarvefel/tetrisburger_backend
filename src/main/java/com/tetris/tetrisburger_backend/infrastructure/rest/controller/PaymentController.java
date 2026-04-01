@@ -34,10 +34,8 @@ public class PaymentController {
 
         CreatePaymentCommand command = new CreatePaymentCommand(
                 dto.idOrder(),
-                user.getId(),           // idUser viene del JWT, no del body
-                dto.paymentMethod(),
-                dto.amount(),
-                dto.amountReceived()
+                user.getId(),
+                dto.paymentMethod()
         );
 
         Payment payment = createPayment.handle(command);

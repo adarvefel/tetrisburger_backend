@@ -25,7 +25,7 @@ public class UpdateImageAdditionUseCase implements UpdateAdditionImage {
 
     @Transactional
     @Override
-    public Addition handle(Integer id, FileData additionImage) {
+    public Addition handle(Integer id, FileData additionImage,Integer updatedBy) {
         if (additionImage == null){
             throw  new IllegalArgumentException("La imagen de la adicion es requerida");
 
@@ -45,7 +45,8 @@ public class UpdateImageAdditionUseCase implements UpdateAdditionImage {
                 id,
                 additionImage.bytes(),
                 additionImage.contentType(),
-                additionImage.originalFilename()
+                additionImage.originalFilename(),
+                updatedBy
         ));
 
         return addition;

@@ -40,7 +40,10 @@ public class CreateAdditionUseCase implements CreateAddition {
                 cmd.description(),
                 cmd.price(),
                 cmd.available(),
-                null
+                null,
+                null,
+                cmd.createdBy()
+
         );
 
         Addition saved = additionRepository.save(addition);
@@ -50,7 +53,9 @@ public class CreateAdditionUseCase implements CreateAddition {
                     saved.getIdAddition(),
                     cmd.additionImage().bytes(),
                     cmd.additionImage().contentType(),
-                    cmd.additionImage().originalFilename()
+                    cmd.additionImage().originalFilename(),
+                    cmd.createdBy()
+
             ));
         }
 

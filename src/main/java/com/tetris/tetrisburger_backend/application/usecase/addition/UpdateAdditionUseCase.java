@@ -25,12 +25,12 @@ public class UpdateAdditionUseCase implements UpdateAddition {
     public Addition handle(UpdateAdditionCommand cmd) {
         Addition addition = additionRepository.findById(cmd.id())
                 .orElseThrow(() -> new AdditionNotFoundException(
-                        "Adición no encontrada con ID: " + id
+                        "Adición no encontrada con ID: " + cmd.id()
                 ));
 
         if (addition.isDeleted()) {
             throw new AdditionAlreadyDeletedException(
-                    "La adición ya fue eliminada. ID: " + id
+                    "La adición ya fue eliminada. ID: " + cmd.id()
             );
         }
 
@@ -46,8 +46,8 @@ public class UpdateAdditionUseCase implements UpdateAddition {
                 cmd.description(),
                 cmd.price(),
                 cmd.available(),
-                null
-                // imageUrl no se toca aquí
+                null,
+                cmd.updatedBy()
         );
 
         return additionRepository.save(addition);

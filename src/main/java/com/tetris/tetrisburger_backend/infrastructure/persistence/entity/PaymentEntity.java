@@ -34,12 +34,6 @@ public class PaymentEntity {
     @Column(name = "amount")
     private BigDecimal amount;
 
-    @Column(name = "amount_received")
-    private BigDecimal amountReceived;
-
-    @Column(name = "change_amount")
-    private BigDecimal changeAmount;
-
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 }

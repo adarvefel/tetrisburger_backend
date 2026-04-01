@@ -6,6 +6,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.adittion.DeleteAddition;
 import com.tetris.tetrisburger_backend.domain.port.out.AdditionRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 
 
 @Service
@@ -20,7 +21,7 @@ public class DeleteAdditionUseCase implements DeleteAddition {
 
 
     @Override
-    public Addition handle(Integer id) {
+    public Addition handle(Integer id, Integer deletedBy) {
         Addition addition = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Adición no encontrada: " + id));
 
@@ -29,7 +30,7 @@ public class DeleteAdditionUseCase implements DeleteAddition {
             throw new AdditionAlreadyDeletedException("La adición ya fue eliminada");
         }
 
-        addition.markAsDeleted();
+        addition.markAsDeleted(deletedBy);
         return repository.save(addition);
 
     }

@@ -15,8 +15,6 @@ public interface PaymentRestDtoMapper {
                 p.getIdUser(),
                 p.getPaymentMethod().name(),
                 p.getAmount(),
-                p.getAmountReceived(),
-                p.getChangeAmount(),
                 p.getPaidAt()
         );
     }

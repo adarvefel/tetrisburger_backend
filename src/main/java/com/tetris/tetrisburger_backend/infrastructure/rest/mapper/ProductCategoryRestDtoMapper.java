@@ -16,16 +16,16 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface ProductCategoryRestDtoMapper {
 
-    default CreateProductCategoryCommand toCreateCommand(CreateProductCategoryRequestDTO dto) {
+    default CreateProductCategoryCommand toCreateCommand(CreateProductCategoryRequestDTO dto,Integer userId) {
         if (dto == null) return null;
         Boolean available = dto.getAvailable() == null ? Boolean.TRUE : dto.getAvailable();
-        return new CreateProductCategoryCommand(dto.getName(), dto.getDescription(), available);
+        return new CreateProductCategoryCommand(dto.getName(), dto.getDescription(), available,userId);
     }
 
-    default UpdateProductCategoryCommand toUpdateCommand(Integer id, UpdateProductCategoryRequestDTO dto) {
+    default UpdateProductCategoryCommand toUpdateCommand(Integer id, UpdateProductCategoryRequestDTO dto,Integer userId) {
         if (dto == null) return null;
         Boolean available = dto.getAvailable() == null ? Boolean.TRUE : dto.getAvailable();
-        return new UpdateProductCategoryCommand(id, dto.getName(), dto.getDescription(), available);
+        return new UpdateProductCategoryCommand(id, dto.getName(), dto.getDescription(), available,userId);
     }
 
     ProductCategoryResponseDTO toResponseDTO(ProductCategory category);

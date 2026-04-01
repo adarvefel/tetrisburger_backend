@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.application.usecase.product;
 
 import com.tetris.tetrisburger_backend.domain.exception.ProductAlreadyDeletedException;
+import com.tetris.tetrisburger_backend.domain.exception.ProductNotFoundException;
 import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.in.product.AdjustProductStock;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
@@ -21,16 +22,16 @@ public class AdjustProductStockUseCase implements AdjustProductStock {
     @Override
     public Product adjustStock(Integer productId, int delta, Integer updatedBy) {
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductAlreadyDeletedException(productId));
+        if (delta == 0) {
+            throw new IllegalArgumentException("El numero de stock no puede ser 0");
+        }
 
-        int currentQuantity = product.getQuantity();
+        Product product = productRepository.findByIdForUpdate(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
 
         product.adjustStock(delta, updatedBy);
 
-        Product updated = productRepository.save(product);
-
-        return updated;
+        return productRepository.save(product);
     }
 
 }

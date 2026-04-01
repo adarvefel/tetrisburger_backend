@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.application.usecase.order;
 
 import com.tetris.tetrisburger_backend.domain.enums.OrderItemType;
+import com.tetris.tetrisburger_backend.domain.exception.CartValidationException;
 import com.tetris.tetrisburger_backend.domain.exception.PhoneRequiredException;
 import com.tetris.tetrisburger_backend.domain.model.Order;
 import com.tetris.tetrisburger_backend.domain.model.OrderItem;
@@ -11,11 +12,13 @@ import com.tetris.tetrisburger_backend.domain.port.out.CartRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.OrderRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
+import com.tetris.tetrisburger_backend.application.usecase.product.AdjustProductStockUseCase;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.cart.CartItemRequestDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -26,45 +29,65 @@ public class CreateOrderUseCase implements CreateOrder {
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final AdjustProductStockUseCase adjustProductStockUseCase;
 
     public CreateOrderUseCase(
             OrderRepository orderRepository,
             CartRepository cartRepository,
             ProductRepository productRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            AdjustProductStockUseCase adjustProductStockUseCase
     ) {
         this.orderRepository = orderRepository;
         this.cartRepository = cartRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.adjustProductStockUseCase = adjustProductStockUseCase;
     }
 
     @Override
     public Order handle(Integer idUser, List<CartItemRequestDTO> cartItems) {
 
-        // Validar usuario y teléfono
+        // Validar usuario
         User user = userRepository.findUserById(idUser)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-
-
+        // Validar teléfono
         if (user.getPhone() == null || user.getPhone().isBlank())
-            throw new PhoneRequiredException("El usuario debe de tener un numero de telefono");
+            throw new PhoneRequiredException("El usuario debe tener un número de teléfono");
+
+        // CU-34 — Revalidar todos los ítems antes de confirmar
+        List<String> errors = new ArrayList<>();
+
+        cartItems.stream()
+                .filter(item -> OrderItemType.PRODUCT.name().equals(item.typeProduct().name()))
+                .forEach(item -> productRepository.findById(item.idProduct()).ifPresentOrElse(
+                        product -> {
+                            if (!product.isAvailable())
+                                errors.add("'" + item.name() + "' no está disponible");
+                            else if (product.getQuantity() < item.quantity())
+                                errors.add("'" + item.name() + "' solo tiene " +
+                                        product.getQuantity() + " unidades disponibles");
+                        },
+                        () -> errors.add("'" + item.name() + "' ya no existe en el catálogo")
+                ));
+
+        if (!errors.isEmpty())
+            throw new CartValidationException(errors);
+
         // Convertir items
         List<OrderItem> orderItems = cartItems.stream()
                 .map(this::toOrderItem)
                 .toList();
 
-        // Restar stock de productos
+        // Descontar stock con lock atómico — CU-15
         cartItems.stream()
-                .filter(item -> "PRODUCT".equals(item.typeProduct().name()))
-                .forEach(item -> {
-                    Product product = productRepository.findById(item.idProduct())
-                            .orElseThrow(() -> new IllegalArgumentException(
-                                    "Producto no encontrado: " + item.idProduct()));
-                    product.adjustStock(-item.quantity(), idUser);
-                    productRepository.save(product);
-                });
+                .filter(item -> OrderItemType.PRODUCT.name().equals(item.typeProduct().name()))
+                .forEach(item -> adjustProductStockUseCase.adjustStock(
+                        item.idProduct(),
+                        -item.quantity(),
+                        idUser
+                ));
 
         // Contador de órdenes del día
         long dailyCount = orderRepository.maxDailySequence(LocalDate.now());
@@ -76,8 +99,6 @@ public class CreateOrderUseCase implements CreateOrder {
         // Limpiar carrito
         cartRepository.findByUserId(idUser)
                 .ifPresent(cart -> cartRepository.deleteItemsByCartId(cart.getIdCart()));
-
-        // Notificar al negocio con datos del cliente
 
         return saved;
     }

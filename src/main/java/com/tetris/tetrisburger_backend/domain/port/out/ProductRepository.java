@@ -22,6 +22,7 @@ public interface ProductRepository {
 
     PageResponse<Product> searchIngredients(String name, PaginationRequest pagination);
 
+    Optional<Product> findByIdForUpdate(Integer id);
 
     PageResponse<Product> findAll(Integer productCategoryId, Boolean availability, PaginationRequest page);
 

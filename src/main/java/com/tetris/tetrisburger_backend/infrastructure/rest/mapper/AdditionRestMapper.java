@@ -43,7 +43,8 @@ public interface AdditionRestMapper {
                 imageStatus,
                 addition.getCreatedAt(),
                 addition.getUpdatedAt(),
-                addition.getDeletedAt()
+                addition.getCreatedBy(),
+                addition.getUpdatedBy()
         );
     }
 
@@ -59,7 +60,8 @@ public interface AdditionRestMapper {
 
     default CreateAdditionCommand toCreateAdditionCommand(
             CreateAdditionRequestDTO dto,
-            MultipartFile additionImage
+            MultipartFile additionImage,
+            Integer userId
     ) {
         if (dto == null) return null;
 
@@ -70,13 +72,15 @@ public interface AdditionRestMapper {
                 dto.description(),
                 dto.price(),
                 dto.available(),
-                imageData
+                imageData,
+                userId
         );
     }
 
     default UpdateAdditionCommand toUpdateAdditionCommand(
             Integer id,
-            UpdateAdditionRequestDTO dto
+            UpdateAdditionRequestDTO dto,
+            Integer userId
     ) {
         if (dto == null) return null;
 
@@ -85,7 +89,8 @@ public interface AdditionRestMapper {
                 dto.name(),
                 dto.description(),
                 dto.price(),
-                dto.available()
+                dto.available(),
+                userId
 
         );
     }

@@ -9,7 +9,5 @@ public record CreatePaymentCommand(
 
         Integer idOrder,
         Integer idUser,
-        PaymentMethod paymentMethod,
-        BigDecimal amount,
-        BigDecimal amountReceived
+        PaymentMethod paymentMethod
 ) {}

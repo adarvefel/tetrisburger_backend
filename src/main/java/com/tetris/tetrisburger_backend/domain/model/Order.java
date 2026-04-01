@@ -1,6 +1,7 @@
 package com.tetris.tetrisburger_backend.domain.model;
 
 import com.tetris.tetrisburger_backend.domain.enums.OrderStatus;
+import com.tetris.tetrisburger_backend.domain.enums.PaymentMethod;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -8,7 +9,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class Order {
 
@@ -80,8 +80,6 @@ public class Order {
     public void cancel(Integer cancelledBy) {
         if (this.status == OrderStatus.CANCELLED_BY_EMPLOYEE)
             throw new IllegalStateException("La orden ya está cancelada");
-        if (this.status == OrderStatus.READY)
-            throw new IllegalStateException("No se puede cancelar una orden lista");
         this.status = OrderStatus.CANCELLED_BY_EMPLOYEE;
         this.updatedBy = cancelledBy;
         this.updatedAt = LocalDateTime.now();
@@ -92,6 +90,8 @@ public class Order {
         this.updatedBy = updatedBy;
         this.updatedAt = LocalDateTime.now();
     }
+
+
 
     public Integer getIdOrder()             { return idOrder; }
     public Integer getIdUser()              { return idUser; }

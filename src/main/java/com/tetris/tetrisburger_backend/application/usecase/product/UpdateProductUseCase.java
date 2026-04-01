@@ -11,15 +11,12 @@ import com.tetris.tetrisburger_backend.domain.port.in.product.command.UpdateProd
 import com.tetris.tetrisburger_backend.domain.port.out.ProductCategoryRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.SupplierRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
 public class UpdateProductUseCase implements UpdateProduct {
-
 
     private final ProductRepository productRepository;
     private final ProductCategoryRepository productCategoryRepository;
@@ -41,7 +38,6 @@ public class UpdateProductUseCase implements UpdateProduct {
         Product current = productRepository.findById(cmd.idProduct())
                 .orElseThrow(() -> new ProductNotFoundException(cmd.idProduct()));
 
-
         ProductCategory category = productCategoryRepository.findById(cmd.productCategoryId())
                 .orElseThrow(() -> new ProductCategoryNotFoundException(
                         "Categoría no encontrada con ID: " + cmd.productCategoryId()
@@ -52,11 +48,16 @@ public class UpdateProductUseCase implements UpdateProduct {
                         "Proveedor no encontrado con ID: " + cmd.supplierId()
                 ));
 
-        // Agrega antes de updateDetails()
         if (!current.getName().equalsIgnoreCase(cmd.name().trim())) {
             if (productRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(cmd.name().trim())) {
                 throw new ProductAlreadyExistsException(cmd.name());
             }
+        }
+
+        if (cmd.quantity() < current.getQuantity()) {
+            throw new IllegalArgumentException(
+                    "La cantidad no puede ser menor al stock actual: " + current.getQuantity()
+            );
         }
 
         current.updateDetails(
@@ -71,9 +72,6 @@ public class UpdateProductUseCase implements UpdateProduct {
                 cmd.updatedBy()
         );
 
-        Product updated = productRepository.save(current);
-
-
-        return updated;
+        return productRepository.save(current);
     }
 }

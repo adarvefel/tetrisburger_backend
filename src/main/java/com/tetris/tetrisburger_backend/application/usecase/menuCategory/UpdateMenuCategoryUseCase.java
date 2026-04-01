@@ -22,14 +22,14 @@ public class UpdateMenuCategoryUseCase implements UpdateMenuCategory {
     public MenuCategory handle(Integer id, UpdateMenuCategoryCommand command) {
         MenuCategory category = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "MenuCategory no encontrada con id: " + id));
+                        "La categoria del menu no fue encontrada con id: " + id));
 
         if (repository.existsByNameAndDeletedAtIsNull(command.menuCategoryName())
                 && !category.getMenuCategoryName().equalsIgnoreCase(command.menuCategoryName()))
             throw new IllegalArgumentException(
                     "Ya existe una categoría activa con el nombre: " + command.menuCategoryName());
 
-        category.update(command.menuCategoryName(), command.description());
+        category.update(command.menuCategoryName(), command.description(), command.updatedBy());
 
         return repository.save(category);
     }

@@ -19,6 +19,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @RestControllerAdvice
 @Order(100)
@@ -206,6 +207,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<MessageResponseDTO> handlePhoneRequired(PhoneRequiredException ex) {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(new MessageResponseDTO(ex.getMessage(), false));
+    }
+
+    @ExceptionHandler(CartValidationException.class)
+    public ResponseEntity<Map<String, Object>> handleCartValidation(CartValidationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                        "error", "CARRITO_INVALIDO",
+                        "mensaje", ex.getMessage(),
+                        "items", ex.getErrors()
+                ));
     }
 
 
