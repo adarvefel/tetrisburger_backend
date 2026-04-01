@@ -24,6 +24,11 @@ public class PaymentEntity {
     @Column(name = "id_order")
     private Integer idOrder;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_order", referencedColumnName = "id_order",
+            insertable = false, updatable = false)
+    private OrderEntity orderRef;
+
     @Column(name = "id_user")
     private Integer idUser;
 

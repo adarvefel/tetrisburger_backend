@@ -10,5 +10,6 @@ public record OrderResponseDTO(
         String status,
         BigDecimal totalAmount,
         LocalDateTime orderDate,
-        List<OrderItemResponseDTO> items
+        List<OrderItemResponseDTO> items,
+        String paymentMethod
 ) {}

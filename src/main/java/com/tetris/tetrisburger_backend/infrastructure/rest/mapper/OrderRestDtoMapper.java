@@ -12,8 +12,6 @@ import java.util.List;
 public interface OrderRestDtoMapper {
 
     default OrderResponseDTO toResponseDTO(Order order) {
-        if (order == null) return null;
-
         List<OrderItemResponseDTO> items = order.getItems().stream()
                 .map(this::toItemDTO)
                 .toList();
@@ -24,7 +22,10 @@ public interface OrderRestDtoMapper {
                 order.getStatus().name(),
                 order.getTotalAmount(),
                 order.getOrderDate(),
-                items
+                items,
+                order.getPaymentMethod() != null
+                        ? order.getPaymentMethod().getDisplayName()
+                        : null
         );
     }
 

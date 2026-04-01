@@ -220,6 +220,18 @@ public class GlobalExceptionHandler {
     }
 
 
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<MessageResponseDTO> handleOrderNotFound(OrderNotFoundException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<MessageResponseDTO> handleIllegalState(IllegalStateException ex) {
+        return buildErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    }
+
+
+
 
     // ========================================
     // FALLBACK
@@ -231,3 +243,4 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
     }
 }
+

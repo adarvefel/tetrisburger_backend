@@ -58,4 +58,7 @@ public class OrderEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<OrderItemEntity> items = new ArrayList<>();
 
+    @OneToOne(mappedBy = "orderRef", fetch = FetchType.LAZY)
+    private PaymentEntity payment;
+
 }

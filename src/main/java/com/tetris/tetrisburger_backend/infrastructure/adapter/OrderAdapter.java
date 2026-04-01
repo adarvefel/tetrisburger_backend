@@ -75,4 +75,15 @@ public class OrderAdapter implements OrderRepository {
     public long countByOrderDate(LocalDate date) {
         return jpa.countByOrderDate(date);
     }
+
+    @Override
+    public PageResponse<Order> findByOrderNumber(String orderNumber, PaginationRequest pagination) {
+        Pageable pageable = PageRequest.of(pagination.getPage(), pagination.getSize());
+        Page<Order> page = jpa.findByOrderNumberContainingIgnoreCase(orderNumber, pageable)
+                .map(mapper::toDomain);
+        return new PageResponse<>(
+                page.getContent(), page.getNumber(),
+                page.getSize(), page.getTotalElements(), page.getTotalPages()
+        );
+    }
 }

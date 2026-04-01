@@ -6,6 +6,7 @@ import com.tetris.tetrisburger_backend.domain.model.Order;
 import com.tetris.tetrisburger_backend.domain.model.OrderItem;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.OrderEntity;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.OrderItemEntity;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.order.OrderResponseDTO;
 import org.mapstruct.Mapper;
 
 import java.util.List;
@@ -19,17 +20,18 @@ public interface OrderEntityMapper {
         List<OrderItem> items = e.getItems() == null ? List.of() :
                 e.getItems().stream().map(this::toDomainItem).toList();
 
-
         return Order.reconstitute(
                 e.getIdOrder(), e.getIdUser(), e.getOrderNumber(),
                 OrderStatus.valueOf(e.getStatus().name()),
                 e.getTotalAmount(),
                 e.getOrderDate(), e.getUpdatedAt(), e.getDeletedAt(),
                 e.getCreatedBy(), e.getUpdatedBy(), e.getDeletedBy(),
-                items
+                items,
+                e.getPayment() != null ? e.getPayment().getPaymentMethod() : null  // 👈
         );
-
     }
+
+
 
     default OrderEntity toEntity(Order o) {
         if (o == null) return null;

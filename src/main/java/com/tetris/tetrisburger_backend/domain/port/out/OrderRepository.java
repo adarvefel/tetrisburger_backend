@@ -19,5 +19,7 @@ public interface OrderRepository {
     Optional<Order> findById(Integer idOrder);
     PageResponse<Order> findByUserId(Integer idUser, PaginationRequest pagination);
     PageResponse<Order> findAll(OrderStatus status, LocalDateTime start,
+
                                 LocalDateTime end, PaginationRequest pagination);
+    PageResponse<Order> findByOrderNumber(String orderNumber, PaginationRequest pagination);
 }

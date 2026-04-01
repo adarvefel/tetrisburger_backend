@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
-public class GetOrderByIdUseCase implements GetOrderById {
+public class  GetOrderByIdUseCase implements GetOrderById {
 
     private final OrderRepository orderRepository;
 

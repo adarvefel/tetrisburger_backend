@@ -30,16 +30,9 @@ public class OrderController {
     private final ListAllOrders listAllOrders;
     private final UpdateOrderStatus updateOrderStatus;
     private final OrderRestDtoMapper mapper;
+    private final SearchOrderByNumber searchOrderByNumber;
 
-    public OrderController(
-            CreateOrder createOrder,
-            GetOrderById getOrderById,
-            ListUserOrders listUserOrders,
-            CancelOrder cancelOrder,
-            ListAllOrders listAllOrders,
-            UpdateOrderStatus updateOrderStatus,
-            OrderRestDtoMapper mapper
-    ) {
+    public OrderController(CreateOrder createOrder, GetOrderById getOrderById, ListUserOrders listUserOrders, CancelOrder cancelOrder, ListAllOrders listAllOrders, UpdateOrderStatus updateOrderStatus, OrderRestDtoMapper mapper, SearchOrderByNumber searchOrderByNumber) {
         this.createOrder = createOrder;
         this.getOrderById = getOrderById;
         this.listUserOrders = listUserOrders;
@@ -47,7 +40,9 @@ public class OrderController {
         this.listAllOrders = listAllOrders;
         this.updateOrderStatus = updateOrderStatus;
         this.mapper = mapper;
+        this.searchOrderByNumber = searchOrderByNumber;
     }
+
 
     // ── Cliente ──────────────────────────────────────
 
@@ -130,5 +125,20 @@ public class OrderController {
         return ResponseEntity.ok(
                 mapper.toResponseDTO(
                         updateOrderStatus.handle(id, newStatus, user.getId())));
+    }
+
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
+    public ResponseEntity<PageResponse<OrderResponseDTO>> search(
+            @RequestParam(required = false) String orderNumber,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        PageResponse<Order> result = searchOrderByNumber.handle(
+                orderNumber,
+                new PaginationRequest(page, size, null, "DESC")
+        );
+        return ResponseEntity.ok(result.map(mapper::toResponseDTO));
     }
 }

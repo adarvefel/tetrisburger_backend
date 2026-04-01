@@ -24,6 +24,7 @@ public class Order {
     private Integer updatedBy;
     private Integer deletedBy;
     private List<OrderItem> items;
+    private PaymentMethod paymentMethod;
 
     private Order() {
         this.items = new ArrayList<>();
@@ -59,7 +60,7 @@ public class Order {
             OrderStatus status, BigDecimal totalAmount,
             LocalDateTime orderDate, LocalDateTime updatedAt, LocalDateTime deletedAt,
             Integer createdBy, Integer updatedBy, Integer deletedBy,
-            List<OrderItem> items
+            List<OrderItem> items,PaymentMethod paymentMethod
     ) {
         Order o = new Order();
         o.idOrder = idOrder;
@@ -74,6 +75,7 @@ public class Order {
         o.updatedBy = updatedBy;
         o.deletedBy = deletedBy;
         o.items = items != null ? new ArrayList<>(items) : new ArrayList<>();
+        o.paymentMethod = paymentMethod;
         return o;
     }
 
@@ -92,7 +94,7 @@ public class Order {
     }
 
 
-
+    public PaymentMethod getPaymentMethod() { return paymentMethod; }
     public Integer getIdOrder()             { return idOrder; }
     public Integer getIdUser()              { return idUser; }
     public String getOrderNumber()          { return orderNumber; }

@@ -13,18 +13,18 @@ import java.time.LocalDateTime;
 
 public interface OrderJpaRepository extends JpaRepository<OrderEntity, Integer> {
 
-    @Query("SELECT o FROM OrderEntity o WHERE o.idUser = :idUser AND o.deletedAt IS NULL ORDER BY o.orderDate DESC")
+    @Query("SELECT o FROM OrderEntity o LEFT JOIN FETCH o.payment WHERE o.idUser = :idUser AND o.deletedAt IS NULL ORDER BY o.orderDate DESC")
     Page<OrderEntity> findByIdUser(@Param("idUser") Integer idUser, Pageable pageable);
 
     @Query("SELECT COUNT(o) FROM OrderEntity o WHERE DATE(o.orderDate) = :date")
     long countByOrderDate(@Param("date") LocalDate date);
 
-
-    @Query("SELECT o FROM OrderEntity o WHERE (:status IS NULL OR o.status = :status) AND o.deletedAt IS NULL ORDER BY o.orderDate DESC")
+    @Query("SELECT o FROM OrderEntity o LEFT JOIN FETCH o.payment WHERE (:status IS NULL OR o.status = :status) AND o.deletedAt IS NULL ORDER BY o.orderDate DESC")
     Page<OrderEntity> findAllByStatus(@Param("status") OrderStatus status, Pageable pageable);
 
     @Query("""
         SELECT o FROM OrderEntity o
+        LEFT JOIN FETCH o.payment
         WHERE o.deletedAt IS NULL
           AND (:status IS NULL OR o.status = :status)
           AND (:start IS NULL OR o.orderDate >= :start)
@@ -41,4 +41,16 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Integer> 
     @Query("SELECT COALESCE(MAX(CAST(SUBSTRING(o.orderNumber, 16) AS int)), 0) " +
             "FROM OrderEntity o WHERE DATE(o.orderDate) = :date")
     long maxDailySequence(@Param("date") LocalDate date);
+
+    @Query("""
+      SELECT o FROM OrderEntity o
+      LEFT JOIN FETCH o.payment
+      WHERE o.deletedAt IS NULL
+      AND UPPER(o.orderNumber) LIKE UPPER(CONCAT('%', :orderNumber, '%'))
+      ORDER BY o.orderDate DESC
+    """)
+    Page<OrderEntity> findByOrderNumberContainingIgnoreCase(
+            @Param("orderNumber") String orderNumber,
+            Pageable pageable
+    );
 }
