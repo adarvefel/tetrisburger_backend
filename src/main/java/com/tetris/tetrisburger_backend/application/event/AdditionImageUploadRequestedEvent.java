@@ -4,5 +4,6 @@ public record AdditionImageUploadRequestedEvent(
         Integer additionId,
         byte[] imageBytes,
         String contentType,
-        String originalFilename
+        String originalFilename,
+        Integer userId
 ) {}

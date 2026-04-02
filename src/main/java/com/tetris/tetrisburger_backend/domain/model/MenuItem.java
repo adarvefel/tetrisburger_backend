@@ -1,5 +1,7 @@
 package com.tetris.tetrisburger_backend.domain.model;
 
+import com.tetris.tetrisburger_backend.domain.enums.ItemType;
+
 public class MenuItem {
 
     private Integer idMenuItem;

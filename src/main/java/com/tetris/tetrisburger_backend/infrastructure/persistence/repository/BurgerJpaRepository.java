@@ -215,4 +215,17 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
 
     Optional<BurgerEntity> findByIdUserAndCustomFalseAndDeletedAtIsNull(Integer idUser);
 
+    @Query("""
+    SELECT b FROM BurgerEntity b
+    WHERE b.isFeatured = true
+      AND b.availability = true
+      AND b.deletedAt IS NULL
+    ORDER BY b.createdAt DESC
+""")
+    List<BurgerEntity> findAllFeaturedAndAvailable();
+
+
+    @Query("SELECT b FROM BurgerEntity b WHERE b.idBurger IN :ids AND b.deletedAt IS NULL")
+    List<BurgerEntity> findAllByIds(@Param("ids") List<Integer> ids);
+
 }

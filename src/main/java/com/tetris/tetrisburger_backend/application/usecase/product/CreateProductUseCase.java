@@ -34,6 +34,7 @@ public class CreateProductUseCase implements CreateProduct {
         this.eventPublisher = eventPublisher;
     }
 
+
     @Override
     public Product create(CreateProductCommand cmd) {
         String productName = cmd.name() != null ? cmd.name().trim() : "";

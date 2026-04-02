@@ -6,7 +6,7 @@ import com.tetris.tetrisburger_backend.domain.exception.ProductNotFoundException
 import com.tetris.tetrisburger_backend.domain.model.Burger;
 import com.tetris.tetrisburger_backend.domain.model.BurgerSettings;
 import com.tetris.tetrisburger_backend.domain.model.Product;
-import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.client.CreateCustomBurger;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.client.command.CreateCustomBurgerCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.command.ProductSnapshot;

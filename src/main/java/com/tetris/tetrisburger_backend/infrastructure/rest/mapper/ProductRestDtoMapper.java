@@ -3,7 +3,7 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.mapper;
 import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.model.Product;
-import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.CreateProductCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.UpdateProductCommand;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.*;

@@ -39,14 +39,14 @@ public interface MenuJpaRepository extends JpaRepository<MenuEntity, Integer> {
 
     // Query 2: carga completa con JOIN FETCH para los IDs obtenidos
     @Query("""
-        SELECT DISTINCT m FROM MenuEntity m
-        LEFT JOIN FETCH m.items
-        LEFT JOIN FETCH m.menuCategory
-        WHERE m.idMenu IN :ids
-        AND m.deletedAt IS NULL
-    """)
+    SELECT DISTINCT m FROM MenuEntity m
+    LEFT JOIN FETCH m.menuCategory
+    LEFT JOIN FETCH m.items i
+    LEFT JOIN FETCH i.burger
+    LEFT JOIN FETCH i.product
+    WHERE m.idMenu IN :ids
+    AND m.deletedAt IS NULL
+   """)
     List<MenuEntity> findAllWithRelationsByIds(@Param("ids") List<Integer> ids);
-
-
 
 }

@@ -11,6 +11,7 @@ import com.tetris.tetrisburger_backend.infrastructure.rest.dto.productcategory.L
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.productcategory.ProductCategoryResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.productcategory.UpdateProductCategoryRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.ProductCategoryRestDtoMapper;
+import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -77,26 +79,53 @@ public class ProductCategoryController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<ProductCategoryResponseDTO> create(@Valid @RequestBody CreateProductCategoryRequestDTO dto) {
+    public ResponseEntity<ProductCategoryResponseDTO> create(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody CreateProductCategoryRequestDTO dto
+    ) {
+        Integer userId = userDetails.getId();
+
         log.info("ADMIN create product-category: {}", dto.getName());
-        ProductCategory created = createCategory.create(mapper.toCreateCommand(dto));
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponseDTO(created));
+
+        ProductCategory created = createCategory.create(
+                mapper.toCreateCommand(dto, userId)
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mapper.toResponseDTO(created));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<ProductCategoryResponseDTO> update(@PathVariable Integer id,
-                                                             @Valid @RequestBody UpdateProductCategoryRequestDTO dto) {
+    public ResponseEntity<ProductCategoryResponseDTO> update(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Integer id,
+            @Valid @RequestBody UpdateProductCategoryRequestDTO dto
+    ) {
+        Integer userId = userDetails.getId();
+
         log.info("ADMIN update product-category id={}", id);
-        ProductCategory updated = updateCategory.update(mapper.toUpdateCommand(id, dto));
+
+        ProductCategory updated = updateCategory.update(
+                mapper.toUpdateCommand(id, dto, userId)
+        );
+
         return ResponseEntity.ok(mapper.toResponseDTO(updated));
     }
 
+
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+    public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Integer id
+    ) {
+        Integer userId = userDetails.getId();
+
         log.info("ADMIN delete product-category id={}", id);
-        deleteCategory.delete(id);
+
+        deleteCategory.delete(id, userId);
+
         return ResponseEntity.noContent().build();
     }
 

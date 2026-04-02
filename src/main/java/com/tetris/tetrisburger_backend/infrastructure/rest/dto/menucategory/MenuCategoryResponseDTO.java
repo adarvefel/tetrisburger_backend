@@ -7,5 +7,7 @@ public record MenuCategoryResponseDTO(
         String menuCategoryName,
         String description,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        Integer createdBy,
+        Integer updatedBy
 ) {}

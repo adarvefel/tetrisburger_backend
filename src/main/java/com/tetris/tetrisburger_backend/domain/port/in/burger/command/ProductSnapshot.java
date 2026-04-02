@@ -1,7 +1,7 @@
 package com.tetris.tetrisburger_backend.domain.port.in.burger.command;
 
 import com.tetris.tetrisburger_backend.domain.model.Product;
-import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 
 import java.math.BigDecimal;
 

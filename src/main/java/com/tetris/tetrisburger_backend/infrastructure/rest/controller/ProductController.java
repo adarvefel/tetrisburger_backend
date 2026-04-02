@@ -4,7 +4,7 @@ import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Product;
-import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 
 import com.tetris.tetrisburger_backend.domain.port.in.product.*;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.CreateProductCommand;

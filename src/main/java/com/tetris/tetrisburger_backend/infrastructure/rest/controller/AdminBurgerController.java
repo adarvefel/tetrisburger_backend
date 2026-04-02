@@ -11,6 +11,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuB
 import com.tetris.tetrisburger_backend.domain.port.in.burger.query.SearchMenuBurgersQuery;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.admin.*;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.burger.client.BurgerResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.product.BurgerIngredientListDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.BurgerRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.ProductRestDtoMapper;
@@ -35,6 +36,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin/burgers")
 @Tag(name = "Admin Burgers", description = "Gestión de hamburguesas de menú (Administrador)")
@@ -49,25 +52,21 @@ public class AdminBurgerController {
     private final UpdateMenuBurger updateMenuBurger;
     private final UpdateMenuBurgerImage updateMenuBurgerImage;
     private final DeleteMenuBurger deleteMenuBurger;
-    private final UpdateMenuBurgerPrice updateMenuBurgerPrice;
     private final SearchMenuBurgers searchMenuBurgers;
-    private final ToggleMenuBurgerFeatured toggleMenuBurgerFeatured;
     private final BurgerRestDtoMapper mapper;
     private final ListBurgerIngredients listBurgerIngredients;
     private final ProductRestDtoMapper productRestDtoMapper;
     private final SearchIngredients searchIngredients;
     private final ImageValidator imageValidator;
 
-    public AdminBurgerController(CreateMenuBurger createMenuBurger, GetBurgerById getBurgerById, ListBurgers listBurgers, UpdateMenuBurger updateMenuBurger, UpdateMenuBurgerImage updateMenuBurgerImage, DeleteMenuBurger deleteMenuBurger, UpdateMenuBurgerPrice updateMenuBurgerPrice, SearchMenuBurgers searchMenuBurgers, ToggleMenuBurgerFeatured toggleMenuBurgerFeatured, BurgerRestDtoMapper mapper, com.tetris.tetrisburger_backend.domain.port.in.burger.ListBurgerIngredients listBurgerIngredients, ProductRestDtoMapper productRestDtoMapper, SearchIngredients searchIngredients, ImageValidator imageValidator) {
+    public AdminBurgerController(CreateMenuBurger createMenuBurger, GetBurgerById getBurgerById, ListBurgers listBurgers, UpdateMenuBurger updateMenuBurger, UpdateMenuBurgerImage updateMenuBurgerImage, DeleteMenuBurger deleteMenuBurger, SearchMenuBurgers searchMenuBurgers, BurgerRestDtoMapper mapper, ListBurgerIngredients listBurgerIngredients, ProductRestDtoMapper productRestDtoMapper, SearchIngredients searchIngredients, ImageValidator imageValidator) {
         this.createMenuBurger = createMenuBurger;
         this.getBurgerById = getBurgerById;
         this.listBurgers = listBurgers;
         this.updateMenuBurger = updateMenuBurger;
         this.updateMenuBurgerImage = updateMenuBurgerImage;
         this.deleteMenuBurger = deleteMenuBurger;
-        this.updateMenuBurgerPrice = updateMenuBurgerPrice;
         this.searchMenuBurgers = searchMenuBurgers;
-        this.toggleMenuBurgerFeatured = toggleMenuBurgerFeatured;
         this.mapper = mapper;
         this.listBurgerIngredients = listBurgerIngredients;
         this.productRestDtoMapper = productRestDtoMapper;
@@ -208,74 +207,9 @@ public class AdminBurgerController {
     }
 
 
-    // ==================== TOGGLE FEATURED ====================
 
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
-    @PatchMapping("/menu/{idBurger}/featured")
-    @Operation(
-            summary = "Marcar/desmarcar como destacada",
-            description = "Cambia el estado de favorita de la hamburguesa " +
-                    "(destacada en el menú del restaurante)"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Estado actualizado exitosamente",
-                    content = @Content(schema = @Schema(implementation = MenuBurgerResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Hamburguesa no encontrada",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
-    })
-    public ResponseEntity<MenuBurgerResponseDTO> toggleFeatured(
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Parameter(description = "ID de la hamburguesa", required = true)
-            @PathVariable Integer idBurger,
-            @Parameter(description = "true = marcar como destacada, false = desmarcar", required = true)
-            @RequestParam Boolean isFeatured
-    ) {
-        Integer adminUserId = userDetails.getId();
-        logger.info(" PATCH /api/admin/burgers/menu/{}/ - isFeatured={}",
-                idBurger, isFeatured);
 
-        Burger burger = toggleMenuBurgerFeatured.handle(idBurger, isFeatured, adminUserId);
 
-        logger.info(" Estado de favorita actualizado: ID={}, isFavorite={}",
-                idBurger, burger.isFeatured());
-
-        MenuBurgerResponseDTO response = mapper.toMenuBurgerResponseDTO(burger);
-        return ResponseEntity.ok(response);
-    }
-
-    // ==================== ACTUALIZAR PRECIO ====================
-
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
-    @PatchMapping("/menu/{idBurger}/price")
-    @Operation(
-            summary = "Actualizar precio de hamburguesa",
-            description = "Cambia el precio final de la hamburguesa sin modificar otros datos"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Precio actualizado exitosamente",
-                    content = @Content(schema = @Schema(implementation = MenuBurgerResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Precio inválido (debe ser mayor a 0)",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Hamburguesa no encontrada",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
-    })
-    public ResponseEntity<MenuBurgerResponseDTO> updateMenuBurgerPrice(
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Parameter(description = "ID de la hamburguesa", required = true)
-            @PathVariable Integer idBurger,
-            @Valid @RequestBody UpdatePriceRequestDTO request
-    ) {
-        Integer adminUserId = userDetails.getId();
-        logger.info(" PATCH /api/admin/burgers/menu/{}/price - newPrice={}",
-                idBurger, request.newPrice());
-
-        Burger updated = updateMenuBurgerPrice.handle(idBurger, request.newPrice());
-
-        logger.info(" Precio actualizado: ID={}, newPrice={}", idBurger, request.newPrice());
-
-        MenuBurgerResponseDTO response = mapper.toMenuBurgerResponseDTO(updated);
-        return ResponseEntity.ok(response);
-    }
 
     // ==================== ELIMINAR ====================
 
@@ -442,6 +376,7 @@ public class AdminBurgerController {
 
         return ResponseEntity.ok(productRestDtoMapper.toBurgerIngredientListDTO(result));
     }
+
 
 
 }

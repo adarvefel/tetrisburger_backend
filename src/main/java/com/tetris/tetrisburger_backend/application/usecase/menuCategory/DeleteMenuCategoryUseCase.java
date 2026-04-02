@@ -18,13 +18,13 @@ public class DeleteMenuCategoryUseCase implements DeleteMenuCategory {
     }
 
     @Override
-    public MenuCategory handle(Integer id) {
+    public MenuCategory handle(Integer id,Integer deletedBy) {
         MenuCategory category = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "MenuCategory no encontrada con id: " + id
+                        "La categoria de menu no fue encontrada con id: " + id
                 ));
 
-        category.softDelete();
+        category.softDelete(deletedBy);
 
         repository.delete(category);
         return category;

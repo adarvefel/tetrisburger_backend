@@ -8,8 +8,6 @@ import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuB
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import jakarta.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -17,17 +15,9 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class UpdateMenuBurgerImageUseCase implements UpdateMenuBurgerImage {
 
-    private static final Logger logger = LoggerFactory.getLogger(UpdateMenuBurgerImageUseCase.class);
-
-    private static final long MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-    private static final String[] ALLOWED_CONTENT_TYPES = {
-            "image/jpeg", "image/jpg", "image/png", "image/webp"
-    };
-
     private final BurgerRepository burgerRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
-
 
     public UpdateMenuBurgerImageUseCase(
             BurgerRepository burgerRepository,
@@ -41,20 +31,13 @@ public class UpdateMenuBurgerImageUseCase implements UpdateMenuBurgerImage {
 
     @Override
     public Burger handle(UpdateMenuBurgerImageCommand command) {
-        logger.info("Updating menu burger image: burgerId={}, adminId={}",
-                command.idBurger(), command.updatedBy());
-
         try {
-            // 1. Validaciones
             validateCommand(command);
             validateUser(command.updatedBy());
-            validateImageData(command.imageData());
 
-            // 2. Buscar burger de menú
             Burger burger = burgerRepository.findActiveMenuById(command.idBurger())
                     .orElseThrow(() -> new BurgerNotFoundException(command.idBurger()));
 
-            // 3. Validar que es menu burger
             if (!burger.isMenuBurger()) {
                 throw new InvalidBurgerException(
                         "Solo hamburguesas de menú pueden actualizar imagen. Burger ID: "
@@ -62,10 +45,6 @@ public class UpdateMenuBurgerImageUseCase implements UpdateMenuBurgerImage {
                 );
             }
 
-            logger.info("Publishing MenuBurgerImageUploadRequestedEvent for burgerId: {}",
-                    burger.getIdBurger());
-
-            // 4. Publicar evento para subir imagen de forma asíncrona
             eventPublisher.publishEvent(
                     new MenuBurgerImageUploadRequestedEvent(
                             burger.getIdBurger(),
@@ -76,10 +55,6 @@ public class UpdateMenuBurgerImageUseCase implements UpdateMenuBurgerImage {
                     )
             );
 
-            logger.info("Menu burger image update event published successfully: burgerId={}",
-                    burger.getIdBurger());
-
-            // 5. Retornar burger (la imagen se actualizará de forma asíncrona)
             return burger;
 
         } catch (BurgerNotFoundException | UserNotFoundException |
@@ -88,25 +63,20 @@ public class UpdateMenuBurgerImageUseCase implements UpdateMenuBurgerImage {
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new InvalidBurgerException(e.getMessage());
         } catch (Exception e) {
-            logger.error("Unexpected error updating menu burger image: burgerId={}",
-                    command.idBurger(), e);
-            throw new ImageUploadException("Error updating menu burger image", e);
+            throw new ImageUploadException("Error al actualizar la imagen de la hamburguesa", e);
         }
     }
 
     private void validateCommand(UpdateMenuBurgerImageCommand command) {
         if (command == null) {
-            throw new InvalidBurgerException("Command cannot be null");
+            throw new InvalidBurgerException("Command no puede ser null");
         }
-
         if (command.idBurger() == null) {
-            throw new InvalidBurgerException("Burger ID cannot be null");
+            throw new InvalidBurgerException("El ID de la hamburguesa no pudo ser encontrado");
         }
-
         if (command.updatedBy() == null) {
-            throw new InvalidBurgerException("Admin ID cannot be null");
+            throw new InvalidBurgerException("El ");
         }
-
         if (command.imageData() == null) {
             throw new ImageUploadException("Image data cannot be null");
         }
@@ -116,51 +86,5 @@ public class UpdateMenuBurgerImageUseCase implements UpdateMenuBurgerImage {
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException(userId);
         }
-    }
-
-    private void validateImageData(com.tetris.tetrisburger_backend.domain.common.FileData imageData) {
-        // Validar bytes
-        if (imageData.bytes() == null || imageData.bytes().length == 0) {
-            throw new ImageUploadException("La imagen no puede estar vacía");
-        }
-
-        // Validar tamaño (máximo 5MB)
-        if (imageData.bytes().length > MAX_IMAGE_SIZE) {
-            throw new ImageUploadException(
-                    String.format("La imagen no puede superar %d MB. Tamaño actual: %.2f MB",
-                            MAX_IMAGE_SIZE / (1024 * 1024),
-                            imageData.bytes().length / (1024.0 * 1024.0))
-            );
-        }
-
-        // Validar tipo de contenido
-        String contentType = imageData.contentType();
-        if (contentType == null || contentType.isBlank()) {
-            throw new ImageUploadException("El tipo de contenido de la imagen es requerido");
-        }
-
-        boolean isValidType = false;
-        for (String allowedType : ALLOWED_CONTENT_TYPES) {
-            if (contentType.toLowerCase().startsWith(allowedType)) {
-                isValidType = true;
-                break;
-            }
-        }
-
-        if (!isValidType) {
-            throw new ImageUploadException(
-                    "Solo se permiten imágenes JPG, PNG o WebP. Tipo recibido: " + contentType
-            );
-        }
-
-        // Validar nombre de archivo
-        if (imageData.originalFilename() == null || imageData.originalFilename().isBlank()) {
-            throw new ImageUploadException("El nombre del archivo es requerido");
-        }
-
-        logger.debug("Image validation passed: size={}KB, type={}, filename={}",
-                imageData.bytes().length / 1024,
-                contentType,
-                imageData.originalFilename());
     }
 }

@@ -1,6 +1,6 @@
 package com.tetris.tetrisburger_backend.domain.common;
 
-import com.tetris.tetrisburger_backend.domain.model.Role;
+import com.tetris.tetrisburger_backend.domain.enums.Role;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

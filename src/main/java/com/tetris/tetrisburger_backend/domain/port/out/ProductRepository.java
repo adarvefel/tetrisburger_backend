@@ -3,8 +3,9 @@ package com.tetris.tetrisburger_backend.domain.port.out;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Product;
-import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductRepository {
@@ -22,6 +23,7 @@ public interface ProductRepository {
 
     PageResponse<Product> searchIngredients(String name, PaginationRequest pagination);
 
+    Optional<Product> findByIdForUpdate(Integer id);
 
     PageResponse<Product> findAll(Integer productCategoryId, Boolean availability, PaginationRequest page);
 
@@ -32,6 +34,9 @@ public interface ProductRepository {
             ProductType productType,
             PaginationRequest page
     );
+
+    List<Product> findAllByIds(List<Integer> ids);
+
 
     PageResponse<Product> findPublicProducts(ProductType productType, Integer categoryId, PaginationRequest pageReq);
 }

@@ -15,11 +15,13 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
-public class MenuCategoryController {
+public class MenuCategoryController extends AuthenticatedController {
 
     private final CreateMenuCategory createMenuCategory;
     private final UpdateMenuCategory updateMenuCategory;
@@ -46,8 +48,10 @@ public class MenuCategoryController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
     @PostMapping("/menu-category")
     public ResponseEntity<MenuCategoryResponseDTO> create(
-            @Valid @RequestBody CreateMenuCategoryRequestDTO requestDTO) {
-        CreateMenuCategoryCommand command = menuCategoryDtoMapper.toCreateCommand(requestDTO);
+            @Valid @RequestBody CreateMenuCategoryRequestDTO requestDTO,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Integer userId = getUserId(userDetails);
+        CreateMenuCategoryCommand command = menuCategoryDtoMapper.toCreateCommand(requestDTO, userId);
         MenuCategory category = createMenuCategory.create(command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(menuCategoryDtoMapper.toResponseDTO(category));
@@ -57,16 +61,21 @@ public class MenuCategoryController {
     @PutMapping("/menu-category/{id}")
     public ResponseEntity<MenuCategoryResponseDTO> update(
             @PathVariable Integer id,
-            @Valid @RequestBody UpdateMenuCategoryRequestDTO requestDTO) {
-        UpdateMenuCategoryCommand command = menuCategoryDtoMapper.toUpdateCommand(id, requestDTO);
-        MenuCategory category = updateMenuCategory.handle(id,command);
+            @Valid @RequestBody UpdateMenuCategoryRequestDTO requestDTO,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Integer userId = getUserId(userDetails);
+        UpdateMenuCategoryCommand command = menuCategoryDtoMapper.toUpdateCommand(requestDTO, userId);
+        MenuCategory category = updateMenuCategory.handle(id, command);
         return ResponseEntity.ok(menuCategoryDtoMapper.toResponseDTO(category));
     }
 
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
     @DeleteMapping("/menu-category/{id}")
-    public ResponseEntity<DeleteResponseDTO> delete(@PathVariable Integer id) {
-        MenuCategory category = deleteMenuCategory.handle(id);
+    public ResponseEntity<DeleteResponseDTO> delete(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Integer userId = getUserId(userDetails);
+        MenuCategory category = deleteMenuCategory.handle(id, userId);
         return ResponseEntity.ok(new DeleteResponseDTO(
                 "Categoría eliminada correctamente",
                 true,

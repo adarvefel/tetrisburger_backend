@@ -1,5 +1,7 @@
 package com.tetris.tetrisburger_backend.domain.model;
 
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -214,8 +216,10 @@ public class Product {
 
     public void adjustStock(int delta, Integer updatedBy) {
         int newQuantity = this.quantity + delta;
-        if (newQuantity <= 0) {
-            throw new IllegalArgumentException("Stock insuficiente. Stock actual: " + this.quantity);
+        if (newQuantity < 0) {
+            throw new IllegalArgumentException(
+                    "Stock insuficiente para '" + this.name + "'. Disponible: " + this.quantity
+            );
         }
         this.quantity = newQuantity;
         this.updatedAt = LocalDateTime.now();
@@ -266,7 +270,6 @@ public class Product {
         return ProductType.SIDE.equals(this.productType);
     }
 
-    // ✅ Calculado desde productType, sin campo redundante
     public boolean isBurgerIngredient() {
         return ProductType.INGREDIENT.equals(this.productType);
     }

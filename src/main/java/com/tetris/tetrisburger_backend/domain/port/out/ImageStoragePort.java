@@ -29,4 +29,7 @@ public interface ImageStoragePort {
     void deleteImage(String imageKey);
 
     String getImageUrl(String imageKey);
+
+    // ====== FACTURAS ======
+    ImageUploadResult uploadInvoicePdf(byte[] bytes);
 }

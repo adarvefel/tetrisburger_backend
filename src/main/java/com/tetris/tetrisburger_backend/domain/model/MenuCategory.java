@@ -9,22 +9,29 @@ public class MenuCategory {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
+    private Integer createdBy;
+    private Integer updatedBy;
+    private Integer deletedBy;
 
-    public MenuCategory() {
-    }
+    public MenuCategory() {}
 
-    public MenuCategory(Integer idMenuCategory, String menuCategoryName, String description,
-                        LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
+    private MenuCategory(Integer idMenuCategory, String menuCategoryName, String description,
+                         LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt,
+                         Integer createdBy, Integer updatedBy, Integer deletedBy) {
         this.idMenuCategory = idMenuCategory;
         this.menuCategoryName = menuCategoryName;
         this.description = description;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
+        this.createdBy = createdBy;
+        this.updatedBy = updatedBy;
+        this.deletedBy = deletedBy;
     }
 
-    // Factory: nueva categoría
-    public static MenuCategory create(String menuCategoryName, String description) {
+    // ==================== FACTORY METHODS ====================
+
+    public static MenuCategory create(String menuCategoryName, String description, Integer createdBy) {
         if (menuCategoryName == null || menuCategoryName.isBlank()) {
             throw new IllegalArgumentException("El nombre de la categoría es obligatorio");
         }
@@ -32,35 +39,41 @@ public class MenuCategory {
         mc.menuCategoryName = menuCategoryName.trim();
         mc.description = description;
         mc.createdAt = LocalDateTime.now();
+        mc.createdBy = createdBy;
         return mc;
     }
 
-    // Factory: reconstituir desde DB
     public static MenuCategory reconstitute(Integer idMenuCategory, String menuCategoryName,
-                                            String description, LocalDateTime createdAt, LocalDateTime updatedAt,
-                                            LocalDateTime deletedAt) {
+                                            String description, LocalDateTime createdAt,
+                                            LocalDateTime updatedAt, LocalDateTime deletedAt,
+                                            Integer createdBy, Integer updatedBy, Integer deletedBy) {
         return new MenuCategory(idMenuCategory, menuCategoryName, description,
-                createdAt, updatedAt, deletedAt);
+                createdAt, updatedAt, deletedAt, createdBy, updatedBy, deletedBy);
     }
 
-    // Método de negocio
-    public void update(String menuCategoryName, String description) {
+    // ==================== MÉTODOS DE NEGOCIO ====================
+
+    public void update(String menuCategoryName, String description, Integer updatedBy) {
         if (menuCategoryName == null || menuCategoryName.isBlank()) {
             throw new IllegalArgumentException("El nombre de la categoría es obligatorio");
         }
         this.menuCategoryName = menuCategoryName.trim();
         this.description = description;
         this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
     }
 
-    public void softDelete() {
+    public void softDelete(Integer deletedBy) {
         if (this.deletedAt != null) {
             throw new IllegalStateException("La categoría ya fue eliminada");
         }
         this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedBy;
     }
 
-
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
 
     // ==================== GETTERS Y SETTERS ====================
 
@@ -81,4 +94,13 @@ public class MenuCategory {
 
     public LocalDateTime getDeletedAt() { return deletedAt; }
     public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+
+    public Integer getCreatedBy() { return createdBy; }
+    public void setCreatedBy(Integer createdBy) { this.createdBy = createdBy; }
+
+    public Integer getUpdatedBy() { return updatedBy; }
+    public void setUpdatedBy(Integer updatedBy) { this.updatedBy = updatedBy; }
+
+    public Integer getDeletedBy() { return deletedBy; }
+    public void setDeletedBy(Integer deletedBy) { this.deletedBy = deletedBy; }
 }

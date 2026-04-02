@@ -1,7 +1,5 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.repository;
 
-import com.tetris.tetrisburger_backend.domain.common.PageResponse;
-import com.tetris.tetrisburger_backend.domain.model.Role;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.UserEntity;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
