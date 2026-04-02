@@ -26,17 +26,15 @@ public class OrderController {
     private final CreateOrder createOrder;
     private final GetOrderById getOrderById;
     private final ListUserOrders listUserOrders;
-    private final CancelOrder cancelOrder;
     private final ListAllOrders listAllOrders;
     private final UpdateOrderStatus updateOrderStatus;
     private final OrderRestDtoMapper mapper;
     private final SearchOrderByNumber searchOrderByNumber;
 
-    public OrderController(CreateOrder createOrder, GetOrderById getOrderById, ListUserOrders listUserOrders, CancelOrder cancelOrder, ListAllOrders listAllOrders, UpdateOrderStatus updateOrderStatus, OrderRestDtoMapper mapper, SearchOrderByNumber searchOrderByNumber) {
+    public OrderController(CreateOrder createOrder, GetOrderById getOrderById, ListUserOrders listUserOrders, ListAllOrders listAllOrders, UpdateOrderStatus updateOrderStatus, OrderRestDtoMapper mapper, SearchOrderByNumber searchOrderByNumber) {
         this.createOrder = createOrder;
         this.getOrderById = getOrderById;
         this.listUserOrders = listUserOrders;
-        this.cancelOrder = cancelOrder;
         this.listAllOrders = listAllOrders;
         this.updateOrderStatus = updateOrderStatus;
         this.mapper = mapper;
@@ -85,15 +83,7 @@ public class OrderController {
                 mapper.toResponseDTO(getOrderById.handle(id, user.getId())));
     }
 
-    @PatchMapping("/{id}/cancel")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<OrderResponseDTO> cancel(
-            @PathVariable Integer id,
-            @AuthenticationPrincipal CustomUserDetails user
-    ) {
-        return ResponseEntity.ok(
-                mapper.toResponseDTO(cancelOrder.handle(id, user.getId())));
-    }
+
 
     // ── Employee / Admin ─────────────────────────────
 
