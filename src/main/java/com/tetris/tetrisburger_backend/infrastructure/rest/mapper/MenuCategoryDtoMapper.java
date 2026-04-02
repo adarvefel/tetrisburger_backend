@@ -11,7 +11,26 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface MenuCategoryDtoMapper {
 
-    CreateMenuCategoryCommand toCreateCommand(CreateMenuCategoryRequestDTO requestDTO);
-    UpdateMenuCategoryCommand toUpdateCommand(Integer id, UpdateMenuCategoryRequestDTO requestDTO);
-    MenuCategoryResponseDTO toResponseDTO(MenuCategory menuCategory);
+    default CreateMenuCategoryCommand toCreateCommand(CreateMenuCategoryRequestDTO dto, Integer userId) {
+        if (dto == null) return null;
+        return new CreateMenuCategoryCommand(dto.menuCategoryName(), dto.description(), userId);
+    }
+
+    default UpdateMenuCategoryCommand toUpdateCommand(UpdateMenuCategoryRequestDTO dto, Integer userId) {
+        if (dto == null) return null;
+        return new UpdateMenuCategoryCommand(dto.menuCategoryName(), dto.description(), userId);
+    }
+
+    default MenuCategoryResponseDTO toResponseDTO(MenuCategory domain) {
+        if (domain == null) return null;
+        return new MenuCategoryResponseDTO(
+                domain.getIdMenuCategory(),
+                domain.getMenuCategoryName(),
+                domain.getDescription(),
+                domain.getCreatedAt(),
+                domain.getUpdatedAt(),
+                domain.getCreatedBy(),
+                domain.getUpdatedBy()
+        );
+    }
 }

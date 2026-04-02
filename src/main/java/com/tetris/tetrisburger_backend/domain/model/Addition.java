@@ -13,7 +13,10 @@ public class Addition {
     private String imageKey;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private LocalDateTime deletedAt; // ✅ soft delete
+    private LocalDateTime deletedAt;
+    private Integer createdBy;
+    private Integer updatedBy;
+    private Integer deletedBy;
 
     // ==================== CONSTRUCTORES ====================
 
@@ -50,39 +53,49 @@ public class Addition {
             String description,
             BigDecimal price,
             Boolean available,
-            String imageUrl
-    ) {
-        return create(name, description, price, available, imageUrl, null);
-    }
-
-    public static Addition create(
-            String name,
-            String description,
-            BigDecimal price,
-            Boolean available,
             String imageUrl,
-            String imageKey
+            String imageKey,
+            Integer createdBy
     ) {
         validateName(name);
         validatePrice(price);
 
-        LocalDateTime now = LocalDateTime.now();
-
-        return new Addition(
-                null,
-                name.trim(),
-                description != null ? description.trim() : null,
-                price,
-                available != null ? available : true,
-                imageUrl != null ? imageUrl.trim() : null,
-                imageKey != null ? imageKey.trim() : null,
-                now,
-                null,
-                null // deletedAt = null en creación
-        );
+        Addition a = new Addition();
+        a.name = name.trim();
+        a.description = description != null ? description.trim() : null;
+        a.price = price;
+        a.available = available != null ? available : true;
+        a.imageUrl = imageUrl != null ? imageUrl.trim() : null;
+        a.imageKey = imageKey != null ? imageKey.trim() : null;
+        a.createdAt = LocalDateTime.now();
+        a.createdBy = createdBy;
+        return a;
     }
 
-    // Factory completo (reconstrucción desde BD)
+    public static Addition of(
+            Integer idAddition, String name, String description,
+            BigDecimal price, Boolean available, String imageUrl,
+            String imageKey, LocalDateTime createdAt, LocalDateTime updatedAt,
+            LocalDateTime deletedAt, Integer createdBy, Integer updatedBy,
+            Integer deletedBy                                    // ← agrega
+    ) {
+        Addition a = new Addition();
+        a.idAddition = idAddition;
+        a.name = name;
+        a.description = description;
+        a.price = price;
+        a.available = available;
+        a.imageUrl = imageUrl;
+        a.imageKey = imageKey;
+        a.createdAt = createdAt;
+        a.updatedAt = updatedAt;
+        a.deletedAt = deletedAt;
+        a.createdBy = createdBy;
+        a.updatedBy = updatedBy;
+        a.deletedBy = deletedBy;
+        return a;
+    }
+
     public static Addition of(
             Integer idAddition,
             String name,
@@ -101,7 +114,6 @@ public class Addition {
         );
     }
 
-    // Overload sin deletedAt (compatibilidad)
     public static Addition of(
             Integer idAddition,
             String name,
@@ -122,34 +134,26 @@ public class Addition {
     // ==================== COMPORTAMIENTO ====================
 
     public void update(
-            String name,
-            String description,
-            BigDecimal price,
-            Boolean available,
-            String imageUrl
+            String name, String description, BigDecimal price,
+            Boolean available, String imageUrl, Integer updatedBy  // ← agrega
     ) {
         validateName(name);
         validatePrice(price);
-
         this.name = name.trim();
         this.description = description != null ? description.trim() : null;
         this.price = price;
-
-        if (available != null) {
-            this.available = available;
-        }
-
-        if (imageUrl != null) {
-            this.imageUrl = imageUrl.trim();
-        }
-
+        if (available != null) this.available = available;
+        if (imageUrl != null) this.imageUrl = imageUrl.trim();
         this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
     }
 
-    public void updateImage(String imageKey, String imageUrl) {
+
+    public void updateImage(String imageKey, String imageUrl,Integer updatedBy) {
         this.imageKey = imageKey != null ? imageKey.trim() : null;
         this.imageUrl = imageUrl != null ? imageUrl.trim() : null;
         this.updatedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
     }
 
     public void enable() {
@@ -159,10 +163,12 @@ public class Addition {
 
 
 
-    public void markAsDeleted() {
+    public void markAsDeleted(Integer deletedBy) {   // ← agrega parámetro
         this.deletedAt = LocalDateTime.now();
         this.available = false;
         this.updatedAt = LocalDateTime.now();
+        this.updatedBy = deletedBy;
+        this.deletedBy = deletedBy;
     }
 
 
@@ -205,5 +211,8 @@ public class Addition {
     public String getImageKey() { return imageKey; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public LocalDateTime getDeletedAt() { return deletedAt; } // ✅
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public Integer getCreatedBy() { return createdBy; }
+    public Integer getUpdatedBy() { return updatedBy; }
+    public Integer getDeletedBy() { return deletedBy; }
 }

@@ -2,7 +2,8 @@ package com.tetris.tetrisburger_backend.domain.port.in.menucategory.command;
 
 public record CreateMenuCategoryCommand(
         String menuCategoryName,
-        String  description
+        String  description,
+        Integer createdBy
 ) {
 
     public CreateMenuCategoryCommand {

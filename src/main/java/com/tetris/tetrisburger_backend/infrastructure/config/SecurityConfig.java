@@ -86,7 +86,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/admin/burgers/menu*", "/api/admin/burgers/menu/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/admin/additions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product-categories/**").permitAll()
+                        .requestMatchers(
+                                "/api/burgers/featured"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product-categories/public").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/orders/all").hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/orders/{id}/status").hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

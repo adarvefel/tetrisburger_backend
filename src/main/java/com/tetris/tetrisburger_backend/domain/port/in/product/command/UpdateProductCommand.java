@@ -1,6 +1,6 @@
 package com.tetris.tetrisburger_backend.domain.port.in.product.command;
 
-import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 
 import java.math.BigDecimal;
 

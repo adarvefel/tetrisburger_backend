@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Transactional
 public class CreateSupplierUseCase implements CreateSupplier {
+
     private final SupplierRepository repo;
 
     public CreateSupplierUseCase(SupplierRepository repo) {
@@ -18,16 +19,19 @@ public class CreateSupplierUseCase implements CreateSupplier {
 
     @Override
     public Supplier create(CreateSupplierCommand cmd) {
-
         if (cmd.email() != null && !cmd.email().isBlank() &&
                 repo.existsByEmailIgnoreCaseAndDeletedAtIsNull(cmd.email().trim())) {
             throw new IllegalArgumentException(
                     "Ya existe un proveedor con el email: " + cmd.email());
         }
 
-
         Supplier s = Supplier.ofNew(
-                cmd.name(), cmd.phone(), cmd.email().trim(), cmd.address(), cmd.registrationDate());
+                cmd.name(),
+                cmd.phone(),
+                cmd.email().trim(),
+                cmd.address(),
+                cmd.createdBy()
+        );
         return repo.save(s);
     }
 }

@@ -17,5 +17,7 @@ public record MenuResponseDTO(
         MenuCategory menuCategory,
         List<MenuItemResponseDTO> items,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        Integer createdBy,
+        Integer updatedBy
 ) {}

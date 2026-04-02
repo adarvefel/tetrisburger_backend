@@ -44,6 +44,7 @@ public class MenuEntity {
     private MenuCategoryEntity menuCategory;
 
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
+    @org.hibernate.annotations.BatchSize(size = 20)
     private List<MenuItemEntity> items = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)

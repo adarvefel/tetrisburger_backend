@@ -15,6 +15,7 @@ import com.tetris.tetrisburger_backend.infrastructure.rest.dto.supplier.ListSupp
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.supplier.SupplierResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.supplier.UpdateSupplierRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.SupplierRestDtoMapper;
+import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -83,25 +85,45 @@ public class SupplierController {
     // ADMIN
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<SupplierResponseDTO> create(@Valid @RequestBody CreateSupplierRequestDTO dto) {
+    public ResponseEntity<SupplierResponseDTO> create(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody CreateSupplierRequestDTO dto
+    ) {
+        Integer userId = userDetails.getId();
+
         log.info("ADMIN create supplier: {}", dto.getName());
-        Supplier created = createSupplier.create(mapper.toCreateCommand(dto));
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponseDTO(created));
+
+        Supplier created = createSupplier.create(
+                mapper.toCreateCommand(dto, userId)
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mapper.toResponseDTO(created));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<SupplierResponseDTO> update(@PathVariable Integer id, @Valid @RequestBody UpdateSupplierRequestDTO dto) {
+    public ResponseEntity<SupplierResponseDTO> update(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                      @PathVariable Integer id,
+                                                      @Valid @RequestBody UpdateSupplierRequestDTO dto) {
         log.info("ADMIN update supplier id={}", id);
-        Supplier updated = updateSupplier.update(mapper.toUpdateCommand(id, dto));
+        Integer userId = userDetails.getId();
+        Supplier updated = updateSupplier.update(mapper.toUpdateCommand(id, dto, userId));
         return ResponseEntity.ok(mapper.toResponseDTO(updated));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+    public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Integer id
+    ) {
+        Integer userId = userDetails.getId();
+
         log.info("ADMIN delete supplier id={}", id);
-        deleteSupplier.delete(id);
+
+        deleteSupplier.delete(id, userId);
+
         return ResponseEntity.noContent().build();
     }
 }

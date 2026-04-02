@@ -7,7 +7,7 @@ import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 
 public interface UpdateAdditionImage {
-    Addition handle(Integer id, FileData additionImage);
+    Addition handle(Integer id, FileData additionImage,Integer updatedBy);
 
 
 }

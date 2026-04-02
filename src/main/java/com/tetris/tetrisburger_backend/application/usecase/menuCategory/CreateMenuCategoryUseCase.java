@@ -6,8 +6,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.menucategory.CreateMenuCat
 import com.tetris.tetrisburger_backend.domain.port.in.menucategory.command.CreateMenuCategoryCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.MenuCategoryRepository;
 import jakarta.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -29,7 +28,8 @@ public class CreateMenuCategoryUseCase implements CreateMenuCategory {
 
         MenuCategory category = MenuCategory.create(
                 command.menuCategoryName(),
-                command.description()
+                command.description(),
+                command.createdBy()
         );
         return repository.save(category);
     }

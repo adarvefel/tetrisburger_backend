@@ -19,6 +19,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @RestControllerAdvice
 @Order(100)
@@ -202,6 +203,35 @@ public class GlobalExceptionHandler {
 
         return buildErrorResponseDTO(HttpStatus.NOT_FOUND, userMessage, request);
     }
+    @ExceptionHandler(PhoneRequiredException.class)
+    public ResponseEntity<MessageResponseDTO> handlePhoneRequired(PhoneRequiredException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(new MessageResponseDTO(ex.getMessage(), false));
+    }
+
+    @ExceptionHandler(CartValidationException.class)
+    public ResponseEntity<Map<String, Object>> handleCartValidation(CartValidationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                        "error", "CARRITO_INVALIDO",
+                        "mensaje", ex.getMessage(),
+                        "items", ex.getErrors()
+                ));
+    }
+
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<MessageResponseDTO> handleOrderNotFound(OrderNotFoundException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<MessageResponseDTO> handleIllegalState(IllegalStateException ex) {
+        return buildErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    }
+
+
+
 
     // ========================================
     // FALLBACK
@@ -213,3 +243,4 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
     }
 }
+

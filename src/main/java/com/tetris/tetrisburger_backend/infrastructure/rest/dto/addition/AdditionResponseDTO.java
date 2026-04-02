@@ -16,5 +16,6 @@ public record AdditionResponseDTO(
         ImageStatus ImageStatus,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        LocalDateTime deletedAt
+        Integer createdBy,
+        Integer updatedBy
 ) {}

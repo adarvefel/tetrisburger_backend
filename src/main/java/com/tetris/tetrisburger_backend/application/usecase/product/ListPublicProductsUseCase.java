@@ -3,7 +3,7 @@ package com.tetris.tetrisburger_backend.application.usecase.product;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Product;
-import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 import com.tetris.tetrisburger_backend.domain.port.in.product.ListPublicProducts;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import jakarta.transaction.Transactional;

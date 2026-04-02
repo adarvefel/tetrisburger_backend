@@ -21,7 +21,7 @@ public class UpdateProductCategoryUseCase implements UpdateProductCategory {
     public ProductCategory update(UpdateProductCategoryCommand cmd) {
         ProductCategory current = repo.findById(cmd.id())
                 .orElseThrow(() -> new IllegalArgumentException("Categoria no encontrada: " + cmd.id()));
-        current.update(cmd.name().trim(), cmd.description(), cmd.available());
+        current.update(cmd.name().trim(), cmd.description(), cmd.available(),cmd.updatedBy());
         return repo.save(current);
     }
 }

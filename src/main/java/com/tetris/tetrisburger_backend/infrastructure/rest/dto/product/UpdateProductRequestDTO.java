@@ -1,7 +1,6 @@
 // src/main/java/com/tetris/tetrisburger_backend/infrastructure/rest/dto/product/UpdateProductRequestDTO.java
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.product;
 
-import com.tetris.tetrisburger_backend.domain.model.ProductType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;

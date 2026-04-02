@@ -51,6 +51,15 @@ public class AdditionEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "created_by", nullable = false, updatable = false)
+    private Integer createdBy;
+
+    @Column(name = "updated_by")
+    private Integer updatedBy;
+
+    @Column(name = "deleted_by")
+    private Integer deletedBy;
+
     public Integer getIdAddition() { return idAddition; }
     public void setIdAddition(Integer idAddition) { this.idAddition = idAddition; }
 

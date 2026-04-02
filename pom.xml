@@ -161,6 +161,8 @@
 			<version>8.10.1</version>
 		</dependency>
 
+
+
 		<!-- Para llamar a la API de Google -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -177,6 +179,11 @@
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
 	</dependencies>
 

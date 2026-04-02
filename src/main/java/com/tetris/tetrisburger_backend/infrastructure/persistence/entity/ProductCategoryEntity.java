@@ -1,25 +1,22 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "product_category",
-        uniqueConstraints = {@UniqueConstraint(name = "uc_product_category_name", columnNames = "product_category_name")},
-        indexes = {@Index(name = "idx_product_category_name", columnList = "product_category_name")})
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uc_product_category_name", columnNames = "product_category_name")
+        },
+        indexes = {
+                @Index(name = "idx_product_category_name", columnList = "product_category_name")
+        })
 public class ProductCategoryEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_product_category")
     private Integer id;
-
 
     @Column(name = "product_category_name", nullable = false, length = 255)
     private String name;
@@ -30,36 +27,52 @@ public class ProductCategoryEntity {
     @Column(name = "available", nullable = false)
     private Boolean available;
 
-    // Getters y Setters
-    public Integer getId() {
-        return id;
-    }
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
-    public String getName() {
-        return name;
-    }
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    @Column(name = "created_by", nullable = false, updatable = false)
+    private Integer createdBy;
 
-    public String getDescription() {
-        return description;
-    }
+    @Column(name = "updated_by")
+    private Integer updatedBy;
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    @Column(name = "deleted_by")
+    private Integer deletedBy;
 
-    public Boolean getAvailable() {
-        return available;
-    }
+    // ── Getters y Setters ────────────────────────────────────────────────────
+    public Integer getId()                  { return id; }
+    public void setId(Integer id)           { this.id = id; }
 
-    public void setAvailable(Boolean available) {
-        this.available = available;
-    }
+    public String getName()                 { return name; }
+    public void setName(String name)        { this.name = name; }
+
+    public String getDescription()          { return description; }
+    public void setDescription(String d)    { this.description = d; }
+
+    public Boolean getAvailable()           { return available; }
+    public void setAvailable(Boolean a)     { this.available = a; }
+
+    public LocalDateTime getCreatedAt()     { return createdAt; }
+    public void setCreatedAt(LocalDateTime v){ this.createdAt = v; }
+
+    public LocalDateTime getUpdatedAt()     { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime v){ this.updatedAt = v; }
+
+    public LocalDateTime getDeletedAt()     { return deletedAt; }
+    public void setDeletedAt(LocalDateTime v){ this.deletedAt = v; }
+
+    public Integer getCreatedBy()           { return createdBy; }
+    public void setCreatedBy(Integer v)     { this.createdBy = v; }
+
+    public Integer getUpdatedBy()           { return updatedBy; }
+    public void setUpdatedBy(Integer v)     { this.updatedBy = v; }
+
+    public Integer getDeletedBy()           { return deletedBy; }
+    public void setDeletedBy(Integer v)     { this.deletedBy = v; }
 }

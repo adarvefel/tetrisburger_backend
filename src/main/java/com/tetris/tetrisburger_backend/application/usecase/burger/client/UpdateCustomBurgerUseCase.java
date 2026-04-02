@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.application.usecase.burger.client;
 
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 import com.tetris.tetrisburger_backend.domain.exception.*;
 import com.tetris.tetrisburger_backend.domain.model.*;
 import com.tetris.tetrisburger_backend.domain.port.in.burger.admin.UpdateCustomBurger;

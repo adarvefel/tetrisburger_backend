@@ -138,8 +138,13 @@ public interface BurgerRepository {
 
     long countActiveMenuBurgers();
 
+    List<Burger> findAllFeaturedAndAvailable();
+
     /**
      * Cuenta burgers personalizadas (isCustom=true) de un usuario.
      */
     long countCustomBurgersByUser(Integer idUser);
+
+    List<Burger> findAllByIds(List<Integer> ids);
+
 }

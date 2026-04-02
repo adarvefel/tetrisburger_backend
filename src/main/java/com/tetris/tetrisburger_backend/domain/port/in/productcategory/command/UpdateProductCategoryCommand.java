@@ -4,6 +4,7 @@ public record UpdateProductCategoryCommand(
         Integer id,
         String name,
         String description,
-        Boolean available
+        Boolean available,
+        Integer updatedBy
 ) {
 }

@@ -1,7 +1,7 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.dto.product;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.tetris.tetrisburger_backend.domain.model.ProductType;
+import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 import com.tetris.tetrisburger_backend.domain.model.Supplier;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.productcategory.ProductCategoryResponseDTO;
 import io.swagger.v3.oas.annotations.media.Schema;

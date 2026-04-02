@@ -9,6 +9,7 @@ public record UpdateAdditionCommand(
         String name,
         String description,
         BigDecimal price,
-        Boolean available
+        Boolean available,
+        Integer updatedBy
 ) {
 }

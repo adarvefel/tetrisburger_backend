@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class ListBurgersUseCase implements ListBurgers {
 
-    private static final Logger logger = LoggerFactory.getLogger(ListBurgersUseCase.class);
 
     private final BurgerRepository burgerRepository;
 
@@ -24,8 +23,7 @@ public class ListBurgersUseCase implements ListBurgers {
 
     @Override
     public PageResponse<Burger> handle(PaginationRequest pagination) {
-        logger.info("Listando hamburguesas del menú page={}, size={}",
-                pagination.getPage(), pagination.getSize());
+
 
         return burgerRepository.findAllOnMenu(pagination);
     }

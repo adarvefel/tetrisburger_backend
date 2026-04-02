@@ -14,16 +14,23 @@ import java.util.UUID;
 
 @Component
 public class S3ImageStorageAdapter implements ImageStoragePort {
+    @Value("${s3.folder.users:users}")
+    private String usersFolder;
 
-    private static final String USERS_FOLDER = "users";
-    private static final String PRODUCTS_FOLDER = "products";
-    private static final String MENU_BURGERS_FOLDER = "burgers";
+    @Value("${s3.folder.products:products}")
+    private String productsFolder;
+
+    @Value("${s3.folder.burgers.menu:burgers}")
+    private String menuBurgersFolder;
 
     @Value("${s3.folder.addition:addition}")
     private String additionFolder;
 
-    @Value("${s3.folder.menu:menus}")
+    @Value("${s3.folder.menus:menus}")
     private String menuFolder;
+
+    @Value("${s3.folder.invoices:invoice}")
+    private String invoicesFolder;
 
     private final S3Client s3Client;
     private final String bucketName;
@@ -42,7 +49,7 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
     // ====== USUARIOS ======
     @Override
     public ImageUploadResult uploadUserImage(byte[] bytes, String contentType, String originalFileName) {
-        return uploadImageInternal(bytes, contentType, originalFileName, USERS_FOLDER);
+        return uploadImageInternal(bytes, contentType, originalFileName, usersFolder);
     }
 
     // ====== PRODUCTOS ======
@@ -52,7 +59,7 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
                 fileData.bytes(),
                 fileData.contentType(),
                 fileData.originalFilename(),
-                PRODUCTS_FOLDER
+                productsFolder
         );
     }
 
@@ -63,7 +70,7 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
                 fileData.bytes(),
                 fileData.contentType(),
                 fileData.originalFilename(),
-                MENU_BURGERS_FOLDER
+                productsFolder
         );
     }
 
@@ -193,6 +200,26 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
                 region,
                 imageKey);
     }
+
+    // ====== FACTURAS ======
+    @Override
+    public ImageUploadResult uploadInvoicePdf(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) return null;
+
+        String key = invoicesFolder + "/factura-" + System.currentTimeMillis() + ".pdf";
+
+        s3Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(key)
+                        .contentType("application/pdf")
+                        .build(),
+                RequestBody.fromBytes(bytes)
+        );
+
+        return new ImageUploadResult(key, key);
+    }
+
 
     // ====== HELPERS ======
     private String normalizeFolder(String folder) {

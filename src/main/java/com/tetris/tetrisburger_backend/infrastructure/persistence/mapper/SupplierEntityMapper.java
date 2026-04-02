@@ -1,6 +1,5 @@
 package com.tetris.tetrisburger_backend.infrastructure.persistence.mapper;
 
-
 import com.tetris.tetrisburger_backend.domain.model.Supplier;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.SupplierEntity;
 import org.mapstruct.Mapper;
@@ -10,10 +9,26 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface SupplierEntityMapper {
 
+    // ==================== Entity -> Domain ====================
+
     default Supplier toDomain(SupplierEntity e) {
         if (e == null) return null;
-        return Supplier.of(e.getId(), e.getName(), e.getPhone(), e.getEmail(), e.getAddress(), e.getRegistrationDate());
+        return Supplier.reconstitute(  // ← of() → reconstitute()
+                e.getId(),
+                e.getName(),
+                e.getPhone(),
+                e.getEmail(),
+                e.getAddress(),
+                e.getRegistrationDate(),
+                e.getUpdatedAt(),
+                e.getDeletedAt(),
+                e.getCreatedBy(),
+                e.getUpdatedBy(),
+                e.getDeletedBy()
+        );
     }
+
+    // ==================== Domain -> Entity ====================
 
     default SupplierEntity toEntity(Supplier d) {
         if (d == null) return null;
@@ -24,8 +39,15 @@ public interface SupplierEntityMapper {
         e.setEmail(d.getEmail() == null ? null : d.getEmail().trim());
         e.setAddress(d.getAddress() == null ? null : d.getAddress().trim());
         e.setRegistrationDate(d.getRegistrationDate());
+        e.setUpdatedAt(d.getUpdatedAt());
+        e.setDeletedAt(d.getDeletedAt());
+        e.setCreatedBy(d.getCreatedBy());
+        e.setUpdatedBy(d.getUpdatedBy());
+        e.setDeletedBy(d.getDeletedBy());
         return e;
     }
+
+    // ==================== List helpers ====================
 
     default List<Supplier> toDomainList(List<SupplierEntity> entities) {
         return entities == null ? List.of() : entities.stream().map(this::toDomain).toList();

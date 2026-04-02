@@ -62,7 +62,6 @@ public abstract class MenuEntityMapper {
         entity.setUpdatedBy(menu.getUpdatedBy());
         entity.setDeletedBy(menu.getDeletedBy());
 
-        // ✅ Mapear ítems y asignar referencia al padre manualmente
         List<MenuItemEntity> itemEntities = menu.getItems() != null
                 ? menu.getItems().stream()
                 .map(this::toItemEntity)
@@ -71,7 +70,6 @@ public abstract class MenuEntityMapper {
 
         entity.setItems(itemEntities);
 
-        // ✅ Garantiza que id_menu nunca sea null
         itemEntities.forEach(item -> item.setMenu(entity));
 
         return entity;

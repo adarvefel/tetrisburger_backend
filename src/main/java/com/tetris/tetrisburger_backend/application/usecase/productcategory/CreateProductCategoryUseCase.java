@@ -19,11 +19,16 @@ public class CreateProductCategoryUseCase implements CreateProductCategory {
 
     @Override
     public ProductCategory create(CreateProductCategoryCommand cmd) {
-        if (repo.existsByNameIgnoreCase(cmd.name().trim())) {
-            throw new IllegalArgumentException("Esta categoria  ya existe: " + cmd.name());
-        }
+        if (repo.existsByNameIgnoreCase(cmd.name().trim()))
+            throw new IllegalArgumentException("Esta categoría ya existe: " + cmd.name());
+
         Boolean avail = cmd.available() != null ? cmd.available() : Boolean.TRUE;
-        ProductCategory cat = ProductCategory.ofNew(cmd.name().trim(), cmd.description(), avail);
+        ProductCategory cat = ProductCategory.ofNew(
+                cmd.name().trim(),
+                cmd.description(),
+                avail,
+                cmd.createdBy()
+        );
         return repo.save(cat);
     }
 }

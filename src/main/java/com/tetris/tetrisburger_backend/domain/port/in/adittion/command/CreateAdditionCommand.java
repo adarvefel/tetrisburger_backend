@@ -11,6 +11,7 @@ public record CreateAdditionCommand(
         String description,
         BigDecimal price,
         Boolean available,
-        FileData additionImage
+        FileData additionImage,
+        Integer createdBy
 ) {
 }

@@ -40,11 +40,9 @@ public class UserAdapter implements UserRepository {
 
     @Override
     public Optional<User> findUserById(Integer id) {
-        return jpa.findById(id).map(mapper::toDomain);
-
-
+        return jpa.findByIdUserAndDeletedAtIsNull(id)
+                .map(mapper::toDomain);
     }
-
 
 
     @Override

@@ -11,6 +11,7 @@ import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.Addition
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.CreateAdditionRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.UpdateAdditionRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.AdditionRestMapper;
+import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -62,11 +63,13 @@ public class AdditionController {
             @RequestPart(value = "additionImage", required = false) MultipartFile additionImage
     ) {
         logger.info("POST /api/additions - Creando: '{}'", dto.name());
+        Integer userId = ((CustomUserDetails) userDetails).getId();
+
 
         boolean imageWasSent = (additionImage != null && !additionImage.isEmpty());
 
         Addition created = createAddition.handle(
-                mapper.toCreateAdditionCommand(dto, additionImage)
+                mapper.toCreateAdditionCommand(dto, additionImage,userId)
         );
 
         AdditionResponseDTO response = mapper.toAdditionResponseDTO(created, imageWasSent);
@@ -88,10 +91,13 @@ public class AdditionController {
             @PathVariable Integer id,
             @Valid @RequestBody UpdateAdditionRequestDTO     dto
     ) {
+        Integer userId = ((CustomUserDetails) userDetails).getId();
+
+
         logger.info("PUT /api/additions/{}", id);
 
         Addition updated = updateAddition.handle(
-                mapper.toUpdateAdditionCommand(id, dto)
+                mapper.toUpdateAdditionCommand(id, dto,userId)
         );
 
         return ResponseEntity.ok(mapper.toAdditionResponseDTO(updated, false));
@@ -130,8 +136,10 @@ public class AdditionController {
             @PathVariable Integer id,
             @RequestPart("additionImage") MultipartFile additionImage
     ) {
+        Integer userId = ((CustomUserDetails) userDetails).getId();
+
         FileData fileData = FileData.from(additionImage);
-        Addition updated = updateAdditionImage.handle(id, fileData);
+        Addition updated = updateAdditionImage.handle(id, fileData,userId);
 
         AdditionResponseDTO response = mapper.toAdditionResponseDTO(updated, true);
 
@@ -144,7 +152,10 @@ public class AdditionController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Integer id
     ) {
-        Addition deleted = deleteAddition.handle(id);
+        Integer userId = ((CustomUserDetails) userDetails).getId();
+
+
+        Addition deleted = deleteAddition.handle(id,userId);
 
         return ResponseEntity.ok(new DeleteResponseDTO(
                 "Adición eliminada exitosamente",
