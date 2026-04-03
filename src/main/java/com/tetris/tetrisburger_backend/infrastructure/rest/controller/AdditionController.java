@@ -14,8 +14,6 @@ import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.AdditionRestMa
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,17 +25,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/api/admin/additions")
 @Tag(name = "Additions", description = "Gestión de adiciones del menú")
 public class AdditionController {
 
-    private static final Logger logger = LoggerFactory.getLogger(AdditionController.class);
-
     private final CreateAddition createAddition;
     private final UpdateAddition updateAddition;
-    private final UpdateAdditionImage  updateAdditionImage;
+    private final UpdateAdditionImage updateAdditionImage;
     private final ListAddition listAddition;
     private final SearchAdditionByName searchAdditionByName;
     private final GetAdditionById getAdditionById;
@@ -62,42 +57,30 @@ public class AdditionController {
             @Valid @RequestPart("data") CreateAdditionRequestDTO dto,
             @RequestPart(value = "additionImage", required = false) MultipartFile additionImage
     ) {
-        logger.info("POST /api/additions - Creando: '{}'", dto.name());
         Integer userId = ((CustomUserDetails) userDetails).getId();
-
 
         boolean imageWasSent = (additionImage != null && !additionImage.isEmpty());
 
         Addition created = createAddition.handle(
-                mapper.toCreateAdditionCommand(dto, additionImage,userId)
+                mapper.toCreateAdditionCommand(dto, additionImage, userId)
         );
 
         AdditionResponseDTO response = mapper.toAdditionResponseDTO(created, imageWasSent);
 
-        logger.info("Adición creada: ID {} | imageStatus: {}",
-                created.getIdAddition(),
-                response.ImageStatus());
-
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
-
-    // ==================== ACTUALIZAR ====================
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     public ResponseEntity<AdditionResponseDTO> update(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Integer id,
-            @Valid @RequestBody UpdateAdditionRequestDTO     dto
+            @Valid @RequestBody UpdateAdditionRequestDTO dto
     ) {
         Integer userId = ((CustomUserDetails) userDetails).getId();
 
-
-        logger.info("PUT /api/additions/{}", id);
-
         Addition updated = updateAddition.handle(
-                mapper.toUpdateAdditionCommand(id, dto,userId)
+                mapper.toUpdateAdditionCommand(id, dto, userId)
         );
 
         return ResponseEntity.ok(mapper.toAdditionResponseDTO(updated, false));
@@ -139,7 +122,7 @@ public class AdditionController {
         Integer userId = ((CustomUserDetails) userDetails).getId();
 
         FileData fileData = FileData.from(additionImage);
-        Addition updated = updateAdditionImage.handle(id, fileData,userId);
+        Addition updated = updateAdditionImage.handle(id, fileData, userId);
 
         AdditionResponseDTO response = mapper.toAdditionResponseDTO(updated, true);
 
@@ -154,8 +137,7 @@ public class AdditionController {
     ) {
         Integer userId = ((CustomUserDetails) userDetails).getId();
 
-
-        Addition deleted = deleteAddition.handle(id,userId);
+        Addition deleted = deleteAddition.handle(id, userId);
 
         return ResponseEntity.ok(new DeleteResponseDTO(
                 "Adición eliminada exitosamente",
@@ -205,12 +187,4 @@ public class AdditionController {
 
         return ResponseEntity.ok(response);
     }
-
-
-
-
-
-
-
-
 }

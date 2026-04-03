@@ -8,7 +8,6 @@ import com.tetris.tetrisburger_backend.domain.enums.ProductType;
 
 import com.tetris.tetrisburger_backend.domain.port.in.product.*;
 import com.tetris.tetrisburger_backend.domain.port.in.product.command.CreateProductCommand;
-import com.tetris.tetrisburger_backend.domain.port.in.product.command.UpdateProductCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.product.query.GetProductByIdQuery;
 import com.tetris.tetrisburger_backend.domain.port.in.product.query.ListProductsQuery;
 import com.tetris.tetrisburger_backend.domain.port.in.product.query.SearchProductsQuery;
@@ -19,16 +18,9 @@ import com.tetris.tetrisburger_backend.domain.port.in.product.ListPublicProducts
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.ProductRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -46,8 +38,6 @@ import java.util.List;
 @SecurityRequirement(name = "bearerAuth")
 public class ProductController {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
-
     private final CreateProduct createProduct;
     private final ListProducts listProducts;
     private final GetProductById getProductById;
@@ -61,7 +51,19 @@ public class ProductController {
     private final AdjustProductStock adjustProductStock;
     private final ListPublicProducts listPublicProducts;
 
-    public ProductController(CreateProduct createProduct, ListProducts listProducts, GetProductById getProductById, UpdateProduct updateProduct, UpdateProductImage updateProductImage, DeleteProduct deleteProduct, ProductRestDtoMapper mapper, ImageStoragePort imageStoragePort, SearchProducts searchProducts, SetProductAvailability setProductAvailability, AdjustProductStock adjustProductStock, ListPublicProducts listPublicProducts) {
+    public ProductController(CreateProduct createProduct,
+                             ListProducts listProducts,
+                             GetProductById getProductById,
+                             UpdateProduct updateProduct,
+                             UpdateProductImage updateProductImage,
+                             DeleteProduct deleteProduct,
+                             ProductRestDtoMapper mapper,
+                             ImageStoragePort imageStoragePort,
+                             SearchProducts searchProducts,
+                             SetProductAvailability setProductAvailability,
+                             AdjustProductStock adjustProductStock,
+                             ListPublicProducts listPublicProducts) {
+
         this.createProduct = createProduct;
         this.listProducts = listProducts;
         this.getProductById = getProductById;
@@ -102,32 +104,15 @@ public class ProductController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
-    @Operation(
-            summary = "Crear producto",
-            description = "Crea un nuevo producto con imagen opcional. imageStatus puede ser: NONE, PENDING o READY."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Producto creado",
-                    content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Datos o imagen inválidos",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Categoría no encontrada",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class))),
-            @ApiResponse(responseCode = "409", description = "Producto duplicado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
-    })
+    @Operation(summary = "Crear producto",
+            description = "Crea un nuevo producto con imagen opcional.")
     public ResponseEntity<ProductResponseDTO> create(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "Datos del producto (JSON)")
+            @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestPart("data") CreateProductRequestDTO dto,
-            @Parameter(description = "Imagen del producto (opcional, máx 5MB)")
             @RequestPart(value = "productImage", required = false) MultipartFile productImage
     ) {
         Integer adminId = getUserIdFromDetails(userDetails);
         boolean imageWasSent = (productImage != null && !productImage.isEmpty());
-
-        logger.info("🔵 POST /api/products - Admin {} creando: '{}' | Categoría: {}",
-                adminId, dto.getName(), dto.getProductCategoryId());
 
         CreateProductCommand command = mapper.toCreateProductCommand(dto, productImage, adminId);
         Product created = createProduct.create(command);
@@ -139,34 +124,20 @@ public class ProductController {
         response.setImageUrl(imageUrl);
         response.setImageStatus(imageStatus);
 
-        logger.info(" Producto creado: ID {} | Categoría: '{}'",
-                created.getId(), created.getCategoryName());
-
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // ==================== GET ALL ====================
 
     @GetMapping("/list")
-    @Operation(
-            summary = "Listar productos",
-            description = "Retorna lista paginada de productos con filtros opcionales."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista obtenida",
-                    content = @Content(schema = @Schema(implementation = ListProductResponseDTO.class)))
-    })
     public ResponseEntity<ListProductResponseDTO> getAll(
-            @Parameter(description = "Número de página (inicia en 0)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Tamaño de página") @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Campo de ordenamiento") @RequestParam(required = false) String sortBy,
-            @Parameter(description = "Dirección (ASC/DESC)") @RequestParam(defaultValue = "ASC") String direction,
-            @Parameter(description = "Filtrar por ID de categoría") @RequestParam(required = false) Integer productCategoryId,
-            @Parameter(description = "Filtrar por disponibilidad") @RequestParam(required = false) Boolean availability
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "ASC") String direction,
+            @RequestParam(required = false) Integer productCategoryId,
+            @RequestParam(required = false) Boolean availability
     ) {
-        logger.info("🔵 GET /api/products/list - Categoría: {}, Disponibilidad: {}",
-                productCategoryId, availability);
-
         ListProductsQuery query = new ListProductsQuery(productCategoryId, availability);
         PaginationRequest pagination = new PaginationRequest(page, size, sortBy, direction);
 
@@ -180,7 +151,6 @@ public class ProductController {
                     ProductResponseDTO dto = mapper.toProductResponseDTO(product);
                     dto.setImageUrl(imageUrl);
                     dto.setImageStatus(imageStatus);
-
                     return dto;
                 })
                 .toList();
@@ -193,32 +163,21 @@ public class ProductController {
                 .totalPages(pageResponse.totalPages())
                 .build();
 
-        logger.info("Productos listados: {} resultados", pageResponse.totalElements());
         return ResponseEntity.ok(response);
     }
 
     // ==================== SEARCH ====================
 
     @GetMapping("/search")
-    @Operation(
-            summary = "Buscar productos",
-            description = "Busca productos por nombre o descripción con filtros opcionales."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Búsqueda completada",
-                    content = @Content(schema = @Schema(implementation = ListProductResponseDTO.class)))
-    })
     public ResponseEntity<ListProductResponseDTO> search(
-            @Parameter(description = "Texto de búsqueda") @RequestParam(required = false) String q,
-            @Parameter(description = "Número de página (inicia en 0)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Tamaño de página") @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Campo de ordenamiento") @RequestParam(required = false) String sortBy,
-            @Parameter(description = "Dirección (ASC/DESC)") @RequestParam(defaultValue = "ASC") String direction,
-            @Parameter(description = "Filtrar por ID de categoría") @RequestParam(required = false) Integer productCategoryId,
-            @Parameter(description = "Filtrar por disponibilidad") @RequestParam(required = false) Boolean availability
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "ASC") String direction,
+            @RequestParam(required = false) Integer productCategoryId,
+            @RequestParam(required = false) Boolean availability
     ) {
-        logger.info(" GET /api/products/search - Query: '{}' | Categoría: {}", q, productCategoryId);
-
         SearchProductsQuery query = new SearchProductsQuery(q, productCategoryId, availability);
         PaginationRequest pagination = new PaginationRequest(page, size, sortBy, direction);
 
@@ -232,41 +191,27 @@ public class ProductController {
                     ProductResponseDTO dto = mapper.toProductResponseDTO(product);
                     dto.setImageUrl(imageUrl);
                     dto.setImageStatus(imageStatus);
-
                     return dto;
                 })
                 .toList();
 
         ListProductResponseDTO response = ListProductResponseDTO.builder()
-                .items(items)
-                .page(pageResponse.page())
-                .size(pageResponse.size())
-                .totalElements(pageResponse.totalElements())
-                .totalPages(pageResponse.totalPages())
                 .build();
 
-        logger.info(" Búsqueda completada: {} resultados", pageResponse.totalElements());
+        response.setItems(items);
+        response.setPage(pageResponse.page());
+        response.setSize(pageResponse.size());
+        response.setTotalElements(pageResponse.totalElements());
+        response.setTotalPages(pageResponse.totalPages());
+
         return ResponseEntity.ok(response);
     }
 
     // ==================== GET BY ID ====================
 
     @GetMapping("/{id}")
-    @Operation(
-            summary = "Obtener producto por ID",
-            description = "Retorna los detalles de un producto específico."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Producto encontrado",
-                    content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Producto no encontrado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
-    })
-    public ResponseEntity<ProductResponseDTO> getById(
-            @Parameter(description = "ID del producto") @PathVariable Integer id
-    ) {
-        GetProductByIdQuery query = new GetProductByIdQuery(id);
-        Product product = getProductById.get(query);
+    public ResponseEntity<ProductResponseDTO> getById(@PathVariable Integer id) {
+        Product product = getProductById.get(new GetProductByIdQuery(id));
 
         String imageUrl = resolveImageUrlFromProduct(product);
         String imageStatus = resolveImageStatus(false, imageUrl);
@@ -280,40 +225,24 @@ public class ProductController {
 
     // ==================== UPDATE ====================
 
-    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
-    @Operation(
-            summary = "Actualizar producto",
-            description = "Actualiza datos del producto (excepto imagen)."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Producto actualizado",
-                    content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Producto o categoría no encontrado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
-    })
     public ResponseEntity<ProductResponseDTO> update(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "ID del producto") @PathVariable Integer id,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Integer id,
             @Valid @RequestBody UpdateProductRequestDTO dto
     ) {
         Integer adminId = getUserIdFromDetails(userDetails);
 
-        logger.info(" PUT /api/products/{} - Admin {} | Categoría: {}",
-                id, adminId, dto.getProductCategoryId());
-
-        UpdateProductCommand command = mapper.toUpdateProductCommand(id, dto, adminId);
-        Product updated = updateProduct.update(command);
+        Product updated = updateProduct.update(
+                mapper.toUpdateProductCommand(id, dto, adminId)
+        );
 
         String imageUrl = resolveImageUrlFromProduct(updated);
-        String imageStatus = (imageUrl != null) ? "READY" : "NONE";
 
         ProductResponseDTO response = mapper.toProductResponseDTO(updated);
         response.setImageUrl(imageUrl);
-        response.setImageStatus(imageStatus);
-
-        logger.info(" Producto actualizado: ID {} | Categoría: '{}'",
-                updated.getId(), updated.getCategoryName());
+        response.setImageStatus(imageUrl != null ? "READY" : "NONE");
 
         return ResponseEntity.ok(response);
     }
@@ -322,49 +251,28 @@ public class ProductController {
 
     @PutMapping(value = "/image/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
-    @Operation(
-            summary = "Actualizar imagen del producto",
-            description = "Actualiza únicamente la imagen."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Imagen aceptada (en proceso)",
-                    content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Producto no encontrado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
-    })
     public ResponseEntity<ProductResponseDTO> updateImage(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "ID del producto") @PathVariable Integer id,
-            @Parameter(description = "Nueva imagen (JPG, PNG, WEBP, máx 5MB)")
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Integer id,
             @RequestPart("productImage") MultipartFile productImage
     ) {
         Integer adminId = getUserIdFromDetails(userDetails);
 
-        FileData fileData = FileData.from(productImage);
-        Product updated = updateProductImage.update(id, fileData, adminId);
-
-        String imageUrl = resolveImageUrlFromProduct(updated);
+        Product updated = updateProductImage.update(id, FileData.from(productImage), adminId);
 
         ProductResponseDTO response = mapper.toProductResponseDTO(updated);
-        response.setImageUrl(imageUrl);
+        response.setImageUrl(resolveImageUrlFromProduct(updated));
         response.setImageStatus("PENDING");
 
         return ResponseEntity.ok(response);
     }
 
-    // ==================== CHANGE AVAILABILITY ====================
+    // ==================== AVAILABILITY ====================
 
     @PatchMapping("/{id}/availability")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
-    @Operation(summary = "Cambiar disponibilidad", description = "Activa o desactiva un producto.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Disponibilidad actualizada",
-                    content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Producto no encontrado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
-    })
     public ResponseEntity<ProductResponseDTO> changeAvailability(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Integer id,
             @RequestParam Boolean availability
     ) {
@@ -372,43 +280,29 @@ public class ProductController {
 
         Product updated = setProductAvailability.setAvailability(id, availability, adminId);
 
-        String imageUrl = resolveImageUrlFromProduct(updated);
-        String imageStatus = resolveImageStatus(false, imageUrl);
-
         ProductResponseDTO response = mapper.toProductResponseDTO(updated);
-        response.setImageUrl(imageUrl);
-        response.setImageStatus(imageStatus);
+        response.setImageUrl(resolveImageUrlFromProduct(updated));
+        response.setImageStatus(resolveImageStatus(false, response.getImageUrl()));
 
         return ResponseEntity.ok(response);
     }
 
-    // ==================== ADJUST STOCK ====================
+    // ==================== STOCK ====================
 
     @PatchMapping("/{id}/stock")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
-    @Operation(summary = "Ajustar stock", description = "Aumenta o disminuye la cantidad disponible.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Stock actualizado",
-                    content = @Content(schema = @Schema(implementation = ProductResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Producto no encontrado",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDTO.class)))
-    })
     public ResponseEntity<ProductResponseDTO> adjustStock(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Integer id,
-            @Parameter(description = "Cantidad a ajustar (positivo=aumentar, negativo=disminuir)")
             @RequestParam Integer delta
     ) {
         Integer adminId = getUserIdFromDetails(userDetails);
 
         Product updated = adjustProductStock.adjustStock(id, delta, adminId);
 
-        String imageUrl = resolveImageUrlFromProduct(updated);
-        String imageStatus = resolveImageStatus(false, imageUrl);
-
         ProductResponseDTO response = mapper.toProductResponseDTO(updated);
-        response.setImageUrl(imageUrl);
-        response.setImageStatus(imageStatus);
+        response.setImageUrl(resolveImageUrlFromProduct(updated));
+        response.setImageStatus(resolveImageStatus(false, response.getImageUrl()));
 
         return ResponseEntity.ok(response);
     }
@@ -417,43 +311,30 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN')")
-    @Operation(
-            summary = "Eliminar producto",
-            description = "Elimina un producto mediante soft delete"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Producto eliminado exitosamente"),
-            @ApiResponse(responseCode = "404", description = "Producto no encontrado")
-    })
     public ResponseEntity<MessageResponseDTO> deleteProduct(
             @PathVariable Integer id,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        logger.info(" DELETE producto ID: {} por usuario ID: {}", id, userDetails.getId());
-
         deleteProduct.delete(id, userDetails.getId());
-
-        logger.info(" Producto eliminado: ID {}", id);
         return ResponseEntity.ok(new MessageResponseDTO("Producto eliminado exitosamente", true));
     }
 
+    // ==================== PUBLIC ====================
 
     @GetMapping("/public")
-    @Operation(summary = "Listar productos públicos",
-            description = "Retorna solo BEVERAGE y SIDE para la vista pública")
     public ResponseEntity<ListProductResponseDTO> getPublicProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) ProductType productType,
-            @RequestParam(required = false) Integer categoryId  // ← agregar
+            @RequestParam(required = false) Integer categoryId
     ) {
-        logger.info("GET /api/products/public - productType: {} | categoryId: {}", productType, categoryId);
-
         PaginationRequest pagination = new PaginationRequest(page, size, "name", "ASC");
-        PageResponse<Product> pageResponse = listPublicProducts.list(productType, categoryId, pagination);
+
+        PageResponse<Product> pageResponse =
+                listPublicProducts.list(productType, categoryId, pagination);
 
         List<ProductResponseDTO> items = pageResponse.content().stream()
-                .map(p -> mapper.toPublicProductResponseDTO(p, resolveImageUrlFromProduct(p))) // ← cambio
+                .map(p -> mapper.toPublicProductResponseDTO(p, resolveImageUrlFromProduct(p)))
                 .toList();
 
         ListProductResponseDTO response = ListProductResponseDTO.builder()
@@ -464,11 +345,6 @@ public class ProductController {
                 .totalPages(pageResponse.totalPages())
                 .build();
 
-        logger.info("Productos públicos: {} resultados", pageResponse.totalElements());
         return ResponseEntity.ok(response);
     }
-
-
-
-
 }

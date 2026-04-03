@@ -53,4 +53,9 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Integer> 
             @Param("orderNumber") String orderNumber,
             Pageable pageable
     );
+
+    @Query(value = "SELECT COALESCE(MAX(CAST(SUBSTRING(order_number, 16) AS UNSIGNED)), 0) " +
+            "FROM `order` WHERE DATE(order_date) = :date LOCK IN SHARE MODE",
+            nativeQuery = true)
+    long maxDailySequenceWithLock(@Param("date") LocalDate date);
 }

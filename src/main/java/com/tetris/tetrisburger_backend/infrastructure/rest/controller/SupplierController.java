@@ -18,27 +18,15 @@ import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.SupplierRestDt
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/suppliers")
 public class SupplierController {
-
-    private static final Logger log = LoggerFactory.getLogger(SupplierController.class);
 
     private final CreateSupplier createSupplier;
     private final UpdateSupplier updateSupplier;
@@ -64,7 +52,6 @@ public class SupplierController {
     // GET públicos
     @GetMapping("/{id}")
     public ResponseEntity<SupplierResponseDTO> get(@PathVariable Integer id) {
-        log.debug("GET supplier id={}", id);
         Supplier s = getSupplierById.get(new GetSupplierByIdQuery(id));
         return ResponseEntity.ok(mapper.toResponseDTO(s));
     }
@@ -76,9 +63,10 @@ public class SupplierController {
             @RequestParam(defaultValue = "12") @Min(1) int size,
             @RequestParam(required = false) String sortBy,
             @RequestParam(defaultValue = "ASC") String direction) {
-        log.debug("LIST suppliers q='{}' page={} size={} sortBy={} dir={}", q, page, size, sortBy, direction);
+
         PaginationRequest pr = new PaginationRequest(page, size, sortBy, direction);
         PageResponse<Supplier> result = listSuppliers.list(new ListSuppliersQuery(q), pr);
+
         return ResponseEntity.ok(mapper.toListResponseDTO(result));
     }
 
@@ -91,8 +79,6 @@ public class SupplierController {
     ) {
         Integer userId = userDetails.getId();
 
-        log.info("ADMIN create supplier: {}", dto.getName());
-
         Supplier created = createSupplier.create(
                 mapper.toCreateCommand(dto, userId)
         );
@@ -103,12 +89,17 @@ public class SupplierController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<SupplierResponseDTO> update(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                      @PathVariable Integer id,
-                                                      @Valid @RequestBody UpdateSupplierRequestDTO dto) {
-        log.info("ADMIN update supplier id={}", id);
+    public ResponseEntity<SupplierResponseDTO> update(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Integer id,
+            @Valid @RequestBody UpdateSupplierRequestDTO dto) {
+
         Integer userId = userDetails.getId();
-        Supplier updated = updateSupplier.update(mapper.toUpdateCommand(id, dto, userId));
+
+        Supplier updated = updateSupplier.update(
+                mapper.toUpdateCommand(id, dto, userId)
+        );
+
         return ResponseEntity.ok(mapper.toResponseDTO(updated));
     }
 
@@ -119,8 +110,6 @@ public class SupplierController {
             @PathVariable Integer id
     ) {
         Integer userId = userDetails.getId();
-
-        log.info("ADMIN delete supplier id={}", id);
 
         deleteSupplier.delete(id, userId);
 
