@@ -38,6 +38,5 @@ public class MenuItemEntity {
     @EqualsAndHashCode.Exclude
     private ProductEntity product;
 
-    @Column(name = "quantity", nullable = false)
-    private Integer quantity;
+
 }

@@ -54,7 +54,6 @@ public class MenuAdapter implements MenuRepository {
         MenuItemEntity entity = new MenuItemEntity();
         entity.setIdMenuItem(item.getIdMenuItem());
         entity.setItemType(item.getItemType());
-        entity.setQuantity(item.getQuantity());
 
         if (item.getBurger() != null)
             entity.setBurger(em.getReference(BurgerEntity.class, item.getBurger().getIdBurger()));
@@ -188,7 +187,7 @@ public class MenuAdapter implements MenuRepository {
                             existing.setItemType(newItem.getItemType());
                             existing.setBurger(newItem.getBurger());
                             existing.setProduct(newItem.getProduct());
-                            existing.setQuantity(newItem.getQuantity());
+
                         });
             }
         });

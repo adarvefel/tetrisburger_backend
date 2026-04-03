@@ -59,7 +59,7 @@ public class MenuImageUploadListener {
             );
 
         } catch (Exception e) {
-            // handle silently
+
         }
     }
 }
