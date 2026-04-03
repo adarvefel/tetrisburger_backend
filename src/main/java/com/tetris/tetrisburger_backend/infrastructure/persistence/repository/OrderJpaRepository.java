@@ -16,11 +16,6 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Integer> 
     @Query("SELECT o FROM OrderEntity o LEFT JOIN FETCH o.payment WHERE o.idUser = :idUser AND o.deletedAt IS NULL ORDER BY o.orderDate DESC")
     Page<OrderEntity> findByIdUser(@Param("idUser") Integer idUser, Pageable pageable);
 
-    @Query("SELECT COUNT(o) FROM OrderEntity o WHERE DATE(o.orderDate) = :date")
-    long countByOrderDate(@Param("date") LocalDate date);
-
-    @Query("SELECT o FROM OrderEntity o LEFT JOIN FETCH o.payment WHERE (:status IS NULL OR o.status = :status) AND o.deletedAt IS NULL ORDER BY o.orderDate DESC")
-    Page<OrderEntity> findAllByStatus(@Param("status") OrderStatus status, Pageable pageable);
 
     @Query("""
         SELECT o FROM OrderEntity o
@@ -38,9 +33,6 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Integer> 
             Pageable pageable
     );
 
-    @Query("SELECT COALESCE(MAX(CAST(SUBSTRING(o.orderNumber, 16) AS int)), 0) " +
-            "FROM OrderEntity o WHERE DATE(o.orderDate) = :date")
-    long maxDailySequence(@Param("date") LocalDate date);
 
     @Query("""
       SELECT o FROM OrderEntity o
@@ -54,8 +46,6 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Integer> 
             Pageable pageable
     );
 
-    @Query(value = "SELECT COALESCE(MAX(CAST(SUBSTRING(order_number, 16) AS UNSIGNED)), 0) " +
-            "FROM `order` WHERE DATE(order_date) = :date LOCK IN SHARE MODE",
-            nativeQuery = true)
-    long maxDailySequenceWithLock(@Param("date") LocalDate date);
+
+
 }

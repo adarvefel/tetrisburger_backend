@@ -12,9 +12,6 @@ import java.util.Optional;
 public interface OrderRepository {
     Order save(Order order);
 
-    long countByOrderDate(LocalDate date);
-    long maxDailySequence(LocalDate date);
-
 
     Optional<Order> findById(Integer idOrder);
     PageResponse<Order> findByUserId(Integer idUser, PaginationRequest pagination);

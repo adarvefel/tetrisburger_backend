@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class Order {
 
@@ -30,7 +31,7 @@ public class Order {
         this.items = new ArrayList<>();
     }
 
-    public static Order create(Integer idUser, List<OrderItem> items, long dailyCount) {
+    public static Order create(Integer idUser, List<OrderItem> items) { // ← quitar dailyCount
         if (idUser == null)
             throw new IllegalArgumentException("idUser es obligatorio");
         if (items == null || items.isEmpty())
@@ -41,10 +42,11 @@ public class Order {
         o.createdBy = idUser;
         o.status = OrderStatus.PENDING;
 
-        // Formato: ORD-2026-03-22-001
+        // Formato: ORD-2026-04-02-A3F9
         LocalDate today = LocalDate.now();
         String fecha = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        o.orderNumber = String.format("ORD-%s-%03d", fecha, dailyCount + 1);
+        String random = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+        o.orderNumber = String.format("ORD-%s-%s", fecha, random);
 
         o.orderDate = LocalDateTime.now();
         o.items = new ArrayList<>(items);
