@@ -13,12 +13,9 @@ import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import com.tetris.tetrisburger_backend.application.usecase.product.AdjustProductStockUseCase;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.cart.CartItemRequestDTO;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,21 +87,9 @@ public class CreateOrderUseCase implements CreateOrder {
                         idUser
                 ));
 
-        // Contador de órdenes del día
-        long dailyCount = orderRepository.maxDailySequence(LocalDate.now());
-        Order order = Order.create(idUser, orderItems, dailyCount);
-
-        // Guardar con retry por race condition
-        Order saved;
-        try {
-            saved = orderRepository.save(order);
-        } catch (DataIntegrityViolationException e) {
-            long newCount = orderRepository.maxDailySequence(LocalDate.now());
-            order.setOrderNumber(String.format("ORD-%s-%03d",
-                    LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                    newCount + 1));
-            saved = orderRepository.save(order);
-        }
+        // Crear y guardar orden con número random
+        Order order = Order.create(idUser, orderItems);
+        Order saved = orderRepository.save(order);
 
         // Limpiar carrito
         cartRepository.findByUserId(idUser)
