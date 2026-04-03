@@ -19,8 +19,6 @@ import com.tetris.tetrisburger_backend.infrastructure.rest.dto.user.RegisterUser
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.AuthRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.UserRestDtoMapper;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,8 +35,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 @Tag(name = "Autenticación", description = "Login, registro, Google OAuth y recuperación de contraseña")
 public class AuthController {
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-
+    
     private final RegisterUser registerUser;
     private final LoginUser loginUser;
     private final LoginWithGoogle loginWithGoogle;
@@ -102,8 +99,7 @@ public class AuthController {
     public ResponseEntity<RegisterUserResponseDTO> register(
             @Valid @RequestBody RegisterUserRequestDTO requestDTO) {
 
-        logger.info("Registrando nuevo usuario con email: {}", requestDTO.email());
-
+        
         RegisterUserCommand command = authMapper.toRegisterCommand(requestDTO);
         User registeredUser = registerUser.handle(command);
         RegisterUserResponseDTO responseDTO = authMapper.toRegisterResponseDTO(registeredUser);
@@ -149,8 +145,7 @@ public class AuthController {
     )
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginDTO) {
 
-        logger.info("Intento de login para: {}", loginDTO.email());
-
+        
         LoginUserCommand command = authMapper.toLoginCommand(loginDTO);
         LoginResponse domainResponse = loginUser.execute(command);
         LoginResponseDTO responseDTO = authMapper.toLoginResponseDTO(domainResponse);
@@ -167,8 +162,7 @@ public class AuthController {
     public ResponseEntity<LoginResponseDTO> loginWithGoogleEndpoint(
             @Valid @RequestBody GoogleLoginRequestDTO googleLoginDTO) {
 
-        logger.info("Intento de login con Google");
-
+        
         LoginWithGoogleCommand command = authMapper.toLoginWithGoogleCommand(googleLoginDTO);
         LoginResponse domainResponse = loginWithGoogle.handle(command);
         LoginResponseDTO responseDTO = authMapper.toLoginResponseDTO(domainResponse);
@@ -207,8 +201,7 @@ public class AuthController {
     public ResponseEntity<MessageResponseDTO> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequestDTO forgotDTO) {
 
-        logger.info("Solicitud de recuperación de contraseña para: {}", forgotDTO.email());
-
+        
         ForgotPasswordCommand command = authMapper.toForgotPasswordCommand(forgotDTO);
         forgotPassword.execute(command);
 
@@ -247,8 +240,7 @@ public class AuthController {
     public ResponseEntity<MessageResponseDTO> resetPasswordEndpoint(
             @Valid @RequestBody ResetPasswordRequestDTO resetDTO) {
 
-        logger.info("Intento de resetear contraseña con token");
-
+        
         ResetPasswordCommand command = authMapper.toResetPasswordCommand(resetDTO);
         resetPassword.handle(command);
 

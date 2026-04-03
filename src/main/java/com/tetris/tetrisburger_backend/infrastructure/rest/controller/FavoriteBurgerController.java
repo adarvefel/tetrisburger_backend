@@ -14,8 +14,6 @@ import com.tetris.tetrisburger_backend.infrastructure.rest.dto.favoriteburger.Fa
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.FavoriteBurgerRestDtoMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,8 +27,6 @@ import java.util.List;
 @RequestMapping("/api/favorites")
 @Tag(name = "Favorites", description = "Gestión de hamburguesas favoritas del usuario")
 public class FavoriteBurgerController extends AuthenticatedController {
-
-    private static final Logger logger = LoggerFactory.getLogger(FavoriteBurgerController.class);
 
     private final AddFavoriteBurger addFavoriteBurger;
     private final GetBurgerById getBurgerById;
@@ -55,12 +51,8 @@ public class FavoriteBurgerController extends AuthenticatedController {
             @Valid @RequestBody FavoriteBurgerRequestDTO dto
     ) {
         Integer idUser = getUserId(userDetails);
-        logger.info("POST /api/favorites - Usuario: {} | Hamburguesa: {}", idUser, dto.idBurger());
 
         FavoriteBurger saved = addFavoriteBurger.handle(idUser, dto.idBurger());
-
-        logger.info("Favorito agregado: ID {} | Usuario: {} | Hamburguesa: {}",
-                saved.getIdFavorite(), idUser, dto.idBurger());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(mapper.toSimpleResponseDTO(saved));
@@ -75,7 +67,6 @@ public class FavoriteBurgerController extends AuthenticatedController {
             @PathVariable Integer idBurger
     ) {
         Integer idUser = getUserId(userDetails);
-        logger.info("DELETE /api/favorites/{} - Usuario: {}", idBurger, idUser);
 
         // Obtener burger ANTES de eliminar
         Burger burger = getBurgerById.execute(idBurger);
@@ -84,8 +75,6 @@ public class FavoriteBurgerController extends AuthenticatedController {
         String mensaje = !burger.isOnMenu()
                 ? "Hamburguesa personalizada eliminada de favoritos y de tus creaciones"
                 : "Hamburguesa eliminada de favoritos";
-
-        logger.info("Favorito eliminado: Usuario: {} | Hamburguesa: {}", idUser, idBurger);
 
         return ResponseEntity.ok(new DeleteResponseDTO(
                 mensaje,
@@ -102,9 +91,8 @@ public class FavoriteBurgerController extends AuthenticatedController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         Integer idUser = getUserId(userDetails);
-        logger.info("GET /api/favorites - Usuario: {}", idUser);
 
-        List<FavoriteBurgerDetail> favorites = getFavoriteBurgersByUser.handle(idUser); // ← FavoriteBurgerDetail
+        List<FavoriteBurgerDetail> favorites = getFavoriteBurgersByUser.handle(idUser);
 
         return ResponseEntity.ok(mapper.toResponseDTOList(favorites));
     }

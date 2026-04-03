@@ -31,8 +31,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -47,8 +45,7 @@ import java.util.List;
 @SecurityRequirement(name = "bearerAuth")
 public class UserBurgerController {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserBurgerController.class);
-
+    
     private final CreateCustomBurger createCustomBurger;
     private final ListBurgerIngredients listBurgerIngredients;
     private final SearchIngredients searchIngredients;
@@ -99,8 +96,7 @@ public class UserBurgerController {
             @Parameter(description = "Tamaño de página")
             @RequestParam(defaultValue = "10") int size
     ) {
-        logger.info("GET /api/admin/burgers/ingredients/search - name='{}'", name);
-
+        
         PaginationRequest pagination = new PaginationRequest(page, size);
         PageResponse<Product> result = searchIngredients.handle(name, pagination);
 
@@ -129,8 +125,7 @@ public class UserBurgerController {
             description = "Retorna todas las hamburguesas marcadas como destacadas y disponibles"
     )
     public ResponseEntity<List<MenuBurgerResponseDTO>> getFeaturedBurgers() {
-        logger.info("GET /api/admin/burgers/menu/featured");
-
+        
         List<Burger> burgers = getFeaturedBurgers.handle();
         List<MenuBurgerResponseDTO> response = burgers.stream()
                 .map(mapper::toMenuBurgerResponseDTO)

@@ -5,7 +5,6 @@ import com.tetris.tetrisburger_backend.domain.exception.CartValidationException;
 import com.tetris.tetrisburger_backend.domain.exception.PhoneRequiredException;
 import com.tetris.tetrisburger_backend.domain.model.Order;
 import com.tetris.tetrisburger_backend.domain.model.OrderItem;
-import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.order.CreateOrder;
 import com.tetris.tetrisburger_backend.domain.port.out.CartRepository;
@@ -14,10 +13,12 @@ import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import com.tetris.tetrisburger_backend.application.usecase.product.AdjustProductStockUseCase;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.cart.CartItemRequestDTO;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +57,7 @@ public class CreateOrderUseCase implements CreateOrder {
         if (user.getPhone() == null || user.getPhone().isBlank())
             throw new PhoneRequiredException("El usuario debe tener un número de teléfono");
 
-        // CU-34 — Revalidar todos los ítems antes de confirmar
+        // Revalidar todos los ítems antes de confirmar
         List<String> errors = new ArrayList<>();
 
         cartItems.stream()
@@ -80,7 +81,7 @@ public class CreateOrderUseCase implements CreateOrder {
                 .map(this::toOrderItem)
                 .toList();
 
-        // Descontar stock con lock atómico — CU-15
+        // Descontar stock con lock atómico
         cartItems.stream()
                 .filter(item -> OrderItemType.PRODUCT.name().equals(item.typeProduct().name()))
                 .forEach(item -> adjustProductStockUseCase.adjustStock(
@@ -91,10 +92,19 @@ public class CreateOrderUseCase implements CreateOrder {
 
         // Contador de órdenes del día
         long dailyCount = orderRepository.maxDailySequence(LocalDate.now());
-
-        // Crear y guardar orden
         Order order = Order.create(idUser, orderItems, dailyCount);
-        Order saved = orderRepository.save(order);
+
+        // Guardar con retry por race condition
+        Order saved;
+        try {
+            saved = orderRepository.save(order);
+        } catch (DataIntegrityViolationException e) {
+            long newCount = orderRepository.maxDailySequence(LocalDate.now());
+            order.setOrderNumber(String.format("ORD-%s-%03d",
+                    LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                    newCount + 1));
+            saved = orderRepository.save(order);
+        }
 
         // Limpiar carrito
         cartRepository.findByUserId(idUser)

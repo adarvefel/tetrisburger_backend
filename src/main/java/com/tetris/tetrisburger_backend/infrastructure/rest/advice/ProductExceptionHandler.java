@@ -3,8 +3,6 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.advice;
 import com.tetris.tetrisburger_backend.domain.exception.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.ErrorResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.MessageResponseDTO;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +17,7 @@ import java.time.LocalDateTime;
 @Order(10)
 public class ProductExceptionHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProductExceptionHandler.class);
-
+    
     // ========================================
     // MÉTODOS AUXILIARES
     // ========================================
@@ -55,35 +52,30 @@ public class ProductExceptionHandler {
     @ExceptionHandler(ProductAlreadyExistsException.class)
     public ResponseEntity<MessageResponseDTO> handleProductAlreadyExists(
             ProductAlreadyExistsException ex, WebRequest request) {
-        logger.warn("Producto duplicado: {} - Path: {}", ex.getMessage(), extractPath(request));
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+                return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @ExceptionHandler(ProductNotFoundException.class)
     public ResponseEntity<MessageResponseDTO> handleProductNotFound(
             ProductNotFoundException ex, WebRequest request) {
-        logger.warn("Producto no encontrado: {} - Path: {}", ex.getMessage(), extractPath(request));
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+                return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(ProductAlreadyDeletedException.class)
     public ResponseEntity<MessageResponseDTO> handleProductAlreadyDeleted(
             ProductAlreadyDeletedException ex, WebRequest request) {
-        logger.warn("Producto ya eliminado: {} - Path: {}", ex.getMessage(), extractPath(request));
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+                return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(ProductNotAvailableException.class)
     public ResponseEntity<ErrorResponseDTO> handleProductNotAvailable(
             ProductNotAvailableException ex, WebRequest request) {
-        logger.warn(" Producto no disponible: {} - Path: {}", ex.getMessage(), extractPath(request));
-        return buildErrorResponseDTO(HttpStatus.CONFLICT, ex.getMessage(), request);
+                return buildErrorResponseDTO(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler(ProductCategoryNotFoundException.class)
     public ResponseEntity<ErrorResponseDTO> handleProductCategoryNotFound(
             ProductCategoryNotFoundException ex, WebRequest request) {
-        logger.warn(" Categoría no encontrada: {} - Path: {}", ex.getMessage(), extractPath(request));
-        return buildErrorResponseDTO(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+                return buildErrorResponseDTO(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 }
