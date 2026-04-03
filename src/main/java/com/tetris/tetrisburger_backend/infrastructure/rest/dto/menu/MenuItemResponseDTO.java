@@ -5,6 +5,4 @@ public record MenuItemResponseDTO(
         Integer idMenuItem,
         String itemType,
         BurgerSummaryDTO burger,
-        ProductSummaryDTO product,
-        Integer quantity
-) {}
+        ProductSummaryDTO product) {}

@@ -88,8 +88,7 @@ public class UpdateMenuUseCase implements UpdateMenu {
                 .map(i -> MenuItem.create(
                         ItemType.valueOf(i.itemType().toUpperCase()),
                         i.idBurger()  != null ? burgerMap.get(i.idBurger())   : null,
-                        i.idProduct() != null ? productMap.get(i.idProduct()) : null,
-                        i.quantity()
+                        i.idProduct() != null ? productMap.get(i.idProduct()) : null
                 ))
                 .toList();
 
