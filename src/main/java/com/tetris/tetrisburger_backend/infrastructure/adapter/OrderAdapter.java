@@ -4,7 +4,6 @@ import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.enums.OrderStatus;
 import com.tetris.tetrisburger_backend.domain.model.Order;
-
 import com.tetris.tetrisburger_backend.domain.port.out.OrderRepository;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.mapper.OrderEntityMapper;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.OrderJpaRepository;
@@ -13,7 +12,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -52,10 +50,8 @@ public class OrderAdapter implements OrderRepository {
     public PageResponse<Order> findAll(OrderStatus status, LocalDateTime start,
                                        LocalDateTime end, PaginationRequest pagination) {
         Pageable pageable = PageRequest.of(pagination.getPage(), pagination.getSize());
-
         Page<Order> page = jpa.findAllWithFilters(status, start, end, pageable)
                 .map(mapper::toDomain);
-
         return new PageResponse<>(
                 page.getContent(),
                 page.getNumber(),
@@ -63,18 +59,6 @@ public class OrderAdapter implements OrderRepository {
                 page.getTotalElements(),
                 page.getTotalPages()
         );
-    }
-
-    @Override
-    public long maxDailySequence(LocalDate date) {
-
-        return jpa.maxDailySequenceWithLock(date);
-    }
-
-
-    @Override
-    public long countByOrderDate(LocalDate date) {
-        return jpa.countByOrderDate(date);
     }
 
     @Override
