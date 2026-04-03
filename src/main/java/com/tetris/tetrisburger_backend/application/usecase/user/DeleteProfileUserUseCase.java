@@ -5,8 +5,6 @@ import com.tetris.tetrisburger_backend.domain.port.in.user.DeleteProfileUser;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.DeleteProfileUserCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import jakarta.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 

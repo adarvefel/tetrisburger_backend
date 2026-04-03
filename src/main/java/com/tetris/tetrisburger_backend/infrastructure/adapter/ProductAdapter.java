@@ -9,8 +9,6 @@ import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.Product
 import com.tetris.tetrisburger_backend.infrastructure.persistence.mapper.ProductEntityMapper;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.ProductJpaRepository;
 import jakarta.persistence.criteria.JoinType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,8 +21,6 @@ import java.util.Optional;
 
 @Repository
 public class ProductAdapter implements ProductRepository {
-
-    private final Logger log = LoggerFactory.getLogger(ProductAdapter.class);
 
     private final ProductJpaRepository jpa;
     private final ProductEntityMapper mapper;
@@ -52,9 +48,7 @@ public class ProductAdapter implements ProductRepository {
 
     @Override
     public boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name) {
-        boolean exists = jpa.existsByNameIgnoreCaseAndDeletedAtIsNull(name);
-        log.info("Verificando si existe producto con nombre '{}': {}", name, exists);
-        return exists;
+        return jpa.existsByNameIgnoreCaseAndDeletedAtIsNull(name);
     }
 
     @Override
@@ -120,7 +114,6 @@ public class ProductAdapter implements ProductRepository {
         Page<ProductEntity> page = jpa.searchIngredients(ProductType.INGREDIENT, name, toPageable(pagination));
         return toPageResponse(page);
     }
-
 
     // ==================== VISTA PÚBLICA ====================
 
@@ -201,15 +194,12 @@ public class ProductAdapter implements ProductRepository {
         );
     }
 
-
     @Override
     public List<Product> findAllByIds(List<Integer> ids) {
         if (ids == null || ids.isEmpty()) return List.of();
-        return  jpa.findAllByIds(ids)
+        return jpa.findAllByIds(ids)
                 .stream()
                 .map(mapper::toDomain)
                 .toList();
     }
 }
-
-

@@ -6,8 +6,6 @@ import com.tetris.tetrisburger_backend.domain.port.in.user.GetUserProfile;
 import com.tetris.tetrisburger_backend.domain.port.in.user.query.GetUserProfileQuery;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
 import com.tetris.tetrisburger_backend.infrastructure.security.JwtUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -15,8 +15,6 @@ import com.tetris.tetrisburger_backend.domain.port.in.burger.command.UpdateMenuB
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import jakarta.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -27,9 +25,6 @@ import java.util.Set;
 @Transactional
 public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
 
-    private static final Logger logger = LoggerFactory.getLogger(UpdateMenuBurgerUseCase.class);
-
-    // Tipos de productos permitidos para ingredientes de hamburguesa
     private static final Set<ProductType> ALLOWED_INGREDIENT_TYPES = Set.of(
             ProductType.INGREDIENT
     );
@@ -45,58 +40,39 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
 
     @Override
     public Burger handle(UpdateMenuBurgerCommand command) {
-        logger.info("🔵 Actualizando hamburguesa de menú: idBurger={}, updatedBy={}",
-                command.idBurger(), command.updatedBy());
 
         try {
-            // 1. Validaciones
             validateCommand(command);
 
-            // 2. Buscar burger de menú
             Burger burger = burgerRepository.findById(command.idBurger())
                     .orElseThrow(() -> new BurgerNotFoundException(
                             "Hamburguesa no encontrada. ID: " + command.idBurger()
                     ));
 
-            // 3. Validar que sea burger de menú activa
             validateIsMenuBurger(burger);
 
-            logger.debug(" Estado actual: name={}, ingredients={}, basePrice={}, finalPrice={}",
-                    burger.getName(),
-                    burger.getIngredients().size(),
-                    burger.getBasePrice(),
-                    burger.getFinalPrice());
-
-            // 4. Validar ingredientes duplicados
             validateNoDuplicateIngredients(command.ingredients());
 
-            // 5.  Crear snapshots de productos (igual que en Create)
             List<BurgerIngredient> newIngredients = command.ingredients().stream()
                     .map(req -> {
                         Product product = productRepository.findById(req.idProduct())
                                 .orElseThrow(() -> new ProductNotFoundException(req.idProduct()));
 
-                        // Validación completa del producto
                         validateProductForBurger(product);
 
-                        //  Crear snapshot del producto
                         ProductSnapshot snapshot = ProductSnapshot.fromProduct(
                                 product,
                                 req.quantity(),
                                 false
-
                         );
 
-                        // Crear ingrediente desde snapshot
                         return BurgerIngredient.fromSnapshot(snapshot);
                     })
                     .toList();
 
-            // 6. Guardar precios actuales para logging
             BigDecimal oldBasePrice = burger.getBasePrice();
             BigDecimal oldFinalPrice = burger.getFinalPrice();
 
-            // 7. Delegar la actualización al dominio
             burger.updateMenuBurger(
                     command.name(),
                     command.description(),
@@ -104,33 +80,13 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
                     command.availability(),
                     command.isFeatured(),
                     command.updatedBy()
-
             );
 
-            // 8. Logging de cambios
-            logger.info(" Actualización de precios:");
-            logger.info("  • Base:  ${} → ${}", oldBasePrice, burger.getBasePrice());
-            logger.info("  • Final: ${} → ${}", oldFinalPrice, burger.getFinalPrice());
-
-            if (!burger.getFinalPrice().equals(burger.getBasePrice())) {
-                logger.info("  • Margen personalizado mantenido: {}%",
-                        burger.calculateMarginPercentage());
-            }
-
-            logger.debug(" Estado actualizado: name={}, ingredients={}, basePrice={}, finalPrice={}",
-                    burger.getName(),
-                    burger.getIngredients().size(),
-                    burger.getBasePrice(),
-                    burger.getFinalPrice());
-
-            // 9. Guardar
             Burger updated = burgerRepository.save(burger);
 
             if (updated == null) {
                 throw new BurgerCreationException("Error al guardar la hamburguesa de menú actualizada");
             }
-
-            logger.info(" Hamburguesa de menú actualizada exitosamente: burgerId={}", updated.getIdBurger());
 
             return updated;
 
@@ -140,8 +96,6 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new InvalidBurgerException(e.getMessage());
         } catch (Exception e) {
-            logger.error(" Error inesperado actualizando hamburguesa de menú: burgerId={}",
-                    command.idBurger(), e);
             throw new BurgerCreationException("Error actualizando hamburguesa de menú", e);
         }
     }
@@ -172,17 +126,12 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
         }
     }
 
-    /**
-     * Valida que sea una hamburguesa de menú activa
-     */
     private void validateIsMenuBurger(Burger burger) {
         if (!burger.isOnMenu()) {
             throw new InvalidBurgerException(
                     "La hamburguesa no es una hamburguesa de menú. ID: " + burger.getIdBurger()
             );
         }
-
-
 
         if (burger.isDeleted()) {
             throw new InvalidBurgerException(
@@ -191,9 +140,6 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
         }
     }
 
-    /**
-     * Valida que no haya ingredientes duplicados
-     */
     private void validateNoDuplicateIngredients(
             List<UpdateMenuBurgerCommand.IngredientRequest> ingredients) {
 
@@ -210,19 +156,14 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
         }
     }
 
-    /**
-     * Validación completa del producto para hamburguesa de menú
-     */
     private void validateProductForBurger(Product product) {
 
-        // 1. Validar disponibilidad
         if (!product.getAvailability()) {
             throw new InvalidBurgerException(
                     "El producto '" + product.getName() + "' no está disponible"
             );
         }
 
-        // 2. Validar tipo de producto (reemplaza ambas validaciones anteriores)
         if (!ALLOWED_INGREDIENT_TYPES.contains(product.getProductType())) {
             throw new InvalidBurgerException(
                     "El producto '" + product.getName() + "' debe ser de tipo INGREDIENT. " +
@@ -230,16 +171,10 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
             );
         }
 
-        // 3. Advertencia de stock
         if (product.getQuantity() <= 0) {
-            logger.warn("Producto sin stock usado en menu burger: {} (ID: {})",
-                    product.getName(), product.getId());
+            throw new InsufficientStockException(
+                    "El producto '" + product.getName() + "' no tiene stock disponible"
+            );
         }
-
-        logger.debug("Producto validado: {} | Categoría: {} | Stock: {} | Tipo: {}",
-                product.getName(),
-                product.getCategoryName(),
-                product.getQuantity(),
-                product.getProductType());
     }
 }

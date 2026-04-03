@@ -16,8 +16,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,8 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Admin Settings", description = "Configuración de hamburguesas personalizadas")
 public class AdminSettingsController {
 
-    private static final Logger logger = LoggerFactory.getLogger(AdminSettingsController.class);
-
+    
     private final GetBurgerSettings getBurgerSettings;
     private final UpdateBurgerSettings updateBurgerSettings;
 
@@ -56,8 +53,7 @@ public class AdminSettingsController {
             )
     })
     public ResponseEntity<BurgerSettingsResponseDTO> getBurgerSettings() {
-        logger.info("📍 GET /api/admin/settings/burgers");
-
+        
         BurgerSettings settings = getBurgerSettings.handle();
         BurgerSettingsResponseDTO response = BurgerSettingsResponseDTO.from(settings);
 
@@ -84,8 +80,7 @@ public class AdminSettingsController {
             @AuthenticationPrincipal CustomUserDetails admin,
             @Valid @RequestBody UpdateBurgerSettingsRequestDTO dto
     ) {
-        logger.info("📍 PUT /api/admin/settings/burgers - Admin ID: {}", admin.getId());
-
+        
         UpdateBurgerSettingsCommand command = new UpdateBurgerSettingsCommand(
                 dto.customBurgerMinPrice(),
                 dto.customBurgerMaxPrice(),
@@ -97,7 +92,6 @@ public class AdminSettingsController {
         BurgerSettings updated = updateBurgerSettings.handle(command);
         BurgerSettingsResponseDTO response = BurgerSettingsResponseDTO.from(updated);
 
-        logger.info("Settings actualizadas exitosamente");
-        return ResponseEntity.ok(response);
+                return ResponseEntity.ok(response);
     }
 }

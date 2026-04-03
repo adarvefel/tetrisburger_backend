@@ -22,6 +22,9 @@ public interface OrderRestDtoMapper {
                 order.getStatus().name(),
                 order.getTotalAmount(),
                 order.getOrderDate(),
+                order.getUpdatedAt(),      // ← agregar
+                order.getCreatedBy(),      // ← agregar
+                order.getUpdatedBy(),      // ← agregar
                 items,
                 order.getPaymentMethod() != null
                         ? order.getPaymentMethod().getDisplayName()
@@ -33,6 +36,7 @@ public interface OrderRestDtoMapper {
         if (item == null) return null;
         return new OrderItemResponseDTO(
                 item.getIdOrderItem(),
+                item.getIdBurger(),
                 item.getItemType().name(),
                 item.getItemName(),
                 item.getQuantity(),

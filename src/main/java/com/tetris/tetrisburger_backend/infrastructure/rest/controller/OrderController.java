@@ -3,7 +3,6 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.enums.OrderStatus;
-import com.tetris.tetrisburger_backend.domain.enums.PaymentMethod;
 import com.tetris.tetrisburger_backend.domain.model.Order;
 import com.tetris.tetrisburger_backend.domain.port.in.order.*;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.order.*;
@@ -89,7 +88,7 @@ public class OrderController {
 
     @GetMapping("/all")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_EMPLOYEE')")
-    public ResponseEntity<PageResponse<Order>> listAll(
+    public ResponseEntity<PageResponse<OrderResponseDTO>> listAll(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(defaultValue = "0") int page,
@@ -100,7 +99,7 @@ public class OrderController {
         PageResponse<Order> result = listAllOrders.handle(
                 orderStatus, date, new PaginationRequest(page, size));
 
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(result.map(mapper::toResponseDTO));
     }
 
 

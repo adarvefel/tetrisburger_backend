@@ -9,8 +9,6 @@ import com.tetris.tetrisburger_backend.domain.port.in.burger.client.command.Upda
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.SettingsRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +20,7 @@ import java.util.List;
 @Transactional
 public class UpdateCustomBurgerUseCase implements UpdateCustomBurger {
 
-    private static final Logger logger = LoggerFactory.getLogger(UpdateCustomBurgerUseCase.class);
-
+    
     private final BurgerRepository burgerRepository;
     private final ProductRepository productRepository;
     private final SettingsRepository settingsRepository;
@@ -39,8 +36,6 @@ public class UpdateCustomBurgerUseCase implements UpdateCustomBurger {
     @Override
     public Burger handle(UpdateCustomBurgerCommand command) {
 
-        logger.info("Actualizando burger personalizada: idBurger={} | idUser={}",
-                command.idBurger(), command.idUser());
 
         // 1. Obtener settings
         BurgerSettings settings = settingsRepository.getBurgerSettings();
@@ -96,8 +91,6 @@ public class UpdateCustomBurgerUseCase implements UpdateCustomBurger {
         // 8. Guardar
         Burger saved = burgerRepository.save(burger);
 
-        logger.info("Burger personalizada actualizada: idBurger={} | idUser={}",
-                saved.getIdBurger(), command.idUser());
 
         return saved;
     }

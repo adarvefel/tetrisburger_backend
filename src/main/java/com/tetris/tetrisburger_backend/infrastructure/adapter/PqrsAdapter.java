@@ -9,13 +9,10 @@ import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.PqrsEnt
 import com.tetris.tetrisburger_backend.infrastructure.persistence.mapper.PqrsEntityMapper;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.PqrsJpaRepository;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -24,8 +21,6 @@ import java.util.Optional;
 
 @Repository
 public class PqrsAdapter implements PqrsPort {
-
-    private  static  final Logger logger = LoggerFactory.getLogger(PqrsAdapter.class);
 
     private final PqrsJpaRepository pqrsJpaRepository;
     private final PqrsEntityMapper pqrsEntityMapper;
@@ -37,23 +32,19 @@ public class PqrsAdapter implements PqrsPort {
 
     @Override
     public Pqrs savePqrs(Pqrs pqrs) {
-        logger.info("Guardando PQRS en base de datos para el user con id: {}", pqrs.getIdUser());
         try {
             PqrsEntity entity = pqrsEntityMapper.toEntity(pqrs);
             PqrsEntity saved = pqrsJpaRepository.save(entity);
-            logger.info("PQRS guardada en la base de datos con id: {}", saved.getIdPqrs());
             return pqrsEntityMapper.toDomain(saved);
-        }
-        catch (Exception e){
-            logger.error("Error al guardar en la base de datos el PQRS con id: {}: {}", pqrs.getIdPqrs(), e);
+        } catch (Exception e) {
             throw e;
         }
     }
 
     @Override
     public Optional<Pqrs> findById(Integer id) {
-        logger.info("Buscando PQRS en la base de datos por el ID: {}", id);
-        return pqrsJpaRepository.findById(id).map(pqrsEntityMapper::toDomain);
+        return pqrsJpaRepository.findById(id)
+                .map(pqrsEntityMapper::toDomain);
     }
 
     @Override
@@ -64,8 +55,6 @@ public class PqrsAdapter implements PqrsPort {
                 q.size(),
                 Sort.by(q.sortBy()).ascending()
         );
-
-
 
         Page<PqrsEntity> page;
 
@@ -79,7 +68,8 @@ public class PqrsAdapter implements PqrsPort {
             page = pqrsJpaRepository.findAllByDeletedAtIsNull(pageable);
         }
 
-        List<Pqrs> list = page.getContent().stream()
+        List<Pqrs> list = page.getContent()
+                .stream()
                 .map(pqrsEntityMapper::toDomain)
                 .toList();
 
@@ -95,38 +85,24 @@ public class PqrsAdapter implements PqrsPort {
     @Override
     public void softDeletePqrs(Integer idPqrs, Integer idUser) {
 
-        logger.info("Usuario con ID: {} intenrando eliminar Pqrs de la db con ID: {}", idUser, idPqrs);
-
         PqrsEntity pqrs = pqrsJpaRepository.findById(idPqrs)
                 .orElseThrow(() -> new RuntimeException("Pqrs no encontrada."));
 
-
         pqrs.setDeletedAt(LocalDateTime.now());
         pqrs.setDeletedBy(idUser);
-
-
-        logger.info("Usuario con ID: {} eliminno Pqrs de la db con ID: {}", idUser, idPqrs);
-
     }
 
     @Override
     public Pqrs updatePqrs(Pqrs pqrs) {
 
-        logger.info("Usuario con id: {} intentando actualizar su PQRS en la DB de id: {} ", pqrs.getIdUser(), pqrs.getIdPqrs());
-
         PqrsEntity pqrsEntity = pqrsEntityMapper.toEntity(pqrs);
         pqrsJpaRepository.save(pqrsEntity);
-        Pqrs domain = pqrsEntityMapper.toDomain(pqrsEntity);
 
-        logger.info("Usuario con id: {} actualizo su PQRS en la DB de id: {} ", pqrs.getIdUser(), pqrs.getIdPqrs());
-
-        return domain;
+        return pqrsEntityMapper.toDomain(pqrsEntity);
     }
 
     @Override
     public PageResponse<Pqrs> findAllById(ListPqrsByIdQuery listPqrsByIdQuery, Integer idUser) {
-
-        logger.info("Buscando en la DB pqrs del user id: {}", idUser);
 
         Pageable pageable = PageRequest.of(
                 listPqrsByIdQuery.page(),
@@ -134,17 +110,15 @@ public class PqrsAdapter implements PqrsPort {
                 Sort.by(listPqrsByIdQuery.storBy()).ascending()
         );
 
-        Page<PqrsEntity> page = pqrsJpaRepository.findAllByIdUserAndDeletedAtIsNull(idUser, pageable);
+        Page<PqrsEntity> page = pqrsJpaRepository
+                .findAllByIdUserAndDeletedAtIsNull(idUser, pageable);
 
         List<Pqrs> pqrs = page.getContent()
                 .stream()
                 .map(pqrsEntityMapper::toDomain)
                 .toList();
 
-
-        logger.info("PQRS del user ID: {} encontradas en la DB", idUser);
-
-        return new PageResponse<Pqrs>(
+        return new PageResponse<>(
                 pqrs,
                 page.getNumber(),
                 page.getSize(),

@@ -7,8 +7,6 @@ import com.tetris.tetrisburger_backend.domain.model.User;
 import com.tetris.tetrisburger_backend.domain.port.in.user.UpdateProfileUser;
 import com.tetris.tetrisburger_backend.domain.port.in.user.command.UpdateProfileUserCommand;
 import com.tetris.tetrisburger_backend.domain.port.out.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
