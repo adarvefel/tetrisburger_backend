@@ -213,7 +213,6 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
             @Param("idUser") Integer idUser);
 
 
-    Optional<BurgerEntity> findByIdUserAndCustomFalseAndDeletedAtIsNull(Integer idUser);
 
     @Query("""
     SELECT b FROM BurgerEntity b
@@ -229,5 +228,42 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
 
     @Query("SELECT b FROM BurgerEntity b WHERE b.idBurger IN :ids AND b.deletedAt IS NULL")
     List<BurgerEntity> findAllByIds(@Param("ids") List<Integer> ids);
+
+
+    @Modifying
+    @Transactional
+    @Query("""
+    UPDATE BurgerEntity b 
+    SET b.basePrice = (
+        SELECT SUM(bi.subtotal) FROM BurgerIngredientEntity bi WHERE bi.burger.idBurger = b.idBurger
+    ),
+    b.updatedAt = CURRENT_TIMESTAMP
+    WHERE b.idBurger IN (
+        SELECT DISTINCT bi2.burger.idBurger FROM BurgerIngredientEntity bi2 WHERE bi2.product.id = :idProduct
+    )
+    AND b.isOnMenu = true
+    AND b.deletedAt IS NULL
+   """)
+    void recalculateBasePriceForMenuBurgers(@Param("idProduct") Integer idProduct);
+
+    @Modifying
+    @Transactional
+    @Query("""
+    UPDATE BurgerEntity b 
+    SET b.basePrice = (
+        SELECT SUM(bi.subtotal) FROM BurgerIngredientEntity bi WHERE bi.burger.idBurger = b.idBurger
+    ),
+    b.finalPrice = (
+        SELECT SUM(bi.subtotal) FROM BurgerIngredientEntity bi WHERE bi.burger.idBurger = b.idBurger
+    ),
+    b.updatedAt = CURRENT_TIMESTAMP
+    WHERE b.idBurger IN (
+        SELECT DISTINCT bi2.burger.idBurger FROM BurgerIngredientEntity bi2 WHERE bi2.product.id = :idProduct
+    )
+    AND b.isOnMenu = false
+    AND b.deletedAt IS NULL
+    """)
+    void recalculateBasePriceForCustomBurgers(@Param("idProduct") Integer idProduct);
+
 
 }

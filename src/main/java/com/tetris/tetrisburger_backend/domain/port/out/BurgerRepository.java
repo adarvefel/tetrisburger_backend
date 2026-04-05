@@ -28,27 +28,18 @@ public interface BurgerRepository {
 
     PageResponse<Burger> findAllOnMenu(PaginationRequest pagination);
 
-    PageResponse<Burger> findAllAvailableOnMenu(PaginationRequest pagination);
 
-    /**
-     * Lista burgers destacadas del menú.
-     * Filtra por isOnMenu=true, isFeatured=true, deletedAt IS NULL.
-     */
-    PageResponse<Burger> findAllFeaturedMenuBurgers(PaginationRequest pagination);
 
-    List<Burger> findAllMenuBurgers();
 
     // ========================================
     // MENÚ - BUSCAR
     // ========================================
 
-    Optional<Burger> findMenuById(Integer idBurger);
 
     Optional<Burger> findActiveMenuById(Integer idBurger);
 
     Optional<Burger> findActiveById(Integer idBurger);
 
-    Optional<Burger> findByNameAndIsOnMenuTrueAndDeletedAtIsNull(String name);
 
     // ========================================
     // MENÚ - FILTROS Y BÚSQUEDA
@@ -56,18 +47,8 @@ public interface BurgerRepository {
 
     PageResponse<Burger> searchMenuByName(String name, PaginationRequest pagination);
 
-    PageResponse<Burger> searchMenuBurgersWithFilters(
-            String name,
-            Boolean availability,
-            Boolean isFeatured,
-            PaginationRequest pagination
-    );
 
-    PageResponse<Burger> findTopOrderedMenuBurgers(PaginationRequest pagination);
 
-    PageResponse<Burger> findMenuBurgersOrderByPriceAsc(PaginationRequest pagination);
-
-    PageResponse<Burger> findMenuBurgersOrderByPriceDesc(PaginationRequest pagination);
 
     // ========================================
     // MENÚ - VALIDACIONES
@@ -75,26 +56,12 @@ public interface BurgerRepository {
 
     boolean existsByNameAndIsOnMenuTrueAndDeletedAtIsNull(String name);
 
-    boolean existsByNameAndIsOnMenuTrueAndDeletedAtIsNullAndIdBurgerNot(
-            String name,
-            Integer excludeId
-    );
+
 
     // ========================================
     // CUSTOM (isCustom) - LISTAR
     // ========================================
 
-    /**
-     * Lista burgers personalizadas de un usuario.
-     * Filtra por idUser, isCustom=true, deletedAt IS NULL.
-     */
-    PageResponse<Burger> findAllCustomByUserId(Integer idUser, PaginationRequest pagination);
-
-
-    /**
-     * Lista todas las burgers personalizadas de un usuario sin paginación.
-     */
-    List<Burger> findAllCustomByUserId(Integer idUser);
 
     // ========================================
     // CUSTOM (isCustom) - BUSCAR
@@ -106,30 +73,7 @@ public interface BurgerRepository {
      */
     Optional<Burger> findCustomByIdAndUser(Integer idBurger, Integer idUser);
 
-    /**
-     * Busca burgers personalizadas por nombre.
-     */
-    PageResponse<Burger> searchCustomByName(
-            Integer idUser,
-            String name,
-            PaginationRequest pagination
-    );
 
-    /**
-     * Busca burgers personalizadas con filtros múltiples.
-     * Filtra por isCustom=true, idUser, nombre e isFeatured.
-     */
-    PageResponse<Burger> searchCustomBurgersWithFilters(
-            Integer idUser,
-            String name,
-            Boolean isFeatured,
-            PaginationRequest pagination
-    );
-
-    PageResponse<Burger> findTopOrderedCustomBurgersByUser(
-            Integer idUser,
-            PaginationRequest pagination
-    );
 
     List<Burger> findAllByIngredientProductId(Integer idProduct);
 
@@ -138,14 +82,12 @@ public interface BurgerRepository {
     // ESTADÍSTICAS
     // ========================================
 
-    long countActiveMenuBurgers();
 
     List<Burger> findAllFeaturedAndAvailable();
 
     /**
      * Cuenta burgers personalizadas (isCustom=true) de un usuario.
      */
-    long countCustomBurgersByUser(Integer idUser);
 
     List<Burger> findAllByIds(List<Integer> ids);
 

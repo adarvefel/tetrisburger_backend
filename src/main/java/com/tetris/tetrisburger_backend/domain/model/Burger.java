@@ -252,6 +252,23 @@ public class Burger {
         this.updatedBy = updatedBy;
     }
 
+    public void syncIngredientSnapshot(Integer idProduct, String name, BigDecimal price, String imageUrl) {
+        this.ingredients.forEach(i -> {
+            if (i.getIdProduct().equals(idProduct)) {
+                i.setProductName(name);
+                i.setPriceAtTime(price);
+                i.setImageUrl(imageUrl);
+                i.setSubtotal(price.multiply(BigDecimal.valueOf(i.getQuantity())));
+            }
+        });
+        this.basePrice = calculateTotalPriceFromIngredients();
+        if (this.finalPrice.compareTo(this.basePrice) == 0) {
+            this.finalPrice = this.basePrice;
+        }
+        this.syncMetrics();
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void updateFinalPrice(BigDecimal newFinalPrice, Integer updatedBy) {
         if (!this.isOnMenu)
             throw new InvalidBurgerException("Solo hamburguesas del menú pueden cambiar de precio");
