@@ -105,6 +105,7 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
                     HttpMethod.POST,
                     new HttpEntity<>(body, headers),
                     byte[].class
+
             );
             System.out.println(">>> Invoice API status: " + response.getStatusCode());
             System.out.println(">>> Invoice PDF size: " + (response.getBody() != null ? response.getBody().length : 0));
@@ -115,11 +116,19 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
             }
 
             byte[] pdfBytes = response.getBody();
+            System.out.println(">>> Iniciando upload S3...");
+
 
             ImageUploadResult result = imageStoragePort.uploadInvoicePdf(pdfBytes);
             String pdfUrl = imageStoragePort.getImageUrl(result.imageKey());
 
+            System.out.println(">>> S3 OK: " + pdfUrl);
+
+
             if (user != null && user.getEmail() != null) {
+                System.out.println(">>> Iniciando envío email a: " + user.getEmail());
+                sendInvoiceEmail(user.getEmail(), userName, order, payment, pdfBytes);
+                System.out.println(">>> Email enviado OK");
                 sendInvoiceEmail(
                         user.getEmail(),
                         userName,
