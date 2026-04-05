@@ -106,6 +106,9 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
                     new HttpEntity<>(body, headers),
                     byte[].class
             );
+            System.out.println(">>> Invoice API status: " + response.getStatusCode());
+            System.out.println(">>> Invoice PDF size: " + (response.getBody() != null ? response.getBody().length : 0));
+
 
             if (response.getBody() == null) {
                 throw new RuntimeException("Error generando factura: PDF vacío");
@@ -137,6 +140,8 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
 
         } catch (Exception e) {
             invoice.markAsFailed();
+            System.err.println(">>> ERROR generando factura: " + e.getClass().getName());
+            System.err.println(">>> Mensaje: " + e.getMessage());
             System.err.println("Error generando factura: " + e.getMessage());
             e.printStackTrace();
         }
