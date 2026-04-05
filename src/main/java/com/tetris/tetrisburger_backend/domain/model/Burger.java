@@ -37,8 +37,9 @@ public class Burger {
     private boolean availability;
     private String imageKey;
     private String imageUrl;
-    private Integer idUser;
     private Integer timesOrdered;
+
+    private Integer idUser;
 
     // Ingredientes
     private List<BurgerIngredient> ingredients;
@@ -57,7 +58,6 @@ public class Burger {
 
     private Burger() {
         this.ingredients = new ArrayList<>();
-        this.timesOrdered = 0;
         this.basePrice = BigDecimal.ZERO;
         this.finalPrice = BigDecimal.ZERO;
         this.margin = BigDecimal.ZERO;
@@ -146,8 +146,8 @@ public class Burger {
         burger.isCustom = false;
         burger.isFeatured = isFeatured;
         burger.availability = availability;
-        burger.idUser = null;
         burger.timesOrdered = 0;
+        burger.idUser = null;
         burger.createdAt = LocalDateTime.now();
 
         if (ingredients != null) {
@@ -193,7 +193,6 @@ public class Burger {
             burger.ingredients.add(BurgerIngredient.fromSnapshot(snapshot));
             return this;
         }
-
 
         public Burger build() {
             if (burger.ingredients.isEmpty())
@@ -244,7 +243,6 @@ public class Burger {
         }
 
         if (availability != null) this.availability = availability;
-
         if (isFeatured != null) this.isFeatured = isFeatured;
 
         this.syncMetrics();
@@ -283,7 +281,6 @@ public class Burger {
         this.updatedBy = updatedBy;
     }
 
-
     public void markAsDeleted(Integer deletedBy) {
         if (deletedBy == null)
             throw new InvalidBurgerException("deletedBy no puede ser null");
@@ -297,7 +294,6 @@ public class Burger {
         this.availability = false;
     }
 
-
     // ============================================
     // COMPORTAMIENTO: Custom Burger
     // ============================================
@@ -307,7 +303,6 @@ public class Burger {
             String name,
             List<BurgerIngredient> newIngredients
     ) {
-
         if (this.isOnMenu)
             throw new InvalidBurgerException(
                     "No se puede actualizar una hamburguesa del menú como custom. ID: " + this.idBurger);
@@ -336,13 +331,9 @@ public class Burger {
         this.updatedBy = idUser;
     }
 
-
-
     // ============================================
     // FAVORITOS: Custom Burger (USUARIO)
     // ============================================
-
-
 
     public void saveAsCustom(Integer idUser) {
         if (this.isOnMenu)
@@ -363,13 +354,10 @@ public class Burger {
                 .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
     }
 
+    // ============================================
     // CÁLCULOS Y MÉTRICAS
     // ============================================
 
-    /**
-     * Sincroniza margin, marginPercentage y sellingAtLoss
-     * Llamar siempre que cambien basePrice o finalPrice
-     */
     public void syncMetrics() {
         this.margin = calculateMargin();
         this.marginPercentage = calculateMarginPercentage();
@@ -400,10 +388,6 @@ public class Burger {
         return finalPrice.compareTo(basePrice) < 0;
     }
 
-    public void incrementOrders() {
-        this.timesOrdered++;
-    }
-
     public boolean belongsToUser(Integer idUser) {
         return this.idUser != null && this.idUser.equals(idUser);
     }
@@ -426,6 +410,10 @@ public class Burger {
     // ============================================
     // GETTERS
     // ============================================
+    public void incrementOrders() {
+        this.timesOrdered++;
+    }
+
 
     public Integer getIdBurger()            { return idBurger; }
     public String getName()                 { return name; }
@@ -442,7 +430,6 @@ public class Burger {
     public String getImageKey()             { return imageKey; }
     public String getImageUrl()             { return imageUrl; }
     public Integer getIdUser()              { return idUser; }
-    public Integer getTimesOrdered()        { return timesOrdered; }
     public List<BurgerIngredient> getIngredients() { return new ArrayList<>(ingredients); }
     public LocalDateTime getCreatedAt()     { return createdAt; }
     public LocalDateTime getUpdatedAt()     { return updatedAt; }
@@ -450,16 +437,18 @@ public class Burger {
     public Integer getCreatedBy()           { return createdBy; }
     public Integer getUpdatedBy()           { return updatedBy; }
     public Integer getDeletedBy()           { return deletedBy; }
+    public Integer getTimesOrdered() { return timesOrdered; }
+
 
     // ============================================
     // SETTERS (solo para infraestructura)
     // ============================================
 
-    public void setIdBurger(Integer idBurger)       { this.idBurger = idBurger; }
-    public void setFinalPrice(BigDecimal finalPrice) { this.finalPrice = finalPrice; }
-    public void setCreatedBy(Integer createdBy)     { this.createdBy = createdBy; }
-    public void setUpdatedBy(Integer updatedBy)     { this.updatedBy = updatedBy; }
-    public void setDeletedBy(Integer deletedBy)     { this.deletedBy = deletedBy; }
+    public void setIdBurger(Integer idBurger)        { this.idBurger = idBurger; }
+    public void setFinalPrice(BigDecimal finalPrice)  { this.finalPrice = finalPrice; }
+    public void setCreatedBy(Integer createdBy)      { this.createdBy = createdBy; }
+    public void setUpdatedBy(Integer updatedBy)      { this.updatedBy = updatedBy; }
+    public void setDeletedBy(Integer deletedBy)      { this.deletedBy = deletedBy; }
 
     void setIngredients(List<BurgerIngredient> ingredients) {
         this.ingredients = ingredients != null ? ingredients : new ArrayList<>();

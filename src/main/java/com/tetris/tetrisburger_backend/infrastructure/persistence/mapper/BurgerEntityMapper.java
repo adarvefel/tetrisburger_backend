@@ -72,8 +72,8 @@ public abstract class BurgerEntityMapper {
         entity.setAvailability(domain.isAvailability());
         entity.setImageKey(domain.getImageKey());
         entity.setImageUrl(domain.getImageUrl());
-        entity.setTimesOrdered(domain.getTimesOrdered());
         entity.setIdUser(domain.getIdUser());
+        entity.setTimesOrdered(domain.getTimesOrdered());
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());
         entity.setDeletedAt(domain.getDeletedAt());

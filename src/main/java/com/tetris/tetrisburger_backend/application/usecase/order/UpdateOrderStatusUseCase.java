@@ -70,13 +70,14 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
             return saved;
         }
 
-        // ── Accept — requires payment and deducts stock ──────────────
+        // ── Accept — requires payment, deducts stock and increments burger orders ──
         if (newStatus == OrderStatus.ACCEPTED) {
             Payment payment = paymentRepository.findByOrderId(idOrder)
                     .orElseThrow(() -> new IllegalStateException(
                             "El pago debe ser registrado antes de aceptar la ordern"));
 
             deductStock(order, employeeId);
+            incrementBurgerOrders(order);
 
             order.updateStatus(newStatus, employeeId);
             Order saved = orderRepository.save(order);
@@ -89,6 +90,23 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
     }
 
     // ==================== PRIVATE METHODS ====================
+
+    private void incrementBurgerOrders(Order order) {
+        order.getItems().forEach(item -> {
+            if (item.getIdBurger() != null) {
+                Burger burger = burgerRepository.findById(item.getIdBurger())
+                        .orElseThrow(() -> new IllegalStateException(
+                                "Hamburguesa no encontrada: " + item.getIdBurger()));
+
+                // Incrementa una vez por cada unidad pedida
+                for (int i = 0; i < item.getQuantity(); i++) {
+                    burger.incrementOrders();
+                }
+
+                burgerRepository.save(burger);
+            }
+        });
+    }
 
     private void deductStock(Order order, Integer employeeId) {
         order.getItems().forEach(item -> {

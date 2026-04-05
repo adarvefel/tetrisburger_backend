@@ -22,15 +22,6 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
 
     Page<BurgerEntity> findByIsOnMenuTrueAndDeletedAtIsNull(Pageable pageable);
 
-    Page<BurgerEntity> findAllByIsOnMenuTrueAndAvailabilityTrueAndDeletedAtIsNull(Pageable pageable);
-
-    Page<BurgerEntity> findAllByIsOnMenuTrueAndIsFeaturedTrueAndDeletedAtIsNull(Pageable pageable);
-
-    Page<BurgerEntity> findAllByIsOnMenuTrueAndIsFeaturedTrueAndAvailabilityTrueAndDeletedAtIsNull(Pageable pageable);
-
-    List<BurgerEntity> findAllByIsOnMenuTrueAndDeletedAtIsNull();
-
-    // ========================================
     // BUSCAR POR ID (con JOIN FETCH de producto)
     // ========================================
 
@@ -40,11 +31,6 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
             "WHERE b.idBurger = :idBurger AND b.deletedAt IS NULL")
     Optional<BurgerEntity> findByIdWithProductsAndDeletedAtIsNull(@Param("idBurger") Integer idBurger);
 
-    @Query("SELECT b FROM BurgerEntity b " +
-            "LEFT JOIN FETCH b.ingredients i " +
-            "LEFT JOIN FETCH i.product " +
-            "WHERE b.idBurger = :idBurger AND b.isOnMenu = true")
-    Optional<BurgerEntity> findByIdOnMenuWithProducts(@Param("idBurger") Integer idBurger);
 
     @Query("SELECT b FROM BurgerEntity b " +
             "LEFT JOIN FETCH b.ingredients i " +
@@ -52,14 +38,6 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
             "WHERE b.idBurger = :idBurger AND b.isOnMenu = true AND b.deletedAt IS NULL")
     Optional<BurgerEntity> findActiveMenuByIdWithProducts(@Param("idBurger") Integer idBurger);
 
-    @Query("SELECT b FROM BurgerEntity b " +
-            "LEFT JOIN FETCH b.ingredients i " +
-            "LEFT JOIN FETCH i.product " +
-            "WHERE b.idBurger = :idBurger AND b.custom = true " +
-            "AND b.idUser = :idUser AND b.deletedAt IS NULL")
-    Optional<BurgerEntity> findCustomByIdAndUserWithProducts(
-            @Param("idBurger") Integer idBurger,
-            @Param("idUser") Integer idUser);
 
     // ========================================
     // VALIDACIÓN DE DUPLICADOS
@@ -76,19 +54,11 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
             @Param("name") String name,
             @Param("excludeId") Integer excludeId);
 
-    @Query("SELECT b FROM BurgerEntity b " +
-            "WHERE LOWER(b.name) = LOWER(:name) AND b.isOnMenu = true AND b.deletedAt IS NULL")
-    Optional<BurgerEntity> findByNameAndIsOnMenuTrueAndDeletedAtIsNull(@Param("name") String name);
 
     // ========================================
     // LISTAS POR USUARIO
     // ========================================
 
-    Page<BurgerEntity> findAllByIdUserAndCustomTrueAndDeletedAtIsNull(Integer idUser, Pageable pageable);
-
-    Page<BurgerEntity> findAllByIdUserAndCustomTrueAndIsFeaturedTrueAndDeletedAtIsNull(Integer idUser, Pageable pageable);
-
-    List<BurgerEntity> findAllByIdUserAndCustomTrueAndDeletedAtIsNull(Integer idUser);
 
     // ========================================
     // BÚSQUEDA CON PAGINACIÓN
@@ -126,40 +96,11 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     // MÁS POPULARES
     // ========================================
 
-    @Query("SELECT b FROM BurgerEntity b " +
-            "WHERE b.isOnMenu = true AND b.deletedAt IS NULL AND b.availability = true " +
-            "ORDER BY b.timesOrdered DESC, b.createdAt DESC")
-    Page<BurgerEntity> findTopOrderedMenuBurgers(Pageable pageable);
-
-    @Query("SELECT b FROM BurgerEntity b " +
-            "WHERE b.custom = true AND b.idUser = :idUser AND b.deletedAt IS NULL " +
-            "ORDER BY b.timesOrdered DESC, b.createdAt DESC")
-    Page<BurgerEntity> findTopOrderedCustomBurgersByUser(@Param("idUser") Integer idUser, Pageable pageable);
 
     // ========================================
     // BÚSQUEDA AVANZADA
     // ========================================
 
-    @Query("SELECT b FROM BurgerEntity b " +
-            "WHERE b.isOnMenu = true AND b.deletedAt IS NULL " +
-            "AND (:name IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
-            "AND (:availability IS NULL OR b.availability = :availability) " +
-            "AND (:isFeatured IS NULL OR b.isFeatured = :isFeatured) " +
-            "ORDER BY b.createdAt DESC")
-    Page<BurgerEntity> searchMenuBurgersWithFilters(@Param("name") String name,
-                                                    @Param("availability") Boolean availability,
-                                                    @Param("isFeatured") Boolean isFeatured,
-                                                    Pageable pageable);
-
-    @Query("SELECT b FROM BurgerEntity b " +
-            "WHERE b.custom = true AND b.idUser = :idUser AND b.deletedAt IS NULL " +
-            "AND (:name IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
-            "AND (:isFeatured IS NULL OR b.isFeatured = :isFeatured) " +
-            "ORDER BY b.createdAt DESC")
-    Page<BurgerEntity> searchCustomBurgersWithFilters(@Param("idUser") Integer idUser,
-                                                      @Param("name") String name,
-                                                      @Param("isFeatured") Boolean isFeatured,
-                                                      Pageable pageable);
 
 
     @Modifying
@@ -177,13 +118,6 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
     // PRECIO
     // ========================================
 
-    @Query("SELECT b FROM BurgerEntity b WHERE b.isOnMenu = true " +
-            "AND b.deletedAt IS NULL AND b.availability = true ORDER BY b.finalPrice ASC")
-    Page<BurgerEntity> findMenuBurgersOrderByPriceAsc(Pageable pageable);
-
-    @Query("SELECT b FROM BurgerEntity b WHERE b.isOnMenu = true " +
-            "AND b.deletedAt IS NULL AND b.availability = true ORDER BY b.finalPrice DESC")
-    Page<BurgerEntity> findMenuBurgersOrderByPriceDesc(Pageable pageable);
 
     // ========================================
     // IMAGEN
