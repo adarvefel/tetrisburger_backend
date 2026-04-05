@@ -224,6 +224,8 @@ public interface BurgerJpaRepository extends JpaRepository<BurgerEntity, Integer
 """)
     List<BurgerEntity> findAllFeaturedAndAvailable();
 
+    @Query("SELECT DISTINCT b FROM BurgerEntity b JOIN b.ingredients i WHERE i.product.id = :idProduct AND b.deletedAt IS NULL")
+    List<BurgerEntity> findAllByIngredientProductId(@Param("idProduct") Integer idProduct);
 
     @Query("SELECT b FROM BurgerEntity b WHERE b.idBurger IN :ids AND b.deletedAt IS NULL")
     List<BurgerEntity> findAllByIds(@Param("ids") List<Integer> ids);

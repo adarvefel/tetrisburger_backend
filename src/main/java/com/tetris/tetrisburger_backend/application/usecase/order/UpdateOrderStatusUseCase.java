@@ -150,6 +150,16 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
         });
     }
 
+    private String toSpanish(OrderStatus status) {
+        return switch (status) {
+            case PENDING              -> "Pendiente";
+            case ACCEPTED             -> "Aceptada";
+            case IN_PROGRESS          -> "En progreso";
+            case COMPLETED            -> "Completada";
+            case CANCELLED_BY_EMPLOYEE -> "Cancelada";
+        };
+    }
+
     private void validateTransition(OrderStatus current, OrderStatus next) {
         boolean valid = switch (current) {
             case PENDING     -> next == OrderStatus.ACCEPTED || next == OrderStatus.CANCELLED_BY_EMPLOYEE;
@@ -160,7 +170,7 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
 
         if (!valid) {
             throw new IllegalStateException(
-                    "Transición  invalida: " + current + " → " + next);
+                    "Transición inválida: " + toSpanish(current) + " → " + toSpanish(next));
         }
     }
 }

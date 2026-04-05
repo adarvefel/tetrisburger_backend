@@ -42,7 +42,7 @@ public class AdditionAdapter implements AdditionRepository {
 
     @Override
     public Optional<Addition> findById(Integer id) {
-        return jpa.findById(id).map(mapper::toDomain);
+        return jpa.findByIdAndNotDeleted(id).map(mapper::toDomain);
     }
 
     @Override

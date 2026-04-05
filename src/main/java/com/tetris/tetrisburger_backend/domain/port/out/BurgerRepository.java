@@ -131,6 +131,8 @@ public interface BurgerRepository {
             PaginationRequest pagination
     );
 
+    List<Burger> findAllByIngredientProductId(Integer idProduct);
+
     void deleteActiveDraftsByUser(Integer idUser);
     // ========================================
     // ESTADÍSTICAS

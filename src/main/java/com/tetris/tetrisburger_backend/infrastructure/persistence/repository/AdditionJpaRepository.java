@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface AdditionJpaRepository extends JpaRepository<AdditionEntity, Integer> {
 
     boolean existsByNameIgnoreCase(String name);
@@ -19,6 +21,8 @@ public interface AdditionJpaRepository extends JpaRepository<AdditionEntity, Int
             Pageable pageable
     );
 
+    @Query("SELECT a FROM AdditionEntity a WHERE a.idAddition = :id AND a.deletedAt IS NULL")
+    Optional<AdditionEntity> findByIdAndNotDeleted(@Param("id") Integer id);
 
 
 

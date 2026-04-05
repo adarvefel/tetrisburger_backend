@@ -78,4 +78,10 @@ public class ProductExceptionHandler {
             ProductCategoryNotFoundException ex, WebRequest request) {
                 return buildErrorResponseDTO(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<MessageResponseDTO> handleInsufficientStock(
+            InsufficientStockException ex, WebRequest request) {
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
 }

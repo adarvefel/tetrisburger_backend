@@ -268,6 +268,14 @@ public class BurgerAdapter implements BurgerRepository {
         );
     }
 
+    @Override
+    public List<Burger> findAllByIngredientProductId(Integer idProduct) {
+        return jpaRepository.findAllByIngredientProductId(idProduct)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
 
     @Override
     public List<Burger> findAllFeaturedAndAvailable() {

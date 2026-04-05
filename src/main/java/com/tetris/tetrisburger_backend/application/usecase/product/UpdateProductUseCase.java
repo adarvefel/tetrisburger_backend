@@ -54,11 +54,6 @@ public class UpdateProductUseCase implements UpdateProduct {
             }
         }
 
-        if (cmd.quantity() < current.getQuantity()) {
-            throw new IllegalArgumentException(
-                    "La cantidad no puede ser menor al stock actual: " + current.getQuantity()
-            );
-        }
 
         current.updateDetails(
                 cmd.name(),

@@ -30,7 +30,7 @@ public class Burger {
 
     // Discriminadores
     private boolean isOnMenu;
-    private boolean isFeatured;   // is_featured en DB (menu) / favorita en DB (custom)
+    private boolean isFeatured;
     private boolean isCustom;      // true = hamburguesa custom guardada por usuario
 
     // Estado
@@ -121,28 +121,6 @@ public class Burger {
         b.setIngredients(ingredients);
         return b;
     }
-    // ============================================
-    // FACTORY: Burger de MENÚ simple (sin ingredientes)
-    // ============================================
-
-    public static Burger createMenuBurger(String name, BigDecimal basePrice) {
-        if (name == null || name.isBlank())
-            throw new IllegalArgumentException("El nombre es obligatorio");
-        if (basePrice == null || basePrice.compareTo(BigDecimal.ZERO) <= 0)
-            throw new IllegalArgumentException("El precio base debe ser mayor a 0");
-
-        Burger burger = new Burger();
-        burger.name = name;
-        burger.basePrice = basePrice;
-        burger.finalPrice = basePrice;
-        burger.isOnMenu = true;
-        burger.isCustom = false;
-        burger.isFeatured = false;
-        burger.availability = true;
-        burger.createdAt = LocalDateTime.now();
-        burger.syncMetrics();
-        return burger;
-    }
 
     // ============================================
     // FACTORY: Burger de MENÚ con ingredientes
@@ -216,15 +194,6 @@ public class Burger {
             return this;
         }
 
-        public CustomBuilder withDescription(String description) {
-            burger.description = description;
-            return this;
-        }
-
-        public CustomBuilder withImage(String imageUrl) {
-            burger.imageUrl = imageUrl;
-            return this;
-        }
 
         public Burger build() {
             if (burger.ingredients.isEmpty())
@@ -297,17 +266,6 @@ public class Burger {
         this.updatedBy = updatedBy;
     }
 
-    public void updateInfo(String name, String description, Integer updatedBy) {
-        if (!this.isOnMenu)
-            throw new IllegalStateException("Solo hamburguesas del menú pueden actualizarse");
-        if (name == null || name.isBlank())
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
-
-        this.name = name;
-        this.description = description;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
 
     public void markAsDeleted(Integer deletedBy) {
         if (deletedBy == null)
@@ -322,18 +280,6 @@ public class Burger {
         this.availability = false;
     }
 
-    public void setAvailability(boolean available, Integer updatedBy) {
-        if (!this.isOnMenu)
-            throw new InvalidBurgerException("Solo hamburguesas del menú pueden cambiar disponibilidad. ID: " + this.idBurger);
-        if (updatedBy == null)
-            throw new InvalidBurgerException("updatedBy no puede ser null");
-        if (this.isDeleted())
-            throw new InvalidBurgerException("No se puede cambiar disponibilidad de una hamburguesa eliminada. ID: " + this.idBurger);
-
-        this.availability = available;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
 
     // ============================================
     // COMPORTAMIENTO: Custom Burger
@@ -374,36 +320,6 @@ public class Burger {
     }
 
 
-    // ============================================
-    // DESTACADAS: Menu Burger (ADMIN)
-    // ============================================
-
-    public void setMenuBurgerFeatured(Boolean isFeatured, Integer updatedBy) {
-        if (!this.isOnMenu)
-            throw new InvalidBurgerException("Solo burgers de menú pueden marcarse como destacadas. ID: " + this.idBurger);
-        if (updatedBy == null)
-            throw new InvalidBurgerException("updatedBy no puede ser null");
-        if (isFeatured == null)
-            throw new InvalidBurgerException("isFavorite no puede ser null");
-
-        this.isFeatured = isFeatured;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
-
-
-
-
-    public void removeAsCustom(Integer idUser) {
-        if (!belongsToUser(idUser))
-            throw new InvalidBurgerException("No pertenece a este usuario");
-        if (this.isDeleted())
-            throw new InvalidBurgerException("Burger eliminada. ID: " + this.idBurger);
-
-        this.isCustom = false;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = idUser;
-    }
 
     // ============================================
     // FAVORITOS: Custom Burger (USUARIO)
@@ -419,32 +335,17 @@ public class Burger {
         if (this.isDeleted())
             throw new InvalidBurgerException("Burger eliminada");
 
-        this.isCustom = true;         // ← conversión draft → saved
+        this.isCustom = true;
         this.updatedAt = LocalDateTime.now();
         this.updatedBy = idUser;
     }
 
-
-
-    // ============================================
-    // IMAGEN
-    // ============================================
-
-    public void updateImageComplete(String imageKey, String imageUrl, Integer updatedBy) {
-        if (imageKey == null || imageKey.isBlank())
-            throw new InvalidBurgerException("El imageKey no puede estar vacío");
-        if (updatedBy == null)
-            throw new InvalidBurgerException("updatedBy no puede ser null");
-        if (this.isDeleted())
-            throw new InvalidBurgerException("No se puede actualizar imagen de una hamburguesa eliminada. ID: " + this.idBurger);
-
-        this.imageKey = imageKey;
-        this.imageUrl = imageUrl;
-        this.updatedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
+    public void removeIngredientByProductId(Integer idProduct) {
+        this.ingredients = this.ingredients.stream()
+                .filter(i -> !i.getIdProduct().equals(idProduct))
+                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
     }
 
-    // ============================================
     // CÁLCULOS Y MÉTRICAS
     // ============================================
 
