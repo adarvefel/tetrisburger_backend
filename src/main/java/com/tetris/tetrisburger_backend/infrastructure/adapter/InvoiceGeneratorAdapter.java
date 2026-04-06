@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.adapter;
 
+
 import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
 import com.tetris.tetrisburger_backend.domain.enums.OrderItemType;
 import com.tetris.tetrisburger_backend.domain.model.Invoice;
@@ -19,8 +20,14 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import sendinblue.ApiClient;
+import sendinblue.Configuration;
+import sibApi.TransactionalEmailsApi;
+import sibModel.SendSmtpEmail;
+import sibModel.SendSmtpEmailAttachment;
+import sibModel.SendSmtpEmailSender;
+import sibModel.SendSmtpEmailTo;
 
-import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -40,6 +47,12 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
 
     @Value("${spring.mail.username}")
     private String fromEmail;
+
+
+
+    @Value("${brevo.api-key}")
+    private String brevoApiKey;
+
 
     public InvoiceGeneratorAdapter(InvoiceRepository invoiceRepository,
                                    RestTemplate restTemplate,
@@ -184,21 +197,32 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
     private void sendInvoiceEmail(String toEmail, String userName,
                                   Order order, Payment payment,
                                   byte[] pdfBytes) throws Exception {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        ApiClient defaultClient = Configuration.getDefaultApiClient();
+        defaultClient.setApiKey(brevoApiKey);
 
-        helper.setFrom(fromEmail);
-        helper.setTo(toEmail);
-        helper.setSubject("Tu factura TetrisBurger - Pedido #" + order.getOrderNumber());
-        helper.setText(buildHtmlEmail(userName, order, payment), true);
+        TransactionalEmailsApi apiInstance = new TransactionalEmailsApi();
 
-        helper.addAttachment(
-                "factura-" + order.getOrderNumber() + ".pdf",
-                new ByteArrayResource(pdfBytes),
-                "application/pdf"
-        );
+        SendSmtpEmailSender sender = new SendSmtpEmailSender();
+        sender.setName("TetrisBurger");
+        sender.setEmail("tetrisburger8@gmail.com");
 
-        mailSender.send(message);
+        SendSmtpEmailTo recipient = new SendSmtpEmailTo();
+        recipient.setEmail(toEmail);
+        recipient.setName(userName);
+
+        // Adjuntar PDF
+        SendSmtpEmailAttachment attachment = new SendSmtpEmailAttachment();
+        attachment.setContent(pdfBytes);
+        attachment.setName("factura-" + order.getOrderNumber() + ".pdf");
+
+        SendSmtpEmail email = new SendSmtpEmail();
+        email.setSender(sender);
+        email.setTo(Collections.singletonList(recipient));
+        email.setSubject("Tu factura TetrisBurger - Pedido #" + order.getOrderNumber());
+        email.setHtmlContent(buildHtmlEmail(userName, order, payment));
+        email.setAttachment(Collections.singletonList(attachment));
+
+        apiInstance.sendTransacEmail(email);
     }
 
     private String buildHtmlEmail(String userName, Order order, Payment payment) {

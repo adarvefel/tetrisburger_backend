@@ -43,7 +43,7 @@ public class Order {
         o.status = OrderStatus.PENDING;
 
         // Formato: ORD-2026-04-02-A3F9
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("America/Bogota"));
         String fecha = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String random = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
         o.orderNumber = String.format("ORD-%s-%s", fecha, random);
