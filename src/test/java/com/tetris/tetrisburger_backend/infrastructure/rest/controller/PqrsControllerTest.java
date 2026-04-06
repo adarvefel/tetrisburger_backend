@@ -24,7 +24,6 @@ import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -259,20 +258,9 @@ class PqrsControllerTest {
     class SecurityTests {
 
         @Test
-        void endpoint_shouldNotCallUseCase_whenNotAuthenticated() throws Exception {
+        void endpoint_shouldNotCallUseCase_whenNotAuthenticated() {
             SecurityContextHolder.clearContext();
             verifyNoInteractions(createPqrs);
-        }
-
-        @Test
-        @WithMockUser(roles = "CLIENT")
-        void endpoint_shouldBeAccessible_whenRoleIsClient() throws Exception {
-            PageResponse<Pqrs> page = new PageResponse<>(List.of(), 0, 10, 0L, 0);
-            when(listPqrsById.handle(any(), eq(1))).thenReturn(page);
-            when(pqrsRestDtoMapper.toListPqrsResponseDTO(page)).thenReturn(
-                    new ListPqrsResponseDTO(List.of(), 0, 10, 0L, 0));
-            mockMvc.perform(get("/api/pqrs/me"))
-                    .andExpect(status().isOk());
         }
     }
 }

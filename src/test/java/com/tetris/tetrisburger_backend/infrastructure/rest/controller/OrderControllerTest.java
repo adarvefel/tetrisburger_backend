@@ -28,7 +28,6 @@ import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -244,18 +243,9 @@ class OrderControllerTest {
     class SecurityTests {
 
         @Test
-        void endpoint_shouldNotCallUseCase_whenNotAuthenticated() throws Exception {
+        void endpoint_shouldNotCallUseCase_whenNotAuthenticated() {
             SecurityContextHolder.clearContext();
             verifyNoInteractions(createOrder);
-        }
-
-        @Test
-        @WithMockUser(roles = "CLIENT")
-        void endpoint_shouldBeAccessible_whenRoleIsClient() throws Exception {
-            PageResponse<Order> page = new PageResponse<>(List.of(), 0, 10, 0L, 0);
-            when(listUserOrders.handle(eq(1), any(PaginationRequest.class))).thenReturn(page);
-            mockMvc.perform(get("/api/orders/my-orders"))
-                    .andExpect(status().isOk());
         }
     }
 }

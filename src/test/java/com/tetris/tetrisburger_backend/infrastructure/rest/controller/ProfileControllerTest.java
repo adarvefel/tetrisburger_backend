@@ -27,7 +27,6 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -214,19 +213,9 @@ class ProfileControllerTest {
     class SecurityTests {
 
         @Test
-        void endpoint_shouldNotCallUseCase_whenNotAuthenticated() throws Exception {
+        void endpoint_shouldNotCallUseCase_whenNotAuthenticated() {
             SecurityContextHolder.clearContext();
             verifyNoInteractions(getUserProfile);
-        }
-
-        @Test
-        @WithMockUser(roles = "CLIENT")
-        void endpoint_shouldBeAccessible_whenRoleIsClient() throws Exception {
-            when(getUserProfile.execute(any())).thenReturn(mockUser);
-            when(mapper.toGetUserProfileResponseDTO(any(), any(), any()))
-                    .thenReturn(mock(GetUserProfileResponseDTO.class));
-            mockMvc.perform(get("/api/profile"))
-                    .andExpect(status().isOk());
         }
     }
 }

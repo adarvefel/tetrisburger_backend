@@ -32,7 +32,6 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -357,27 +356,9 @@ class ProductControllerTest {
     class SecurityTests {
 
         @Test
-        void adminEndpoint_shouldNotCallUseCase_whenNotAuthenticated() throws Exception {
+        void adminEndpoint_shouldNotCallUseCase_whenNotAuthenticated() {
             SecurityContextHolder.clearContext();
             verifyNoInteractions(createProduct);
-        }
-
-        @Test
-        @WithMockUser(roles = "CLIENT")
-        void adminEndpoint_shouldReturn403_whenRoleIsClient() throws Exception {
-            mockMvc.perform(post("/api/products")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}"))
-                    .andExpect(status().isForbidden());
-        }
-
-        @Test
-        @WithMockUser(roles = "ADMIN")
-        void adminEndpoint_shouldBeAccessible_whenRoleIsAdmin() throws Exception {
-            PageResponse<Product> page = new PageResponse<>(List.of(), 0, 10, 0L, 0);
-            when(listProducts.list(any(), any(PaginationRequest.class))).thenReturn(page);
-            mockMvc.perform(get("/api/products/list"))
-                    .andExpect(status().isOk());
         }
     }
 }

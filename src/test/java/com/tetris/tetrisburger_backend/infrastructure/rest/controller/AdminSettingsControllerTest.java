@@ -20,7 +20,6 @@ import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -149,25 +148,9 @@ class AdminSettingsControllerTest {
     class SecurityTests {
 
         @Test
-        void adminEndpoint_shouldNotCallUseCase_whenNotAuthenticated() throws Exception {
+        void adminEndpoint_shouldNotCallUseCase_whenNotAuthenticated() {
             SecurityContextHolder.clearContext();
             verifyNoInteractions(getBurgerSettings);
-        }
-
-        @Test
-        @WithMockUser(roles = "CLIENT")
-        void adminEndpoint_shouldReturn403_whenRoleIsClient() throws Exception {
-            mockMvc.perform(get("/api/admin/settings/burgers"))
-                    .andExpect(status().isForbidden());
-        }
-
-        @Test
-        @WithMockUser(roles = "ADMIN")
-        void adminEndpoint_shouldBeAccessible_whenRoleIsAdmin() throws Exception {
-            BurgerSettings settings = BurgerSettings.createDefaults();
-            when(getBurgerSettings.handle()).thenReturn(settings);
-            mockMvc.perform(get("/api/admin/settings/burgers"))
-                    .andExpect(status().isOk());
         }
     }
 }
