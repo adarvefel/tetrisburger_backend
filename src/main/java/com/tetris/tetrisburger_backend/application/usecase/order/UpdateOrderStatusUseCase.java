@@ -16,6 +16,8 @@ import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Map;
 
@@ -81,7 +83,14 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
 
             order.updateStatus(newStatus, employeeId);
             Order saved = orderRepository.save(order);
-            invoicePort.createInvoice(saved, payment);
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            invoicePort.createInvoice(saved, payment);
+                        }
+                    }
+            );
             return saved;
         }
 
