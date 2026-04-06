@@ -16,6 +16,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -52,8 +53,9 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
         this.imageStoragePort = imageStoragePort;
     }
 
+    @Async
     @Override
-    public Invoice createInvoice(Order order, Payment payment) {
+    public void createInvoice(Order order, Payment payment) {
         Invoice invoice = Invoice.create(
                 order.getIdOrder(),
                 payment.getIdPayment(),
@@ -154,8 +156,7 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
             System.err.println("Error generando factura: " + e.getMessage());
             e.printStackTrace();
         }
-
-        return invoiceRepository.save(invoice);
+        invoiceRepository.save(invoice);
 
     }
 

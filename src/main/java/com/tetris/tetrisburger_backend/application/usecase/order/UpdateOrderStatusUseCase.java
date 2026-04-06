@@ -83,14 +83,7 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
 
             order.updateStatus(newStatus, employeeId);
             Order saved = orderRepository.save(order);
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            invoicePort.createInvoice(saved, payment);
-                        }
-                    }
-            );
+            invoicePort.createInvoice(saved, payment);
             return saved;
         }
 

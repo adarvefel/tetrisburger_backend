@@ -6,6 +6,6 @@ import com.tetris.tetrisburger_backend.domain.model.Payment;
 
 public interface
 InvoicePort {
-    Invoice createInvoice(Order order, Payment payment);
+    void createInvoice(Order order, Payment payment);
 
 }
