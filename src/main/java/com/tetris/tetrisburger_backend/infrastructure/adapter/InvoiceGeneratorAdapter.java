@@ -131,13 +131,6 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
                 System.out.println(">>> Iniciando envío email a: " + user.getEmail());
                 sendInvoiceEmail(user.getEmail(), userName, order, payment, pdfBytes);
                 System.out.println(">>> Email enviado OK");
-                sendInvoiceEmail(
-                        user.getEmail(),
-                        userName,
-                        order,
-                        payment,
-                        pdfBytes
-                );
             }
 
             invoice.markAsIssued(
