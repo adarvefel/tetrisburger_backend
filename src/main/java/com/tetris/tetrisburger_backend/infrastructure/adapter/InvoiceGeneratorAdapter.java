@@ -38,15 +38,12 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
 
     private final InvoiceRepository invoiceRepository;
     private final RestTemplate restTemplate;
-    private final JavaMailSender mailSender;
     private final UserRepository userRepository;
     private final ImageStoragePort imageStoragePort;
 
     @Value("${invoice.generator.api-key}")
     private String apiKey;
 
-    @Value("${spring.mail.username}")
-    private String fromEmail;
 
 
 
@@ -56,12 +53,10 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
 
     public InvoiceGeneratorAdapter(InvoiceRepository invoiceRepository,
                                    RestTemplate restTemplate,
-                                   JavaMailSender mailSender,
                                    UserRepository userRepository,
                                    ImageStoragePort imageStoragePort) {
         this.invoiceRepository = invoiceRepository;
         this.restTemplate = restTemplate;
-        this.mailSender = mailSender;
         this.userRepository = userRepository;
         this.imageStoragePort = imageStoragePort;
     }
