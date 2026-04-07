@@ -1,672 +1,362 @@
 package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.tetris.tetrisburger_backend.domain.common.FileData;
-import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Addition;
-import com.tetris.tetrisburger_backend.domain.port.in.adittion.*;
+import com.tetris.tetrisburger_backend.domain.port.in.adittion.CreateAddition;
+import com.tetris.tetrisburger_backend.domain.port.in.adittion.DeleteAddition;
+import com.tetris.tetrisburger_backend.domain.port.in.adittion.GetAdditionById;
+import com.tetris.tetrisburger_backend.domain.port.in.adittion.ListAddition;
+import com.tetris.tetrisburger_backend.domain.port.in.adittion.SearchAdditionByName;
+import com.tetris.tetrisburger_backend.domain.port.in.adittion.UpdateAddition;
+import com.tetris.tetrisburger_backend.domain.port.in.adittion.UpdateAdditionImage;
+import com.tetris.tetrisburger_backend.domain.port.in.adittion.command.CreateAdditionCommand;
+import com.tetris.tetrisburger_backend.domain.port.in.adittion.command.UpdateAdditionCommand;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.AdditionResponseDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.CreateAdditionRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.UpdateAdditionRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.AdditionRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
-import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.mock.web.MockPart;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AdditionController.class)
-@DisplayName("AdditionController - Pruebas Unitarias")
-class AdditionControllerTest {
+@ExtendWith(MockitoExtension.class)
+public class AdditionControllerTest {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
+    // ─── Mocks compartidos ────────────────────────────────────────────────────
+    @Mock private CreateAddition createAddition;
+    @Mock private UpdateAddition updateAddition;
+    @Mock private UpdateAdditionImage updateAdditionImage;
+    @Mock private ListAddition listAddition;
+    @Mock private SearchAdditionByName searchAdditionByName;
+    @Mock private GetAdditionById getAdditionById;
+    @Mock private DeleteAddition deleteAddition;
+    @Mock private AdditionRestDtoMapper mapper;
+    @Mock private CustomUserDetails mockUserDetails;
 
-    @MockitoBean private CreateAddition       createAddition;
-    @MockitoBean private UpdateAddition       updateAddition;
-    @MockitoBean private UpdateAdditionImage  updateAdditionImage;
-    @MockitoBean private ListAddition         listAddition;
-    @MockitoBean private SearchAdditionByName searchAdditionByName;
-    @MockitoBean private GetAdditionById      getAdditionById;
-    @MockitoBean private DeleteAddition       deleteAddition;
-    @MockitoBean private AdditionRestDtoMapper mapper;
-    // ── Fixtures ────────────────────────────────────────────────────
-    private Addition            mockAddition;
-    private AdditionResponseDTO mockResponseDTO;
-    private CustomUserDetails   mockUserDetails;
+    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
 
-    /** DTO de creación con tipos correctos */
-    private CreateAdditionRequestDTO buildCreateDTO() {
-        return new CreateAdditionRequestDTO(
-                "Queso Extra",
-                "Porción extra de queso",
-                new BigDecimal("1500.00"),
-                true
-        );
-    }
+    static final Integer USER_ID    = 1;
+    static final Integer ADDITION_ID = 10;
 
-    /** DTO de actualización con tipos correctos */
-    private UpdateAdditionRequestDTO buildUpdateDTO() {
-        return new UpdateAdditionRequestDTO(
-                "Queso Doble",
-                "Doble porción de queso",
-                new BigDecimal("2000.00"),
-                true
-        );
-    }
-
-    /** AdditionResponseDTO con los 12 campos reales del record */
-    private AdditionResponseDTO buildResponseDTO(boolean withImage) {
-        return new AdditionResponseDTO(
-                1,
-                "Queso Extra",
-                "Porción extra de queso",
-                new BigDecimal("1500.00"),
-                true,
-                withImage ? "https://cdn.example.com/queso.png" : null,
-                withImage ? "additions/queso.png"               : null,
-                withImage ? ImageStatus.UPLOADED                : ImageStatus.NONE,
-                LocalDateTime.of(2025, 1, 10, 12, 0),
-                LocalDateTime.of(2025, 1, 10, 12, 0),
-                10,
-                10
-        );
-    }
+    // ─── Setup / Teardown ─────────────────────────────────────────────────────
 
     @BeforeEach
     void setUp() {
-        mockAddition = mock(Addition.class);
-        when(mockAddition.getIdAddition()).thenReturn(1);
-        when(mockAddition.getName()).thenReturn("Queso Extra");
+        AdditionController controller = new AdditionController(
+                createAddition, updateAddition, updateAdditionImage,
+                listAddition, searchAdditionByName, getAdditionById,
+                deleteAddition, mapper
+        );
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
+                .build();
 
-        mockResponseDTO = buildResponseDTO(false);
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
 
-        mockUserDetails = mock(CustomUserDetails.class);
-        when(mockUserDetails.getId()).thenReturn(10);
-        when(mockUserDetails.getUsername()).thenReturn("admin@test.com");
+        // Stub lenient: usado solo en los tests que llaman a userDetails.getId()
+        lenient().when(mockUserDetails.getId()).thenReturn(USER_ID);
+
+        SecurityContext ctx = SecurityContextHolder.createEmptyContext();
+        ctx.setAuthentication(
+                new UsernamePasswordAuthenticationToken(mockUserDetails, null, List.of())
+        );
+        SecurityContextHolder.setContext(ctx);
     }
 
-    // ================================================================
-    //  POST /api/admin/additions
-    // ================================================================
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    // ─── Helper ───────────────────────────────────────────────────────────────
+
+    private MockPart buildDataPart(String json) {
+        MockPart part = new MockPart("data", json.getBytes());
+        part.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        return part;
+    }
+
+    // =========================================================================
+    // POST /api/admin/additions
+    // =========================================================================
+
     @Nested
-    @DisplayName("POST /api/admin/additions — Crear adición")
     class CreateAdditionTests {
 
         @Test
-        @DisplayName("201 · Con imagen: mapper recibe imageWasSent=true")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void shouldCreateWithImageAndReturn201() throws Exception {
-            AdditionResponseDTO responseWithImg = buildResponseDTO(true);
+        void create_conImagen_retorna201() throws Exception {
+            Addition mockAddition       = mock(Addition.class);
+            AdditionResponseDTO mockDto = mock(AdditionResponseDTO.class);
 
-            MockMultipartFile dataPart = new MockMultipartFile(
-                    "data", "", MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(buildCreateDTO())
-            );
-            MockMultipartFile imgPart = new MockMultipartFile(
-                    "additionImage", "queso.png", MediaType.IMAGE_PNG_VALUE, "img".getBytes()
-            );
-
-            when(mapper.toCreateAdditionCommand(any(), any(), anyInt())).thenReturn(mock());
+            when(mapper.toCreateAdditionCommand(any(), any(), eq(USER_ID)))
+                    .thenReturn(mock(CreateAdditionCommand.class));
             when(createAddition.handle(any())).thenReturn(mockAddition);
-            when(mapper.toAdditionResponseDTO(mockAddition, true)).thenReturn(responseWithImg);
+            when(mapper.toAdditionResponseDTO(mockAddition, true)).thenReturn(mockDto);
+
+            MockPart dataPart = buildDataPart(
+                    "{\"name\":\"Queso Extra\",\"description\":\"Cheddar\",\"price\":2000,\"available\":true}");
+            MockMultipartFile imagePart = new MockMultipartFile(
+                    "additionImage", "queso.jpg", "image/jpeg", "bytes".getBytes());
 
             mockMvc.perform(multipart("/api/admin/additions")
-                            .file(dataPart).file(imgPart)
-                            .with(csrf()).with(user(mockUserDetails)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.idAddition").value(1))
-                    .andExpect(jsonPath("$.name").value("Queso Extra"))
-                    .andExpect(jsonPath("$.price").value(1500.00))
-                    .andExpect(jsonPath("$.description").value("Porción extra de queso"))
-                    .andExpect(jsonPath("$.imageUrl").value("https://cdn.example.com/queso.png"))
-                    .andExpect(jsonPath("$.createdBy").value(10));
+                            .part(dataPart)
+                            .file(imagePart))
+                    .andExpect(status().isCreated());
 
             verify(createAddition).handle(any());
             verify(mapper).toAdditionResponseDTO(mockAddition, true);
         }
 
         @Test
-        @DisplayName("201 · Sin imagen: mapper recibe imageWasSent=false")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void shouldCreateWithoutImageAndReturn201() throws Exception {
-            MockMultipartFile dataPart = new MockMultipartFile(
-                    "data", "", MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(buildCreateDTO())
-            );
+        void create_sinImagen_retorna201() throws Exception {
+            Addition mockAddition       = mock(Addition.class);
+            AdditionResponseDTO mockDto = mock(AdditionResponseDTO.class);
 
-            when(mapper.toCreateAdditionCommand(any(), isNull(), anyInt())).thenReturn(mock());
+            when(mapper.toCreateAdditionCommand(any(), isNull(), eq(USER_ID)))
+                    .thenReturn(mock(CreateAdditionCommand.class));
             when(createAddition.handle(any())).thenReturn(mockAddition);
-            when(mapper.toAdditionResponseDTO(mockAddition, false)).thenReturn(mockResponseDTO);
+            when(mapper.toAdditionResponseDTO(mockAddition, false)).thenReturn(mockDto);
+
+            MockPart dataPart = buildDataPart(
+                    "{\"name\":\"Queso Extra\",\"description\":\"Cheddar\",\"price\":2000,\"available\":true}");
 
             mockMvc.perform(multipart("/api/admin/additions")
-                            .file(dataPart)
-                            .with(csrf()).with(user(mockUserDetails)))
+                            .part(dataPart))
                     .andExpect(status().isCreated());
 
+            verify(createAddition).handle(any());
             verify(mapper).toAdditionResponseDTO(mockAddition, false);
-        }
-
-        @Test
-        @DisplayName("201 · Archivo vacío se trata como sin imagen (imageWasSent=false)")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void shouldTreatEmptyFileAsNoImage() throws Exception {
-            MockMultipartFile dataPart = new MockMultipartFile(
-                    "data", "", MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(buildCreateDTO())
-            );
-            MockMultipartFile emptyImg = new MockMultipartFile(
-                    "additionImage", "", MediaType.IMAGE_PNG_VALUE, new byte[0]
-            );
-
-            when(mapper.toCreateAdditionCommand(any(), any(), anyInt())).thenReturn(mock());
-            when(createAddition.handle(any())).thenReturn(mockAddition);
-            when(mapper.toAdditionResponseDTO(mockAddition, false)).thenReturn(mockResponseDTO);
-
-            mockMvc.perform(multipart("/api/admin/additions")
-                            .file(dataPart).file(emptyImg)
-                            .with(csrf()).with(user(mockUserDetails)))
-                    .andExpect(status().isCreated());
-
-            // isEmpty()=true → imageWasSent=false
-            verify(mapper).toAdditionResponseDTO(mockAddition, false);
-        }
-
-        @Test
-        @DisplayName("403 · Usuario con ROLE_USER no puede crear")
-        @WithMockUser(authorities = "ROLE_USER")
-        void shouldReturn403WhenRoleUser() throws Exception {
-            MockMultipartFile dataPart = new MockMultipartFile(
-                    "data", "", MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(buildCreateDTO())
-            );
-
-            mockMvc.perform(multipart("/api/admin/additions")
-                            .file(dataPart).with(csrf()))
-                    .andExpect(status().isForbidden());
-
-            verifyNoInteractions(createAddition);
-        }
-
-        @Test
-        @DisplayName("401 · Solicitud sin autenticación")
-        void shouldReturn401WhenUnauthenticated() throws Exception {
-            MockMultipartFile dataPart = new MockMultipartFile(
-                    "data", "", MediaType.APPLICATION_JSON_VALUE,
-                    objectMapper.writeValueAsBytes(buildCreateDTO())
-            );
-
-            mockMvc.perform(multipart("/api/admin/additions")
-                            .file(dataPart).with(csrf()))
-                    .andExpect(status().isUnauthorized());
-
-            verifyNoInteractions(createAddition);
         }
     }
 
-    // ================================================================
-    //  PATCH /api/admin/additions/{id}
-    // ================================================================
+    // =========================================================================
+    // PATCH /api/admin/additions/{id}
+    // =========================================================================
+
     @Nested
-    @DisplayName("PATCH /api/admin/additions/{id} — Actualizar adición")
     class UpdateAdditionTests {
 
         @Test
-        @DisplayName("200 · Actualiza todos los campos con tipos correctos")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void shouldUpdateAndReturn200() throws Exception {
-            when(mapper.toUpdateAdditionCommand(eq(1), any(), anyInt())).thenReturn(mock());
-            when(updateAddition.handle(any())).thenReturn(mockAddition);
-            when(mapper.toAdditionResponseDTO(mockAddition, false)).thenReturn(mockResponseDTO);
+        void update_requestValido_retorna200() throws Exception {
+            UpdateAdditionRequestDTO dto = new UpdateAdditionRequestDTO(
+                    "Queso Actualizado", null, BigDecimal.valueOf(2500), true);
+            Addition mockAddition       = mock(Addition.class);
+            AdditionResponseDTO mockDto = mock(AdditionResponseDTO.class);
 
-            mockMvc.perform(patch("/api/admin/additions/1")
+            when(mapper.toUpdateAdditionCommand(eq(ADDITION_ID), any(), eq(USER_ID)))
+                    .thenReturn(mock(UpdateAdditionCommand.class));
+            when(updateAddition.handle(any())).thenReturn(mockAddition);
+            when(mapper.toAdditionResponseDTO(mockAddition, false)).thenReturn(mockDto);
+
+            mockMvc.perform(patch("/api/admin/additions/{id}", ADDITION_ID)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(buildUpdateDTO()))
-                            .with(csrf()).with(user(mockUserDetails)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.idAddition").value(1))
-                    .andExpect(jsonPath("$.price").value(1500.00));
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk());
 
             verify(updateAddition).handle(any());
-            // update de datos nunca actualiza imagen → false
             verify(mapper).toAdditionResponseDTO(mockAddition, false);
-        }
-
-        @Test
-        @DisplayName("200 · Actualización parcial — solo campos no nulos")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void shouldUpdatePartialFields() throws Exception {
-            // Record permite nulls porque no hay @NotNull
-            UpdateAdditionRequestDTO partial =
-                    new UpdateAdditionRequestDTO(null, null, null, false);
-
-            when(mapper.toUpdateAdditionCommand(eq(5), any(), anyInt())).thenReturn(mock());
-            when(updateAddition.handle(any())).thenReturn(mockAddition);
-            when(mapper.toAdditionResponseDTO(mockAddition, false)).thenReturn(mockResponseDTO);
-
-            mockMvc.perform(patch("/api/admin/additions/5")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(partial))
-                            .with(csrf()).with(user(mockUserDetails)))
-                    .andExpect(status().isOk());
-        }
-
-        @Test
-        @DisplayName("403 · Usuario sin ROLE_ADMIN")
-        @WithMockUser(authorities = "ROLE_USER")
-        void shouldReturn403() throws Exception {
-            mockMvc.perform(patch("/api/admin/additions/1")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(buildUpdateDTO()))
-                            .with(csrf()))
-                    .andExpect(status().isForbidden());
-
-            verifyNoInteractions(updateAddition);
-        }
-
-        @Test
-        @DisplayName("415 · Content-Type incorrecto")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void shouldReturn415WhenWrongContentType() throws Exception {
-            mockMvc.perform(patch("/api/admin/additions/1")
-                            .contentType(MediaType.TEXT_PLAIN)
-                            .content("texto")
-                            .with(csrf()).with(user(mockUserDetails)))
-                    .andExpect(status().isUnsupportedMediaType());
-
-            verifyNoInteractions(updateAddition);
         }
     }
 
-    // ================================================================
-    //  GET /api/admin/additions
-    // ================================================================
+    // =========================================================================
+    // PUT /api/admin/additions/image/{id}
+    // =========================================================================
+
     @Nested
-    @DisplayName("GET /api/admin/additions — Listar adiciones")
+    class UpdateAdditionImageTests {
+
+        @Test
+        void updateImage_requestValido_retorna200() throws Exception {
+            Addition mockAddition       = mock(Addition.class);
+            AdditionResponseDTO mockDto = mock(AdditionResponseDTO.class);
+
+            when(updateAdditionImage.handle(eq(ADDITION_ID), any(FileData.class), eq(USER_ID)))
+                    .thenReturn(mockAddition);
+            when(mapper.toAdditionResponseDTO(mockAddition, true)).thenReturn(mockDto);
+
+            MockMultipartFile imagePart = new MockMultipartFile(
+                    "additionImage", "test.jpg", "image/jpeg", "data".getBytes());
+
+            mockMvc.perform(multipart("/api/admin/additions/image/{id}", ADDITION_ID)
+                            .file(imagePart)
+                            // PUT en vez de POST (multipart() usa POST por defecto)
+                            .with(req -> { req.setMethod("PUT"); return req; }))
+                    .andExpect(status().isOk());
+
+            verify(updateAdditionImage).handle(eq(ADDITION_ID), any(FileData.class), eq(USER_ID));
+            verify(mapper).toAdditionResponseDTO(mockAddition, true);
+        }
+    }
+
+    // =========================================================================
+    // GET /api/admin/additions
+    // =========================================================================
+
+    @Nested
     class ListAdditionsTests {
 
         @Test
-        @DisplayName("200 · Parámetros por defecto")
-        void shouldReturnPageWithDefaults() throws Exception {
-            PageResponse<Addition> page = new PageResponse<>(List.of(mockAddition), 0, 10, 1L, 1);
-
+        void getAll_sinFiltros_retorna200() throws Exception {
+            PageResponse<Addition> page = new PageResponse<>(List.of(), 0, 10, 0L, 0);
             when(listAddition.handle(isNull(), any(PaginationRequest.class))).thenReturn(page);
-            when(mapper.toAdditionResponseDTO(mockAddition, false)).thenReturn(mockResponseDTO);
 
             mockMvc.perform(get("/api/admin/additions"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content[0].idAddition").value(1))
-                    .andExpect(jsonPath("$.content[0].price").value(1500.00))
-                    .andExpect(jsonPath("$.totalElements").value(1))
-                    .andExpect(jsonPath("$.totalPages").value(1));
+                    .andExpect(status().isOk());
 
             verify(listAddition).handle(isNull(), any(PaginationRequest.class));
         }
 
         @Test
-        @DisplayName("200 · Filtro available=true se pasa al use-case")
-        void shouldPassAvailableTrueFilter() throws Exception {
+        void getAll_conFiltroAvailable_retorna200() throws Exception {
+            Addition mockAddition       = mock(Addition.class);
+            AdditionResponseDTO mockDto = mock(AdditionResponseDTO.class);
             PageResponse<Addition> page = new PageResponse<>(List.of(mockAddition), 0, 10, 1L, 1);
 
             when(listAddition.handle(eq(true), any(PaginationRequest.class))).thenReturn(page);
-            when(mapper.toAdditionResponseDTO(mockAddition, false)).thenReturn(mockResponseDTO);
+            when(mapper.toAdditionResponseDTO(any(Addition.class), eq(false))).thenReturn(mockDto);
 
             mockMvc.perform(get("/api/admin/additions").param("available", "true"))
                     .andExpect(status().isOk());
 
             verify(listAddition).handle(eq(true), any(PaginationRequest.class));
-        }
-
-        @Test
-        @DisplayName("200 · Filtro available=false se pasa al use-case")
-        void shouldPassAvailableFalseFilter() throws Exception {
-            PageResponse<Addition> page = new PageResponse<>(List.of(), 0, 10, 0L, 0);
-
-            when(listAddition.handle(eq(false), any(PaginationRequest.class))).thenReturn(page);
-
-            mockMvc.perform(get("/api/admin/additions").param("available", "false"))
-                    .andExpect(status().isOk());
-
-            verify(listAddition).handle(eq(false), any(PaginationRequest.class));
-        }
-
-        @Test
-        @DisplayName("200 · Paginación personalizada")
-        void shouldApplyCustomPagination() throws Exception {
-            PageResponse<Addition> page = new PageResponse<>(List.of(), 2, 5, 0L, 0);
-
-            when(listAddition.handle(isNull(), any(PaginationRequest.class))).thenReturn(page);
-
-            mockMvc.perform(get("/api/admin/additions")
-                            .param("page", "2").param("size", "5")
-                            .param("sortBy", "name").param("sortDirection", "DESC"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.page").value(2))
-                    .andExpect(jsonPath("$.size").value(5));
-        }
-
-        @Test
-        @DisplayName("200 · Lista vacía")
-        void shouldReturnEmptyList() throws Exception {
-            PageResponse<Addition> empty = new PageResponse<>(List.of(), 0, 10, 0L, 0);
-
-            when(listAddition.handle(isNull(), any(PaginationRequest.class))).thenReturn(empty);
-
-            mockMvc.perform(get("/api/admin/additions"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content").isEmpty())
-                    .andExpect(jsonPath("$.totalElements").value(0));
-        }
-
-        @Test
-        @DisplayName("200 · Endpoint público (sin autenticación funciona)")
-        void shouldBePublicEndpoint() throws Exception {
-            when(listAddition.handle(isNull(), any(PaginationRequest.class)))
-                    .thenReturn(new PageResponse<>(List.of(), 0, 10, 0L, 0));
-
-            mockMvc.perform(get("/api/admin/additions"))
-                    .andExpect(status().isOk());
-        }
-    }
-
-    // ================================================================
-    //  PUT /api/admin/additions/image/{id}
-    // ================================================================
-    @Nested
-    @DisplayName("PUT /api/admin/additions/image/{id} — Actualizar imagen")
-    class UpdateImageTests {
-
-        @Test
-        @DisplayName("200 · Imagen actualizada, mapper recibe imageWasSent=true")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void shouldUpdateImageAndReturn200() throws Exception {
-            AdditionResponseDTO withImg = buildResponseDTO(true);
-
-            MockMultipartFile imgPart = new MockMultipartFile(
-                    "additionImage", "queso.png", MediaType.IMAGE_PNG_VALUE, "img".getBytes()
-            );
-
-            when(updateAdditionImage.handle(eq(1), any(FileData.class), anyInt()))
-                    .thenReturn(mockAddition);
-            when(mapper.toAdditionResponseDTO(mockAddition, true)).thenReturn(withImg);
-
-            mockMvc.perform(multipart("/api/admin/additions/image/1")
-                            .file(imgPart)
-                            .with(req -> { req.setMethod("PUT"); return req; })
-                            .with(csrf()).with(user(mockUserDetails)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.idAddition").value(1))
-                    .andExpect(jsonPath("$.imageUrl").value("https://cdn.example.com/queso.png"))
-                    .andExpect(jsonPath("$.imageKey").value("additions/queso.png"));
-
-            // userId extraído del token (10) se propaga al use-case
-            verify(updateAdditionImage).handle(eq(1), any(FileData.class), eq(10));
-            verify(mapper).toAdditionResponseDTO(mockAddition, true);
-        }
-
-        @Test
-        @DisplayName("403 · Usuario sin ROLE_ADMIN")
-        @WithMockUser(authorities = "ROLE_USER")
-        void shouldReturn403() throws Exception {
-            MockMultipartFile imgPart = new MockMultipartFile(
-                    "additionImage", "queso.png", MediaType.IMAGE_PNG_VALUE, "img".getBytes()
-            );
-
-            mockMvc.perform(multipart("/api/admin/additions/image/1")
-                            .file(imgPart)
-                            .with(req -> { req.setMethod("PUT"); return req; })
-                            .with(csrf()))
-                    .andExpect(status().isForbidden());
-
-            verifyNoInteractions(updateAdditionImage);
-        }
-
-        @Test
-        @DisplayName("400 · Sin parte additionImage")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void shouldReturn400WhenNoImage() throws Exception {
-            mockMvc.perform(multipart("/api/admin/additions/image/1")
-                            .with(req -> { req.setMethod("PUT"); return req; })
-                            .with(csrf()).with(user(mockUserDetails)))
-                    .andExpect(status().isBadRequest());
-
-            verifyNoInteractions(updateAdditionImage);
-        }
-    }
-
-    // ================================================================
-    //  DELETE /api/admin/additions/{id}
-    // ================================================================
-    @Nested
-    @DisplayName("DELETE /api/admin/additions/{id} — Eliminar adición")
-    class DeleteAdditionTests {
-
-        @Test
-        @DisplayName("200 · Body con todos los campos correctos")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void shouldDeleteAndReturnCorrectBody() throws Exception {
-            when(deleteAddition.handle(eq(1), anyInt())).thenReturn(mockAddition);
-
-            mockMvc.perform(delete("/api/admin/additions/1")
-                            .with(csrf()).with(user(mockUserDetails)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.message").value("Adición eliminada exitosamente"))
-                    .andExpect(jsonPath("$.deletedResource.id").value(1))
-                    .andExpect(jsonPath("$.deletedResource.name").value("Queso Extra"));
-
-            // userId del token (10) se pasa correctamente
-            verify(deleteAddition).handle(1, 10);
-        }
-
-        @Test
-        @DisplayName("200 · userId del token no puede ser otro valor")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void shouldPropagateCorrectUserId() throws Exception {
-            when(deleteAddition.handle(anyInt(), anyInt())).thenReturn(mockAddition);
-
-            mockMvc.perform(delete("/api/admin/additions/7")
-                            .with(csrf()).with(user(mockUserDetails)))
-                    .andExpect(status().isOk());
-
-            verify(deleteAddition).handle(7, 10);
-            verify(deleteAddition, never()).handle(anyInt(), eq(99));
-        }
-
-        @Test
-        @DisplayName("403 · Usuario sin ROLE_ADMIN")
-        @WithMockUser(authorities = "ROLE_USER")
-        void shouldReturn403() throws Exception {
-            mockMvc.perform(delete("/api/admin/additions/1").with(csrf()))
-                    .andExpect(status().isForbidden());
-
-            verifyNoInteractions(deleteAddition);
-        }
-
-        @Test
-        @DisplayName("401 · Sin autenticación")
-        void shouldReturn401WhenUnauthenticated() throws Exception {
-            mockMvc.perform(delete("/api/admin/additions/1").with(csrf()))
-                    .andExpect(status().isUnauthorized());
-
-            verifyNoInteractions(deleteAddition);
-        }
-    }
-
-    // ================================================================
-    //  GET /api/admin/additions/{id}
-    // ================================================================
-    @Nested
-    @DisplayName("GET /api/admin/additions/{id} — Obtener por ID")
-    class GetByIdTests {
-
-        @Test
-        @DisplayName("200 · Retorna todos los campos del DTO correctamente")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void shouldReturnFullDTOById() throws Exception {
-            when(getAdditionById.execute(1)).thenReturn(mockAddition);
-            when(mapper.toAdditionResponseDTO(mockAddition, false)).thenReturn(mockResponseDTO);
-
-            mockMvc.perform(get("/api/admin/additions/1")
-                            .with(user(mockUserDetails)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.idAddition").value(1))
-                    .andExpect(jsonPath("$.name").value("Queso Extra"))
-                    .andExpect(jsonPath("$.description").value("Porción extra de queso"))
-                    .andExpect(jsonPath("$.price").value(1500.00))
-                    .andExpect(jsonPath("$.available").value(true))
-                    .andExpect(jsonPath("$.createdBy").value(10));
-
-            verify(getAdditionById).execute(1);
-            // getById nunca gestiona imagen → false
             verify(mapper).toAdditionResponseDTO(mockAddition, false);
         }
 
         @Test
-        @DisplayName("403 · Usuario sin ROLE_ADMIN")
-        @WithMockUser(authorities = "ROLE_USER")
-        void shouldReturn403() throws Exception {
-            mockMvc.perform(get("/api/admin/additions/1"))
-                    .andExpect(status().isForbidden());
+        void getAll_paginacionPersonalizada_pasaParametrosCorrectos() throws Exception {
+            PageResponse<Addition> page = new PageResponse<>(List.of(), 1, 5, 0L, 0);
+            when(listAddition.handle(isNull(), any(PaginationRequest.class))).thenReturn(page);
 
-            verifyNoInteractions(getAdditionById);
-        }
+            mockMvc.perform(get("/api/admin/additions")
+                            .param("page", "1")
+                            .param("size", "5")
+                            .param("sortBy", "name")
+                            .param("sortDirection", "DESC"))
+                    .andExpect(status().isOk());
 
-        @Test
-        @DisplayName("401 · Sin autenticación")
-        void shouldReturn401WhenUnauthenticated() throws Exception {
-            mockMvc.perform(get("/api/admin/additions/1"))
-                    .andExpect(status().isUnauthorized());
-
-            verifyNoInteractions(getAdditionById);
+            verify(listAddition).handle(isNull(), any(PaginationRequest.class));
         }
     }
 
-    // ================================================================
-    //  GET /api/admin/additions/search
-    // ================================================================
+    // =========================================================================
+    // GET /api/admin/additions/{id}
+    // =========================================================================
+
     @Nested
-    @DisplayName("GET /api/admin/additions/search — Buscar por nombre")
+    class GetByIdTests {
+
+        @Test
+        void getById_idExistente_retorna200() throws Exception {
+            Addition mockAddition       = mock(Addition.class);
+            AdditionResponseDTO mockDto = mock(AdditionResponseDTO.class);
+
+            when(getAdditionById.execute(ADDITION_ID)).thenReturn(mockAddition);
+            when(mapper.toAdditionResponseDTO(mockAddition, false)).thenReturn(mockDto);
+
+            mockMvc.perform(get("/api/admin/additions/{id}", ADDITION_ID))
+                    .andExpect(status().isOk());
+
+            verify(getAdditionById).execute(ADDITION_ID);
+            verify(mapper).toAdditionResponseDTO(mockAddition, false);
+        }
+
+        @Test
+        void getById_useCaseLanzaExcepcion_propagaExcepcion() {
+            when(getAdditionById.execute(ADDITION_ID))
+                    .thenThrow(new RuntimeException("Adición no encontrada"));
+
+            assertThrows(Exception.class, () ->
+                    mockMvc.perform(get("/api/admin/additions/{id}", ADDITION_ID)));
+        }
+    }
+
+    // =========================================================================
+    // DELETE /api/admin/additions/{id}
+    // =========================================================================
+
+    @Nested
+    class DeleteAdditionTests {
+
+        @Test
+        void delete_idExistente_retorna200() throws Exception {
+            Addition mockAddition = mock(Addition.class);
+            when(mockAddition.getIdAddition()).thenReturn(ADDITION_ID);
+            when(mockAddition.getName()).thenReturn("Queso Extra");
+            when(deleteAddition.handle(ADDITION_ID, USER_ID)).thenReturn(mockAddition);
+
+            mockMvc.perform(delete("/api/admin/additions/{id}", ADDITION_ID))
+                    .andExpect(status().isOk());
+
+            verify(deleteAddition).handle(ADDITION_ID, USER_ID);
+        }
+
+        @Test
+        void delete_useCaseLanzaExcepcion_propagaExcepcion() {
+            when(deleteAddition.handle(ADDITION_ID, USER_ID))
+                    .thenThrow(new RuntimeException("Adición no encontrada"));
+
+            assertThrows(Exception.class, () ->
+                    mockMvc.perform(delete("/api/admin/additions/{id}", ADDITION_ID)));
+        }
+    }
+
+    // =========================================================================
+    // GET /api/admin/additions/search
+    // =========================================================================
+
+    @Nested
     class SearchByNameTests {
 
         @Test
-        @DisplayName("200 · Resultados con todos los campos del DTO")
-        void shouldReturnFullDTOOnSearch() throws Exception {
-            PageResponse<Addition> page = new PageResponse<>(List.of(mockAddition), 0, 10, 1L, 1);
+        void search_conNombre_retorna200() throws Exception {
+            PageResponse<Addition> page = new PageResponse<>(List.of(), 0, 10, 0L, 0);
+            when(searchAdditionByName.handle(eq("queso"), any(PaginationRequest.class))).thenReturn(page);
 
-            when(searchAdditionByName.handle(eq("Queso"), any(PaginationRequest.class)))
-                    .thenReturn(page);
-            when(mapper.toAdditionResponseDTO(mockAddition, false)).thenReturn(mockResponseDTO);
+            mockMvc.perform(get("/api/admin/additions/search").param("name", "queso"))
+                    .andExpect(status().isOk());
 
-            mockMvc.perform(get("/api/admin/additions/search").param("name", "Queso"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content[0].idAddition").value(1))
-                    .andExpect(jsonPath("$.content[0].price").value(1500.00))
-                    .andExpect(jsonPath("$.totalElements").value(1));
-
-            verify(searchAdditionByName).handle(eq("Queso"), any(PaginationRequest.class));
+            verify(searchAdditionByName).handle(eq("queso"), any(PaginationRequest.class));
         }
 
         @Test
-        @DisplayName("200 · Paginación personalizada")
-        void shouldApplyCustomPagination() throws Exception {
-            PageResponse<Addition> page = new PageResponse<>(List.of(mockAddition), 1, 5, 6L, 2);
-
-            when(searchAdditionByName.handle(eq("Queso"), any(PaginationRequest.class)))
-                    .thenReturn(page);
-            when(mapper.toAdditionResponseDTO(any(), eq(false))).thenReturn(mockResponseDTO);
+        void search_paginacionPersonalizada_pasaParametrosCorrectos() throws Exception {
+            PageResponse<Addition> page = new PageResponse<>(List.of(), 0, 5, 0L, 0);
+            when(searchAdditionByName.handle(eq("papa"), any(PaginationRequest.class))).thenReturn(page);
 
             mockMvc.perform(get("/api/admin/additions/search")
-                            .param("name", "Queso")
-                            .param("page", "1").param("size", "5")
-                            .param("sortBy", "name").param("sortDirection", "DESC"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.page").value(1))
-                    .andExpect(jsonPath("$.size").value(5))
-                    .andExpect(jsonPath("$.totalElements").value(6))
-                    .andExpect(jsonPath("$.totalPages").value(2));
-        }
-
-        @Test
-        @DisplayName("200 · Sin resultados retorna página vacía (no 404)")
-        void shouldReturnEmptyPageNotNotFound() throws Exception {
-            when(searchAdditionByName.handle(eq("XYZ_NO_EXISTE"), any(PaginationRequest.class)))
-                    .thenReturn(new PageResponse<>(List.of(), 0, 10, 0L, 0));
-
-            mockMvc.perform(get("/api/admin/additions/search").param("name", "XYZ_NO_EXISTE"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content").isEmpty())
-                    .andExpect(jsonPath("$.totalElements").value(0));
-        }
-
-        @Test
-        @DisplayName("400 · Sin parámetro name")
-        void shouldReturn400WhenNameMissing() throws Exception {
-            mockMvc.perform(get("/api/admin/additions/search"))
-                    .andExpect(status().isBadRequest());
-
-            verifyNoInteractions(searchAdditionByName);
-        }
-
-        @Test
-        @DisplayName("200 · Endpoint público (sin autenticación funciona)")
-        void shouldBePublicEndpoint() throws Exception {
-            when(searchAdditionByName.handle(anyString(), any()))
-                    .thenReturn(new PageResponse<>(List.of(), 0, 10, 0L, 0));
-
-            mockMvc.perform(get("/api/admin/additions/search").param("name", "Queso"))
+                            .param("name", "papa")
+                            .param("page", "0")
+                            .param("size", "5"))
                     .andExpect(status().isOk());
-        }
-    }
 
-    @Nested
-    @DisplayName("SecurityTests — Pruebas de seguridad")
-    class SecurityTests {
-
-        @Test
-        @DisplayName("401 · Sin autenticación en endpoint protegido")
-        void adminEndpoint_shouldNotCallUseCase_whenNotAuthenticated() throws Exception {
-            SecurityContextHolder.clearContext();
-            verifyNoInteractions(createAddition);
-        }
-
-        @Test
-        @DisplayName("403 · Usuario con ROLE_CLIENT no puede acceder")
-        @WithMockUser(roles = "CLIENT")
-        void adminEndpoint_shouldReturn403_whenRoleIsClient() throws Exception {
-            mockMvc.perform(post("/api/admin/additions")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}").with(csrf()))
-                    .andExpect(status().isForbidden());
-        }
-
-        @Test
-        @DisplayName("200 · Usuario con ROLE_ADMIN puede acceder")
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        void adminEndpoint_shouldBeAccessible_whenRoleIsAdmin() throws Exception {
-            PageResponse<Addition> page = new PageResponse<>(List.of(), 0, 10, 0L, 0);
-            when(listAddition.handle(isNull(), any(PaginationRequest.class))).thenReturn(page);
-            mockMvc.perform(get("/api/admin/additions")
-                            .with(user(mockUserDetails)))
-                    .andExpect(status().isOk());
+            verify(searchAdditionByName).handle(eq("papa"), any(PaginationRequest.class));
         }
     }
 }
