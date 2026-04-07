@@ -3,7 +3,6 @@ package com.tetris.tetrisburger_backend.infrastructure.adapter;
 import com.tetris.tetrisburger_backend.domain.common.PageResponse;
 import com.tetris.tetrisburger_backend.domain.common.PaginationRequest;
 import com.tetris.tetrisburger_backend.domain.model.Burger;
-import com.tetris.tetrisburger_backend.domain.model.Product;
 import com.tetris.tetrisburger_backend.domain.port.out.BurgerRepository;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.BurgerEntity;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.mapper.BurgerEntityMapper;
@@ -13,7 +12,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -74,35 +72,12 @@ public class BurgerAdapter implements BurgerRepository {
         return mapToPageResponse(page);
     }
 
-    @Override
-    public PageResponse<Burger> findAllAvailableOnMenu(PaginationRequest pagination) {
-        Page<BurgerEntity> page = jpaRepository
-                .findAllByIsOnMenuTrueAndAvailabilityTrueAndDeletedAtIsNull(buildPageable(pagination));
-        return mapToPageResponse(page);
-    }
-
-    @Override
-    public PageResponse<Burger> findAllFeaturedMenuBurgers(PaginationRequest pagination) {
-        Page<BurgerEntity> page = jpaRepository
-                .findAllByIsOnMenuTrueAndIsFeaturedTrueAndDeletedAtIsNull(buildPageable(pagination));
-        return mapToPageResponse(page);
-    }
-
-    @Override
-    public List<Burger> findAllMenuBurgers() {
-        return jpaRepository.findAllByIsOnMenuTrueAndDeletedAtIsNull()
-                .stream().map(mapper::toDomain).toList();
-    }
 
     // ========================================
     // MENÚ - BUSCAR
     // ========================================
 
-    @Override
-    public Optional<Burger> findMenuById(Integer idBurger) {
-        return jpaRepository.findByIdOnMenuWithProducts(idBurger)
-                .map(mapper::toDomain);
-    }
+
 
     @Override
     public Optional<Burger> findActiveMenuById(Integer idBurger) {
@@ -116,11 +91,6 @@ public class BurgerAdapter implements BurgerRepository {
                 .map(mapper::toDomain);
     }
 
-    @Override
-    public Optional<Burger> findByNameAndIsOnMenuTrueAndDeletedAtIsNull(String name) {
-        return jpaRepository.findByNameAndIsOnMenuTrueAndDeletedAtIsNull(name)
-                .map(mapper::toDomain);
-    }
 
     // ========================================
     // MENÚ - FILTROS Y BÚSQUEDA
@@ -132,31 +102,7 @@ public class BurgerAdapter implements BurgerRepository {
         return mapToPageResponse(page);
     }
 
-    @Override
-    public PageResponse<Burger> searchMenuBurgersWithFilters(
-            String name, Boolean availability, Boolean isFeatured, PaginationRequest pagination) {
-        Page<BurgerEntity> page = jpaRepository
-                .searchMenuBurgersWithFilters(name, availability, isFeatured, buildPageable(pagination));
-        return mapToPageResponse(page);
-    }
 
-    @Override
-    public PageResponse<Burger> findTopOrderedMenuBurgers(PaginationRequest pagination) {
-        Page<BurgerEntity> page = jpaRepository.findTopOrderedMenuBurgers(buildPageable(pagination));
-        return mapToPageResponse(page);
-    }
-
-    @Override
-    public PageResponse<Burger> findMenuBurgersOrderByPriceAsc(PaginationRequest pagination) {
-        Page<BurgerEntity> page = jpaRepository.findMenuBurgersOrderByPriceAsc(buildPageable(pagination));
-        return mapToPageResponse(page);
-    }
-
-    @Override
-    public PageResponse<Burger> findMenuBurgersOrderByPriceDesc(PaginationRequest pagination) {
-        Page<BurgerEntity> page = jpaRepository.findMenuBurgersOrderByPriceDesc(buildPageable(pagination));
-        return mapToPageResponse(page);
-    }
 
     // ========================================
     // MENÚ - VALIDACIONES
@@ -167,28 +113,7 @@ public class BurgerAdapter implements BurgerRepository {
         return jpaRepository.existsByNameAndIsOnMenuTrueAndDeletedAtIsNull(name);
     }
 
-    @Override
-    public boolean existsByNameAndIsOnMenuTrueAndDeletedAtIsNullAndIdBurgerNot(
-            String name, Integer excludeId) {
-        return jpaRepository.existsByNameAndIsOnMenuTrueAndDeletedAtIsNullAndIdBurgerNot(name, excludeId);
-    }
 
-    // ========================================
-    // CUSTOM (isCustom) - LISTAR
-    // ========================================
-
-    @Override
-    public PageResponse<Burger> findAllCustomByUserId(Integer idUser, PaginationRequest pagination) {
-        Page<BurgerEntity> page = jpaRepository
-                .findAllByIdUserAndCustomTrueAndDeletedAtIsNull(idUser, buildPageable(pagination));
-        return mapToPageResponse(page);
-    }
-
-    @Override
-    public List<Burger> findAllCustomByUserId(Integer idUser) {
-        return jpaRepository.findAllByIdUserAndCustomTrueAndDeletedAtIsNull(idUser)
-                .stream().map(mapper::toDomain).toList();
-    }
 
     // ========================================
     // CUSTOM (isCustom) - BUSCAR
@@ -200,43 +125,14 @@ public class BurgerAdapter implements BurgerRepository {
                 .map(mapper::toDomain);
     }
 
-    @Override
-    public PageResponse<Burger> searchCustomByName(
-            Integer idUser, String name, PaginationRequest pagination) {
-        Page<BurgerEntity> page = jpaRepository
-                .searchCustomByName(idUser, name, buildPageable(pagination));
-        return mapToPageResponse(page);
-    }
 
-    @Override
-    public PageResponse<Burger> searchCustomBurgersWithFilters(
-            Integer idUser, String name, Boolean isFeatured, PaginationRequest pagination) {
-        Page<BurgerEntity> page = jpaRepository
-                .searchCustomBurgersWithFilters(idUser, name, isFeatured, buildPageable(pagination));
-        return mapToPageResponse(page);
-    }
-
-    @Override
-    public PageResponse<Burger> findTopOrderedCustomBurgersByUser(
-            Integer idUser, PaginationRequest pagination) {
-        Page<BurgerEntity> page = jpaRepository
-                .findTopOrderedCustomBurgersByUser(idUser, buildPageable(pagination));
-        return mapToPageResponse(page);
-    }
 
     // ========================================
     // ESTADÍSTICAS
     // ========================================
 
-    @Override
-    public long countActiveMenuBurgers() {
-        return jpaRepository.countActiveMenuBurgers();
-    }
 
-    @Override
-    public long countCustomBurgersByUser(Integer idUser) {
-        return jpaRepository.countCustomBurgersByUser(idUser);
-    }
+
 
     @Override
     public List<Burger> findAllByIds(List<Integer> ids) {
@@ -266,6 +162,14 @@ public class BurgerAdapter implements BurgerRepository {
                 page.getTotalElements(),
                 page.getTotalPages()
         );
+    }
+
+    @Override
+    public List<Burger> findAllByIngredientProductId(Integer idProduct) {
+        return jpaRepository.findAllByIngredientProductId(idProduct)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 
 

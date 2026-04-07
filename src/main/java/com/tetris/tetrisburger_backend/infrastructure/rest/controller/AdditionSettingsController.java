@@ -3,7 +3,7 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.controller;
 import com.tetris.tetrisburger_backend.domain.model.AdditionSettings;
 import com.tetris.tetrisburger_backend.domain.port.in.additionsettings.GetAdditionSettings;
 import com.tetris.tetrisburger_backend.domain.port.in.additionsettings.UpdateAdditionSettings;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.additionSettings.UpdateAdditionSettingsRequestDTO;
+import com.tetris.tetrisburger_backend.infrastructure.rest.dto.additionsettings.UpdateAdditionSettingsRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.additionsettings.AdditionSettingsResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.AdditionSettingsDtoMapper;
 import org.springframework.http.ResponseEntity;

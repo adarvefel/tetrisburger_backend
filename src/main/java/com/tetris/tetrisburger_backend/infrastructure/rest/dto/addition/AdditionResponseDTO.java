@@ -18,4 +18,21 @@ public record AdditionResponseDTO(
         LocalDateTime updatedAt,
         Integer createdBy,
         Integer updatedBy
-) {}
+) {
+    public AdditionResponseDTO(Integer idAddition, String name, double price, Boolean available, String imageUrl) {
+        this(
+                idAddition,
+                name,
+                null,
+                BigDecimal.valueOf(price),
+                available,
+                imageUrl,
+                null,
+                com.tetris.tetrisburger_backend.domain.common.ImageStatus.NONE,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+}

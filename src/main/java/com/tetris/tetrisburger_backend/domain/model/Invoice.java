@@ -62,6 +62,8 @@ public class Invoice {
 
     public void markAsFailed() {
         this.status = InvoiceStatus.FAILED;
+        this.invoiceNumber = "ERR-" + this.idOrder; // ✅
+
     }
     public String getPdfUrl() { return pdfUrl; }
     public Integer getIdInvoice()           { return idInvoice; }

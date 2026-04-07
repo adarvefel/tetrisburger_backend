@@ -2,14 +2,12 @@ package com.tetris.tetrisburger_backend.infrastructure.persistence.mapper;
 
 import com.tetris.tetrisburger_backend.domain.model.Addition;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.AdditionEntity;
-import org.mapstruct.Mapper;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring")
-public interface AdditionEntityMapper {
+@Component
+public class AdditionEntityMapper {
 
-    // ==================== Entity -> Domain ====================
-
-    default Addition toDomain(AdditionEntity e) {
+    public Addition toDomain(AdditionEntity e) {
         if (e == null) return null;
 
         return Addition.of(
@@ -29,9 +27,7 @@ public interface AdditionEntityMapper {
         );
     }
 
-    // ==================== Domain -> Entity ====================
-
-    default AdditionEntity toEntity(Addition d) {
+    public AdditionEntity toEntity(Addition d) {
         if (d == null) return null;
 
         AdditionEntity e = new AdditionEntity();
@@ -50,9 +46,7 @@ public interface AdditionEntityMapper {
         return e;
     }
 
-    // ==================== Utils ====================
-
-    default String trim(String s) {
+    private String trim(String s) {
         return s == null ? null : s.trim();
     }
 }

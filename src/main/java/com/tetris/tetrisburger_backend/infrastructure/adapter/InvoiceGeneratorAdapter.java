@@ -1,5 +1,6 @@
 package com.tetris.tetrisburger_backend.infrastructure.adapter;
 
+
 import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
 import com.tetris.tetrisburger_backend.domain.enums.OrderItemType;
 import com.tetris.tetrisburger_backend.domain.model.Invoice;
@@ -16,10 +17,17 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import sendinblue.ApiClient;
+import sendinblue.Configuration;
+import sibApi.TransactionalEmailsApi;
+import sibModel.SendSmtpEmail;
+import sibModel.SendSmtpEmailAttachment;
+import sibModel.SendSmtpEmailSender;
+import sibModel.SendSmtpEmailTo;
 
-import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -30,30 +38,32 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
 
     private final InvoiceRepository invoiceRepository;
     private final RestTemplate restTemplate;
-    private final JavaMailSender mailSender;
     private final UserRepository userRepository;
     private final ImageStoragePort imageStoragePort;
 
     @Value("${invoice.generator.api-key}")
     private String apiKey;
 
-    @Value("${spring.mail.username}")
-    private String fromEmail;
+
+
+
+    @Value("${brevo.api-key}")
+    private String brevoApiKey;
+
 
     public InvoiceGeneratorAdapter(InvoiceRepository invoiceRepository,
                                    RestTemplate restTemplate,
-                                   JavaMailSender mailSender,
                                    UserRepository userRepository,
                                    ImageStoragePort imageStoragePort) {
         this.invoiceRepository = invoiceRepository;
         this.restTemplate = restTemplate;
-        this.mailSender = mailSender;
         this.userRepository = userRepository;
         this.imageStoragePort = imageStoragePort;
     }
 
+    @Async
     @Override
-    public Invoice createInvoice(Order order, Payment payment) {
+    public void createInvoice(Order order, Payment payment) {
         Invoice invoice = Invoice.create(
                 order.getIdOrder(),
                 payment.getIdPayment(),
@@ -105,25 +115,30 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
                     HttpMethod.POST,
                     new HttpEntity<>(body, headers),
                     byte[].class
+
             );
+            System.out.println(">>> Invoice API status: " + response.getStatusCode());
+            System.out.println(">>> Invoice PDF size: " + (response.getBody() != null ? response.getBody().length : 0));
+
 
             if (response.getBody() == null) {
                 throw new RuntimeException("Error generando factura: PDF vacío");
             }
 
             byte[] pdfBytes = response.getBody();
+            System.out.println(">>> Iniciando upload S3...");
+
 
             ImageUploadResult result = imageStoragePort.uploadInvoicePdf(pdfBytes);
             String pdfUrl = imageStoragePort.getImageUrl(result.imageKey());
 
+            System.out.println(">>> S3 OK: " + pdfUrl);
+
+
             if (user != null && user.getEmail() != null) {
-                sendInvoiceEmail(
-                        user.getEmail(),
-                        userName,
-                        order,
-                        payment,
-                        pdfBytes
-                );
+                System.out.println(">>> Iniciando envío email a: " + user.getEmail());
+                sendInvoiceEmail(user.getEmail(), userName, order, payment, pdfBytes);
+                System.out.println(">>> Email enviado OK");
             }
 
             invoice.markAsIssued(
@@ -137,11 +152,12 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
 
         } catch (Exception e) {
             invoice.markAsFailed();
+            System.err.println(">>> ERROR generando factura: " + e.getClass().getName());
+            System.err.println(">>> Mensaje: " + e.getMessage());
             System.err.println("Error generando factura: " + e.getMessage());
             e.printStackTrace();
         }
-
-        return invoiceRepository.save(invoice);
+        invoiceRepository.save(invoice);
 
     }
 
@@ -176,21 +192,32 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
     private void sendInvoiceEmail(String toEmail, String userName,
                                   Order order, Payment payment,
                                   byte[] pdfBytes) throws Exception {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        ApiClient defaultClient = Configuration.getDefaultApiClient();
+        defaultClient.setApiKey(brevoApiKey);
 
-        helper.setFrom(fromEmail);
-        helper.setTo(toEmail);
-        helper.setSubject("Tu factura TetrisBurger - Pedido #" + order.getOrderNumber());
-        helper.setText(buildHtmlEmail(userName, order, payment), true);
+        TransactionalEmailsApi apiInstance = new TransactionalEmailsApi();
 
-        helper.addAttachment(
-                "factura-" + order.getOrderNumber() + ".pdf",
-                new ByteArrayResource(pdfBytes),
-                "application/pdf"
-        );
+        SendSmtpEmailSender sender = new SendSmtpEmailSender();
+        sender.setName("TetrisBurger");
+        sender.setEmail("tetrisburger8@gmail.com");
 
-        mailSender.send(message);
+        SendSmtpEmailTo recipient = new SendSmtpEmailTo();
+        recipient.setEmail(toEmail);
+        recipient.setName(userName);
+
+        // Adjuntar PDF
+        SendSmtpEmailAttachment attachment = new SendSmtpEmailAttachment();
+        attachment.setContent(pdfBytes);
+        attachment.setName("factura-" + order.getOrderNumber() + ".pdf");
+
+        SendSmtpEmail email = new SendSmtpEmail();
+        email.setSender(sender);
+        email.setTo(Collections.singletonList(recipient));
+        email.setSubject("Tu factura TetrisBurger - Pedido #" + order.getOrderNumber());
+        email.setHtmlContent(buildHtmlEmail(userName, order, payment));
+        email.setAttachment(Collections.singletonList(attachment));
+
+        apiInstance.sendTransacEmail(email);
     }
 
     private String buildHtmlEmail(String userName, Order order, Payment payment) {

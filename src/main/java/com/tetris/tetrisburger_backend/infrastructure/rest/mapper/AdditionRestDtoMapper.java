@@ -3,23 +3,19 @@ package com.tetris.tetrisburger_backend.infrastructure.rest.mapper;
 import com.tetris.tetrisburger_backend.domain.common.FileData;
 import com.tetris.tetrisburger_backend.domain.common.ImageStatus;
 import com.tetris.tetrisburger_backend.domain.model.Addition;
-import com.tetris.tetrisburger_backend.domain.model.Supplier;
 import com.tetris.tetrisburger_backend.domain.port.in.adittion.command.CreateAdditionCommand;
 import com.tetris.tetrisburger_backend.domain.port.in.adittion.command.UpdateAdditionCommand;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.AdditionResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.CreateAdditionRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.UpdateAdditionRequestDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.dto.supplier.SupplierResponseDTO;
 import org.mapstruct.Mapper;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface AdditionRestMapper {
+public interface AdditionRestDtoMapper {
 
-
-    // en AdditionRestDtoMapper.java
     default AdditionResponseDTO toAdditionResponseDTO(Addition addition, boolean imageWasSent) {
         if (addition == null) return null;
 
@@ -47,17 +43,6 @@ public interface AdditionRestMapper {
                 addition.getUpdatedBy()
         );
     }
-
-
-    private String resolveImageStatus(boolean imageWasSent, String imageUrl) {
-        if (!imageWasSent)                          return "NONE";
-        if (imageUrl == null || imageUrl.isBlank()) return "PENDING";
-        return "READY";
-    }
-
-
-
-
     default CreateAdditionCommand toCreateAdditionCommand(
             CreateAdditionRequestDTO dto,
             MultipartFile additionImage,
@@ -95,9 +80,12 @@ public interface AdditionRestMapper {
         );
     }
 
-    List<AdditionResponseDTO> toResponseDTOList(List<Addition> handle);
-
-
-
-
+    default List<AdditionResponseDTO> toResponseDTOList(List<Addition> additions) {
+        if (additions == null || additions.isEmpty()) {
+            return List.of();
+        }
+        return additions.stream()
+                .map(addition -> toAdditionResponseDTO(addition, false))
+                .toList();
+    }
 }

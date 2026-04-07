@@ -10,6 +10,7 @@ import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.Ord
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -38,7 +39,11 @@ public class OrderAdapter implements OrderRepository {
 
     @Override
     public PageResponse<Order> findByUserId(Integer idUser, PaginationRequest pagination) {
-        Pageable pageable = PageRequest.of(pagination.getPage(), pagination.getSize());
+        Pageable pageable = PageRequest.of(
+                pagination.getPage(),
+                pagination.getSize(),
+                Sort.by(Sort.Direction.DESC, "idOrder")
+        );
         Page<Order> page = jpa.findByIdUser(idUser, pageable).map(mapper::toDomain);
         return new PageResponse<>(
                 page.getContent(), page.getNumber(),
@@ -49,7 +54,11 @@ public class OrderAdapter implements OrderRepository {
     @Override
     public PageResponse<Order> findAll(OrderStatus status, LocalDateTime start,
                                        LocalDateTime end, PaginationRequest pagination) {
-        Pageable pageable = PageRequest.of(pagination.getPage(), pagination.getSize());
+        Pageable pageable = PageRequest.of(
+                pagination.getPage(),
+                pagination.getSize(),
+                Sort.by(Sort.Direction.DESC, "idOrder")
+        );
         Page<Order> page = jpa.findAllWithFilters(status, start, end, pageable)
                 .map(mapper::toDomain);
         return new PageResponse<>(
@@ -63,7 +72,11 @@ public class OrderAdapter implements OrderRepository {
 
     @Override
     public PageResponse<Order> findByOrderNumber(String orderNumber, PaginationRequest pagination) {
-        Pageable pageable = PageRequest.of(pagination.getPage(), pagination.getSize());
+        Pageable pageable = PageRequest.of(
+                pagination.getPage(),
+                pagination.getSize(),
+                Sort.by(Sort.Direction.DESC, "idOrder")
+        );
         Page<Order> page = jpa.findByOrderNumberContainingIgnoreCase(orderNumber, pageable)
                 .map(mapper::toDomain);
         return new PageResponse<>(

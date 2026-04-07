@@ -28,7 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "cors.allowed.origins=http://localhost:3000,http://localhost:4200"
 })
 @DisplayName("Pruebas de SecurityConfig")
-class SecurityConfigTest {
+class
+SecurityConfigTest {
 
     @Autowired
     private MockMvc mockMvc;
