@@ -11,6 +11,7 @@ import com.tetris.tetrisburger_backend.domain.port.in.cart.AddCart;
 import com.tetris.tetrisburger_backend.domain.port.out.AdditionRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.CartRepository;
 import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,7 +77,12 @@ public class AddCartUseCase implements AddCart {
                     });
 
             if (cart.getIdCart() == null) {
-                cart = cartRepository.save(cart);
+                try {
+                    cart = cartRepository.save(cart);
+                } catch (DataIntegrityViolationException e) {
+                    cart = cartRepository.findByUserId(idUser)
+                            .orElseThrow(() -> new InvalidCartItemException("Error al obtener el carrito del usuario"));
+                }
             }
 
             List<CartItem> validatedItems = items.stream()

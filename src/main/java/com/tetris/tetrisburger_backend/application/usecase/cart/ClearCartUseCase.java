@@ -2,7 +2,7 @@ package com.tetris.tetrisburger_backend.application.usecase.cart;
 
  import com.tetris.tetrisburger_backend.domain.port.in.cart.ClearCart;
  import com.tetris.tetrisburger_backend.domain.port.out.CartRepository;
-import jakarta.transaction.Transactional;
+ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 @Service
