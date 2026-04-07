@@ -8,4 +8,8 @@ public record UpdateAdditionRequestDTO(
         String description,
         BigDecimal price,
         Boolean available
-) {}
+) {
+    public UpdateAdditionRequestDTO(String name, double price, Boolean available) {
+        this(name, null, BigDecimal.valueOf(price), available);
+    }
+}

@@ -3,6 +3,7 @@ package com.tetris.tetrisburger_backend.infrastructure.persistence.mapper;
 import com.tetris.tetrisburger_backend.domain.model.BurgerIngredient;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.BurgerIngredientEntity;
 import com.tetris.tetrisburger_backend.infrastructure.persistence.entity.ProductEntity;
+import com.tetris.tetrisburger_backend.infrastructure.persistence.repository.ProductJpaRepository;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -12,7 +13,15 @@ import java.util.List;
 @Component
 public class BurgerIngredientEntityMapper {
 
+    private final ProductJpaRepository productJpa;
+
+    public BurgerIngredientEntityMapper(ProductJpaRepository productJpa) { // ← AGREGA
+        this.productJpa = productJpa;
+    }
+
     // ==================== Entity -> Domain ====================
+
+
 
     public BurgerIngredient toDomain(BurgerIngredientEntity entity) {
         if (entity == null) {
@@ -49,21 +58,17 @@ public class BurgerIngredientEntityMapper {
         entity.setPriceAtTime(domain.getPriceAtTime());
         entity.setQuantity(domain.getQuantity());
         entity.setIsOptional(domain.getIsOptional());
+        entity.setImageUrl(domain.getImageUrl());
 
-        // Calcular subtotal
         BigDecimal subtotal = domain.getSubtotal();
         if (subtotal == null || subtotal.compareTo(BigDecimal.ZERO) == 0) {
             subtotal = domain.calculateSubtotal();
         }
         entity.setSubtotal(subtotal);
 
-        // Asignar ProductEntity solo con ID para la relación
         if (domain.getIdProduct() != null) {
-            ProductEntity product = new ProductEntity();
-            product.setId(domain.getIdProduct());
-            entity.setProduct(product);
+            entity.setProduct(productJpa.getReferenceById(domain.getIdProduct())); // ← proxy real
         }
-        entity.setImageUrl(domain.getImageUrl());
 
         return entity;
     }

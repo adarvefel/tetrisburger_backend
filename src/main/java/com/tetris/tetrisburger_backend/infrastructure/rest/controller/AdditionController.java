@@ -10,7 +10,7 @@ import com.tetris.tetrisburger_backend.infrastructure.rest.dto.DeleteResponseDTO
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.AdditionResponseDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.CreateAdditionRequestDTO;
 import com.tetris.tetrisburger_backend.infrastructure.rest.dto.addition.UpdateAdditionRequestDTO;
-import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.AdditionRestMapper;
+import com.tetris.tetrisburger_backend.infrastructure.rest.mapper.AdditionRestDtoMapper;
 import com.tetris.tetrisburger_backend.infrastructure.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -37,9 +37,9 @@ public class AdditionController {
     private final SearchAdditionByName searchAdditionByName;
     private final GetAdditionById getAdditionById;
     private final DeleteAddition deleteAddition;
-    private final AdditionRestMapper mapper;
+    private final AdditionRestDtoMapper mapper;
 
-    public AdditionController(CreateAddition createAddition, UpdateAddition updateAddition, UpdateAdditionImage updateAdditionImage, ListAddition listAddition, SearchAdditionByName searchAdditionByName, GetAdditionById getAdditionById, DeleteAddition deleteAddition, AdditionRestMapper mapper) {
+    public AdditionController(CreateAddition createAddition, UpdateAddition updateAddition, UpdateAdditionImage updateAdditionImage, ListAddition listAddition, SearchAdditionByName searchAdditionByName, GetAdditionById getAdditionById, DeleteAddition deleteAddition, AdditionRestDtoMapper mapper) {
         this.createAddition = createAddition;
         this.updateAddition = updateAddition;
         this.updateAdditionImage = updateAdditionImage;

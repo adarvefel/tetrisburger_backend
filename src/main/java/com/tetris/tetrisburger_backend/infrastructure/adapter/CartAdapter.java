@@ -54,9 +54,7 @@ public class CartAdapter implements CartRepository {
     @Override
     @Transactional
     public void replaceItems(Integer idCart, List<CartItem> items) {
-        System.out.println(">>> DELETING items for cart: " + idCart);
         int deleted = cartItemJpa.deleteByCart_IdCart(idCart);
-        System.out.println(">>> DELETED: " + deleted + " items");
         cartItemJpa.flush();
 
         CartEntity cartRef = cartJpa.getReferenceById(idCart);
@@ -65,7 +63,6 @@ public class CartAdapter implements CartRepository {
                 .toList();
 
         cartItemJpa.saveAll(entities);
-        System.out.println(">>> SAVED: " + entities.size() + " items");
     }
 
 

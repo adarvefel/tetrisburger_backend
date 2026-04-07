@@ -70,8 +70,6 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
                     })
                     .toList();
 
-            BigDecimal oldBasePrice = burger.getBasePrice();
-            BigDecimal oldFinalPrice = burger.getFinalPrice();
 
             burger.updateMenuBurger(
                     command.name(),
@@ -81,6 +79,11 @@ public class UpdateMenuBurgerUseCase implements UpdateMenuBurger {
                     command.isFeatured(),
                     command.updatedBy()
             );
+
+            if (command.finalPrice() != null) {
+                burger.updateFinalPrice(command.finalPrice(), command.updatedBy());
+            }
+
 
             Burger updated = burgerRepository.save(burger);
 

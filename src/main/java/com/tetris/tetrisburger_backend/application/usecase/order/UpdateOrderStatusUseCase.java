@@ -16,6 +16,8 @@ import com.tetris.tetrisburger_backend.domain.port.out.ProductRepository;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Map;
 
@@ -70,13 +72,14 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
             return saved;
         }
 
-        // ── Accept — requires payment and deducts stock ──────────────
+        // ── Accept — requires payment, deducts stock and increments burger orders ──
         if (newStatus == OrderStatus.ACCEPTED) {
             Payment payment = paymentRepository.findByOrderId(idOrder)
                     .orElseThrow(() -> new IllegalStateException(
                             "El pago debe ser registrado antes de aceptar la ordern"));
 
             deductStock(order, employeeId);
+            incrementBurgerOrders(order);
 
             order.updateStatus(newStatus, employeeId);
             Order saved = orderRepository.save(order);
@@ -89,6 +92,23 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
     }
 
     // ==================== PRIVATE METHODS ====================
+
+    private void incrementBurgerOrders(Order order) {
+        order.getItems().forEach(item -> {
+            if (item.getIdBurger() != null) {
+                Burger burger = burgerRepository.findById(item.getIdBurger())
+                        .orElseThrow(() -> new IllegalStateException(
+                                "Hamburguesa no encontrada: " + item.getIdBurger()));
+
+                // Incrementa una vez por cada unidad pedida
+                for (int i = 0; i < item.getQuantity(); i++) {
+                    burger.incrementOrders();
+                }
+
+                burgerRepository.save(burger);
+            }
+        });
+    }
 
     private void deductStock(Order order, Integer employeeId) {
         order.getItems().forEach(item -> {
@@ -150,6 +170,16 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
         });
     }
 
+    private String toSpanish(OrderStatus status) {
+        return switch (status) {
+            case PENDING              -> "Pendiente";
+            case ACCEPTED             -> "Aceptada";
+            case IN_PROGRESS          -> "En progreso";
+            case COMPLETED            -> "Completada";
+            case CANCELLED_BY_EMPLOYEE -> "Cancelada";
+        };
+    }
+
     private void validateTransition(OrderStatus current, OrderStatus next) {
         boolean valid = switch (current) {
             case PENDING     -> next == OrderStatus.ACCEPTED || next == OrderStatus.CANCELLED_BY_EMPLOYEE;
@@ -160,7 +190,7 @@ public class UpdateOrderStatusUseCase implements UpdateOrderStatus {
 
         if (!valid) {
             throw new IllegalStateException(
-                    "Transición  invalida: " + current + " → " + next);
+                    "Transición inválida: " + toSpanish(current) + " → " + toSpanish(next));
         }
     }
 }

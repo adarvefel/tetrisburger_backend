@@ -43,7 +43,7 @@ public class BurgerEntity {
     @Column(name = "margin_percentage", precision = 10, scale = 2)
     private BigDecimal marginPercentage;
 
-    @Column(name = "selling_at_loss")
+
     private Boolean sellingAtLoss = false;
 
     @Column(name = "is_on_menu", nullable = false)

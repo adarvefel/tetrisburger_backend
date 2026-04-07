@@ -14,7 +14,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Pruebas Unitarias de CustomUserDetails")
-class CustomUserDetailsTest {
+class
+CustomUserDetailsTest {
 
     @Nested
     @DisplayName("Pruebas de Constructores")

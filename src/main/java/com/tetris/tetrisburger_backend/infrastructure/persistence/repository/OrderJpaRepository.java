@@ -8,24 +8,34 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public interface OrderJpaRepository extends JpaRepository<OrderEntity, Integer> {
 
-    @Query("SELECT o FROM OrderEntity o LEFT JOIN FETCH o.payment WHERE o.idUser = :idUser AND o.deletedAt IS NULL ORDER BY o.orderDate DESC")
+    @Query(
+            value = "SELECT o FROM OrderEntity o LEFT JOIN FETCH o.payment WHERE o.idUser = :idUser AND o.deletedAt IS NULL ORDER BY o.idOrder DESC",
+            countQuery = "SELECT COUNT(o) FROM OrderEntity o WHERE o.idUser = :idUser AND o.deletedAt IS NULL"
+    )
     Page<OrderEntity> findByIdUser(@Param("idUser") Integer idUser, Pageable pageable);
 
-
-    @Query("""
-        SELECT o FROM OrderEntity o
-        LEFT JOIN FETCH o.payment
-        WHERE o.deletedAt IS NULL
-          AND (:status IS NULL OR o.status = :status)
-          AND (:start IS NULL OR o.orderDate >= :start)
-          AND (:end IS NULL OR o.orderDate < :end)
-        ORDER BY o.orderDate DESC
-    """)
+    @Query(
+            value = """
+            SELECT o FROM OrderEntity o
+            LEFT JOIN FETCH o.payment
+            WHERE o.deletedAt IS NULL
+              AND (:status IS NULL OR o.status = :status)
+              AND (:start IS NULL OR o.orderDate >= :start)
+              AND (:end IS NULL OR o.orderDate < :end)
+            ORDER BY o.idOrder DESC
+        """,
+            countQuery = """
+            SELECT COUNT(o) FROM OrderEntity o
+            WHERE o.deletedAt IS NULL
+              AND (:status IS NULL OR o.status = :status)
+              AND (:start IS NULL OR o.orderDate >= :start)
+              AND (:end IS NULL OR o.orderDate < :end)
+        """
+    )
     Page<OrderEntity> findAllWithFilters(
             @Param("status") OrderStatus status,
             @Param("start") LocalDateTime start,
@@ -33,19 +43,22 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Integer> 
             Pageable pageable
     );
 
-
-    @Query("""
-      SELECT o FROM OrderEntity o
-      LEFT JOIN FETCH o.payment
-      WHERE o.deletedAt IS NULL
-      AND UPPER(o.orderNumber) LIKE UPPER(CONCAT('%', :orderNumber, '%'))
-      ORDER BY o.orderDate DESC
-    """)
+    @Query(
+            value = """
+            SELECT o FROM OrderEntity o
+            LEFT JOIN FETCH o.payment
+            WHERE o.deletedAt IS NULL
+            AND UPPER(o.orderNumber) LIKE UPPER(CONCAT('%', :orderNumber, '%'))
+            ORDER BY o.idOrder DESC
+        """,
+            countQuery = """
+            SELECT COUNT(o) FROM OrderEntity o
+            WHERE o.deletedAt IS NULL
+            AND UPPER(o.orderNumber) LIKE UPPER(CONCAT('%', :orderNumber, '%'))
+        """
+    )
     Page<OrderEntity> findByOrderNumberContainingIgnoreCase(
             @Param("orderNumber") String orderNumber,
             Pageable pageable
     );
-
-
-
 }

@@ -1,4 +1,4 @@
-package com.tetris.tetrisburger_backend.infrastructure.rest.dto.additionSettings;
+package com.tetris.tetrisburger_backend.infrastructure.rest.dto.additionsettings;
 
 import java.math.BigDecimal;
 
