@@ -44,9 +44,6 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
     @Value("${invoice.generator.api-key}")
     private String apiKey;
 
-
-
-
     @Value("${brevo.api-key}")
     private String brevoApiKey;
 
@@ -117,8 +114,7 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
                     byte[].class
 
             );
-            System.out.println(">>> Invoice API status: " + response.getStatusCode());
-            System.out.println(">>> Invoice PDF size: " + (response.getBody() != null ? response.getBody().length : 0));
+
 
 
             if (response.getBody() == null) {
@@ -126,19 +122,15 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
             }
 
             byte[] pdfBytes = response.getBody();
-            System.out.println(">>> Iniciando upload S3...");
 
 
             ImageUploadResult result = imageStoragePort.uploadInvoicePdf(pdfBytes);
             String pdfUrl = imageStoragePort.getImageUrl(result.imageKey());
 
-            System.out.println(">>> S3 OK: " + pdfUrl);
 
 
             if (user != null && user.getEmail() != null) {
-                System.out.println(">>> Iniciando envío email a: " + user.getEmail());
                 sendInvoiceEmail(user.getEmail(), userName, order, payment, pdfBytes);
-                System.out.println(">>> Email enviado OK");
             }
 
             invoice.markAsIssued(
@@ -147,14 +139,9 @@ public class InvoiceGeneratorAdapter implements InvoicePort {
                     pdfUrl
             );
 
-            System.out.println("Factura enviada a: " +
-                    (user != null ? user.getEmail() : "sin email"));
 
         } catch (Exception e) {
             invoice.markAsFailed();
-            System.err.println(">>> ERROR generando factura: " + e.getClass().getName());
-            System.err.println(">>> Mensaje: " + e.getMessage());
-            System.err.println("Error generando factura: " + e.getMessage());
             e.printStackTrace();
         }
         invoiceRepository.save(invoice);
