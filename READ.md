@@ -69,23 +69,27 @@ cp .env.example .env
 Contenido del `.env`:
 
 ```env
-# ── Base de datos ──────────────────────────────────────────
 DB_URL=jdbc:mysql://localhost:3306/railway?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
 DB_USERNAME=root
-DB_PASSWORD=tu_password
+DB_PASSWORD=tu contraseña
 
-# ── JWT ────────────────────────────────────────────────────
-JWT_SECRET=tu_jwt_secret_minimo_32_caracteres
-JWT_EXPIRATION=3600000        # ms → 1 hora
 
-# ── AWS S3 ─────────────────────────────────────────────────
-AWS_ACCESS_KEY_ID=tu_access_key
-AWS_SECRET_ACCESS_KEY=tu_secret_key
+
+
+# 2. JWT (JSON Web Token)
+JWT_SECRET=586E597133743677397A24432646294B404D635166546A576E5A49327A597A2F413F4428472B4B6250655368566B597133733676397A24432646294B404D635166546A576E5A49327A597A2F413F4428472B4B6250655368566B59
+JWT_EXPIRATION=3600000
+
+
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
 AWS_PROFILE=tetrisburger
 AWS_REGION=us-east-2
 AWS_S3_BUCKET=tetrisburger-image
 
-# ── Carpetas S3 ────────────────────────────────────────────
+# ================================================
+# S3 FOLDER STRUCTURE
+# ================================================
 S3_FOLDER_PRODUCTS=products
 S3_FOLDER_USERS=users
 S3_FOLDER_BURGERS_MENU=burgers
@@ -93,19 +97,20 @@ S3_FOLDER_MENUS=menus
 S3_FOLDER_ADDITION=addition
 S3_FOLDER_INVOICES=invoices
 
-# ── Google OAuth ───────────────────────────────────────────
-GOOGLE_OAUTH_CLIENT_ID=tu_google_client_id
 
-# ── CORS / Frontend ────────────────────────────────────────
+
+
+
+# 4. Google OAuth y URLs de la Aplicación
+GOOGLE_OAUTH_CLIENT_ID=157248408373-i7kgglkl62u4ijhqct2545r7gb0ri4i9.apps.googleusercontent.com
+
 APP_FRONTEND_URL=http://localhost:5173
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
 
-# ── Servicios externos ─────────────────────────────────────
-INVOICE_GENERATOR_API_KEY=tu_api_key
-BREVO_API_KEY=tu_brevo_key
+INVOICE_GENERATOR_API_KEY=
+BREVO_API_KEY=
 
-# ── reCAPTCHA v3 ───────────────────────────────────────────
-RECAPTCHA_SECRET_KEY=tu_recaptcha_key
+RECAPTCHA_SECRET_KEY=6LfCBG0sAAAAAPpMKqUTlJ1AyVPKKG84-Ef6n6H8
 RECAPTCHA_VERIFY_URL=https://www.google.com/recaptcha/api/siteverify
 RECAPTCHA_THRESHOLD=0.5
 ```
@@ -114,8 +119,9 @@ RECAPTCHA_THRESHOLD=0.5
 ### 4. Compilar y ejecutar
 
 ```bash
-mvn clean install
-mvn spring-boot:run
+.\mvnw clean install -DskipTests
+
+.\mvnw spring-boot:run
 ```
 
 La API quedará disponible en `http://localhost:8080`.
