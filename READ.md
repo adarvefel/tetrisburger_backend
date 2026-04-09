@@ -41,7 +41,7 @@ facturación, inventario y notificaciones por correo.
 ### 1. Clonar el repositorio
 
 ```bash
-git https://github.com/adarvefel/tetrisburger_backend.git
+git clone https://github.com/adarvefel/tetrisburger_backend.git
 cd tetrisburger_backend
 ```
 
@@ -50,6 +50,11 @@ cd tetrisburger_backend
 ```bash
 "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p < seed.sql
 ```
+Si no funciona haces lo siguiente
+Abre MySQL Workbench
+Conéctate a tu servidor local
+Menú File → Open SQL Script → selecciona seed.sql
+Ejecuta con Ctrl+Shift+Enter
 
 > Esto crea la base de datos `railway`, las 20 tablas y carga todos los datos de prueba.
 
@@ -166,6 +171,10 @@ trazabilidad de auditoría (`created_by`, `updated_by`, `deleted_by`).
 text
 
 ### Tablas del esquema (20 tablas)
+Ejemplos:
+
+Usurios de prueba:
+
 
 #### 👤 Usuarios y Acceso
 
@@ -286,14 +295,17 @@ text
 
 ---
 
-## 🧪 Datos de Prueba (`seed.sql`)
+## 🧪 Datos de Prueba EJEMPLO:
 
-El script `seed.sql` inicializa la base de datos con datos ficticios listos para
-desarrollo y QA. **La contraseña de todos los usuarios es: `tetris2024`**
+El script `seed.sql` inicializa la base de datos con estos datos. 
 
-> ⚠️ El hash BCrypt fue generado con strength 10. Si necesitas regenerar los hashes
-> en producción, ejecuta `passwordEncoder.encode("tetris2024")` en tu app y actualiza
-> el script antes de importar.
+ADMIN:admintetrisburger@gmail.com
+PASSWORD:tetris2024
+EMPLEADO:employeetetrisburger@gmail.com
+PASSWORD:tetris2024
+PASSWORD: usuariotetrisburger@gmail.com
+tetris2024
+
 
 ### 👥 Usuarios
 
