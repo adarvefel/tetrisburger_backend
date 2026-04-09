@@ -1,10 +1,15 @@
 package com.tetris.tetrisburger_backend.infrastructure.adapter;
 
+import brevo.ApiClient;
+import brevo.ApiException;
+import brevo.Configuration;
+import brevo.auth.ApiKeyAuth;
+import brevoApi.TransactionalEmailsApi;
+import brevoModel.SendSmtpEmail;
+import brevoModel.SendSmtpEmailSender;
+import brevoModel.SendSmtpEmailTo;
 import com.tetris.tetrisburger_backend.domain.port.out.EmailPort;
-import sendinblue.ApiClient;
-import sendinblue.Configuration;
-import sibApi.TransactionalEmailsApi;
-import sibModel.*;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -15,13 +20,15 @@ import java.util.Map;
 @Component
 public class EmailAdapter implements EmailPort {
 
+
     @Value("${brevo.api-key}")
     private String brevoApiKey;
 
     private TransactionalEmailsApi getApi() {
         ApiClient client = Configuration.getDefaultApiClient();
-        client.setApiKey(brevoApiKey);
-        return new TransactionalEmailsApi();
+        ApiKeyAuth apiKey = (ApiKeyAuth) client.getAuthentication("api-key");
+        apiKey.setApiKey(brevoApiKey);
+        return new TransactionalEmailsApi(client);
     }
 
     @Override
@@ -42,8 +49,10 @@ public class EmailAdapter implements EmailPort {
             email.setTextContent(body);
 
             getApi().sendTransacEmail(email);
+        } catch (ApiException e) {
+            System.err.println(">>> Error enviando email [" + e.getCode() + "]: " + e.getResponseBody());
         } catch (Exception e) {
-            System.err.println(">>> Error enviando email: " + e.getMessage());
+            System.err.println(">>> Error inesperado enviando email: " + e.getMessage());
         }
     }
 

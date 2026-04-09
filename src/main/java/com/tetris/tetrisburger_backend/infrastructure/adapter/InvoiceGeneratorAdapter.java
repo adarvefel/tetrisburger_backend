@@ -1,6 +1,13 @@
 package com.tetris.tetrisburger_backend.infrastructure.adapter;
 
 
+import brevo.ApiClient;
+import brevo.Configuration;
+import brevoApi.TransactionalEmailsApi;
+import brevoModel.SendSmtpEmail;
+import brevoModel.SendSmtpEmailAttachment;
+import brevoModel.SendSmtpEmailSender;
+import brevoModel.SendSmtpEmailTo;
 import com.tetris.tetrisburger_backend.domain.common.ImageUploadResult;
 import com.tetris.tetrisburger_backend.domain.enums.OrderItemType;
 import com.tetris.tetrisburger_backend.domain.model.Invoice;
@@ -20,13 +27,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import sendinblue.ApiClient;
-import sendinblue.Configuration;
-import sibApi.TransactionalEmailsApi;
-import sibModel.SendSmtpEmail;
-import sibModel.SendSmtpEmailAttachment;
-import sibModel.SendSmtpEmailSender;
-import sibModel.SendSmtpEmailTo;
+
 
 import java.text.NumberFormat;
 import java.time.LocalDate;
