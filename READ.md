@@ -41,14 +41,14 @@ facturación, inventario y notificaciones por correo.
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/tu-usuario/tetrisburger-backend.git
-cd tetrisburger-backend
+git https://github.com/adarvefel/tetrisburger_backend.git
+cd tetrisburger_backend
 ```
 
 ### 2. Inicializar la base de datos
 
 ```bash
-mysql -u root -p < seed.sql
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p < seed.sql
 ```
 
 > Esto crea la base de datos `railway`, las 20 tablas y carga todos los datos de prueba.
@@ -478,6 +478,8 @@ MySQL en ejecución.
 - **Carrito único por usuario**: `cart` tiene constraint `UNIQUE` en `id_user`.
 
 ---
+
+
 
 ## 📝 Licencia
 
